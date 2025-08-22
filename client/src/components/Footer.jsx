@@ -9,7 +9,7 @@ const Footer = () => {
             <div className="flex items-center mb-4">
               <ShieldCheck className="h-8 w-8 text-web3-purple mr-2" />
               <span className="text-2xl font-bold bg-gradient-to-r from-web3-purple to-web3-blue bg-clip-text text-transparent">
-                DecentralID
+                Credence
               </span>
             </div>
             <p className="text-gray-400 max-w-md" data-testid="footer-description">
@@ -47,8 +47,8 @@ const Footer = () => {
             <h4 className="text-white font-semibold mb-4">Contact</h4>
             <ul className="space-y-2">
               <li>
-                <a href="mailto:hello@decentralid.com" className="text-gray-400 hover:text-web3-purple transition-colors" data-testid="footer-email">
-                  hello@decentralid.com
+                <a href="mailto:hello@credence.com" className="text-gray-400 hover:text-web3-purple transition-colors" data-testid="footer-email">
+                  hello@credence.com
                 </a>
               </li>
               <li>
@@ -72,7 +72,7 @@ const Footer = () => {
         
         <div className="border-t border-gray-800 mt-8 pt-8 text-center">
           <p className="text-gray-400" data-testid="footer-copyright">
-            &copy; 2024 DecentralID. All rights reserved.
+            &copy; 2024 Credence. All rights reserved.
           </p>
         </div>
       </div>

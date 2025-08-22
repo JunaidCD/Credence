@@ -23,7 +23,7 @@ const Navbar = () => {
             <Link href="/" className="flex items-center">
               <ShieldCheck className="h-8 w-8 text-web3-purple mr-2" />
               <span className="text-2xl font-bold bg-gradient-to-r from-web3-purple to-web3-blue bg-clip-text text-transparent">
-                DecentralID
+                Credence
               </span>
             </Link>
 

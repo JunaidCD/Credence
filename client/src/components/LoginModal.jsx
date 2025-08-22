@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Wallet } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext.jsx';
@@ -35,10 +35,10 @@ const LoginModal = ({ isOpen, onClose, userType }) => {
           <div className="w-16 h-16 bg-gradient-to-r from-web3-purple to-web3-blue rounded-2xl flex items-center justify-center mx-auto mb-4">
             <Wallet className="h-8 w-8 text-white" />
           </div>
-          <h2 className="text-2xl font-bold text-white mb-2" data-testid="modal-title">Connect Wallet</h2>
-          <p className="text-gray-400 mb-6" data-testid="modal-description">
+          <DialogTitle className="text-2xl font-bold text-white mb-2" data-testid="modal-title">Connect Wallet</DialogTitle>
+          <DialogDescription className="text-gray-400 mb-6" data-testid="modal-description">
             Connect your MetaMask wallet to access your decentralized identity
-          </p>
+          </DialogDescription>
           
           <Button 
             onClick={handleConnect}
