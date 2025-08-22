@@ -57,14 +57,24 @@ const HeroSection = () => {
             </div>
 
             {/* Hero Image */}
-            <div className="relative max-w-4xl mx-auto">
+            <div className="relative max-w-4xl mx-auto hero-glow">
               <img 
-                src="/src/assets/blockchain-network.png" 
-                alt="Blockchain network visualization with decentralized nodes" 
-                className="rounded-2xl shadow-2xl animate-float" 
+                src="/src/assets/web3-hero-illustration.png" 
+                alt="Modern abstract Web3 digital technology illustration" 
+                className="rounded-2xl shadow-2xl animate-float relative z-10" 
                 data-testid="hero-image"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent rounded-2xl"></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent rounded-2xl z-20"></div>
+              
+              {/* Floating Particles */}
+              <div className="floating-particles">
+                <div className="particle" style={{left: '10%', animationDelay: '0s'}}></div>
+                <div className="particle" style={{left: '20%', animationDelay: '-1s'}}></div>
+                <div className="particle" style={{left: '30%', animationDelay: '-2s'}}></div>
+                <div className="particle" style={{left: '70%', animationDelay: '-3s'}}></div>
+                <div className="particle" style={{left: '80%', animationDelay: '-4s'}}></div>
+                <div className="particle" style={{left: '90%', animationDelay: '-5s'}}></div>
+              </div>
             </div>
           </div>
         </div>
