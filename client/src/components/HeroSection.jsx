@@ -59,8 +59,8 @@ const HeroSection = () => {
             {/* Hero Image */}
             <div className="relative max-w-4xl mx-auto hero-glow">
               <img 
-                src="/src/assets/web3-hero-illustration.png" 
-                alt="Modern abstract Web3 digital technology illustration" 
+                src="/src/assets/web3-hero-modern.png" 
+                alt="Ultra-modern Web3 holographic interface with digital identity visualization" 
                 className="rounded-2xl shadow-2xl animate-float relative z-10" 
                 data-testid="hero-image"
               />
