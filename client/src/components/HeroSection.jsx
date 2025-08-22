@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { User, Search } from 'lucide-react';
+import { User, Search, Award } from 'lucide-react';
 import { useState } from 'react';
 import LoginModal from './LoginModal.jsx';
 
@@ -45,13 +45,22 @@ const HeroSection = () => {
                 <Search className="mr-2 h-5 w-5" />
                 Login as Verifier
               </Button>
+              <Button 
+                onClick={() => openLoginModal('issuer')}
+                variant="outline"
+                className="border-2 border-web3-cyan text-white px-8 py-4 text-lg font-semibold rounded-xl hover:bg-web3-cyan hover:bg-opacity-20 transition-all flex items-center justify-center bg-transparent"
+                data-testid="button-login-issuer"
+              >
+                <Award className="mr-2 h-5 w-5" />
+                Login as Issuer
+              </Button>
             </div>
 
             {/* Hero Image */}
             <div className="relative max-w-4xl mx-auto">
               <img 
-                src="https://images.unsplash.com/photo-1639762681485-074b7f938ba0?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&h=1080" 
-                alt="Blockchain digital identity visualization" 
+                src="/src/assets/blockchain-network.png" 
+                alt="Blockchain network visualization with decentralized nodes" 
                 className="rounded-2xl shadow-2xl animate-float" 
                 data-testid="hero-image"
               />
