@@ -21,7 +21,7 @@ const UserSidebar = ({ activeSection, onSectionChange }) => {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'credentials', label: 'My Credentials', icon: Award },
-    { id: 'requests', label: 'Requests', icon: Mail, badge: 3 },
+    { id: 'issued-credentials', label: 'Issued Credentials', icon: Award },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 

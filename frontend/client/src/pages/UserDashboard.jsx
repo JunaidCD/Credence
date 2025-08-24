@@ -70,6 +70,11 @@ const UserDashboard = () => {
     enabled: !!user?.id,
   });
 
+  const { data: issuedCredentials = [], isLoading: credentialsIssuedLoading } = useQuery({
+    queryKey: ['/api/credentials/issued', user?.id],
+    enabled: !!user?.id,
+  });
+
   const { data: verificationRequests = [], isLoading: requestsLoading } = useQuery({
     queryKey: ['/api/verification-requests/user', user?.id],
     enabled: !!user?.id,
@@ -526,77 +531,175 @@ const UserDashboard = () => {
     </div>
   );
 
-  const renderRequests = () => (
-    <div className="p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">Verification Requests</h1>
-        <p className="text-gray-400">Review and respond to credential verification requests</p>
+  const renderIssuedCredentials = () => (
+    <div className="p-6 min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-blue-900/20">
+      {/* Enhanced Header */}
+      <div className="mb-10 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 via-blue-600/20 to-cyan-600/20 rounded-3xl blur-xl"></div>
+        <div className="relative bg-gradient-to-r from-gray-800/80 to-gray-900/80 backdrop-blur-sm rounded-3xl p-8 border border-purple-500/30">
+          <div className="animate-fadeInUp">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 via-blue-400 to-cyan-400 bg-clip-text text-transparent mb-3 animate-shimmer">Issued Credentials ✨</h1>
+            <p className="text-gray-300 text-lg">View and manage all credentials you have issued to others</p>
+            <div className="flex items-center mt-4 space-x-4">
+              <div className="flex items-center text-green-400">
+                <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
+                <span className="text-sm">Active Issuer</span>
+              </div>
+              <div className="text-gray-400 text-sm">
+                {issuedCredentials.length} {issuedCredentials.length === 1 ? 'Credential' : 'Credentials'} Issued
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {requestsLoading ? (
-        <div className="space-y-6">
-          {[1, 2, 3].map(i => (
-            <Skeleton key={i} className="h-32 w-full rounded-2xl" />
+      {credentialsIssuedLoading ? (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {[1, 2, 3, 4, 5, 6].map(i => (
+            <div key={i} className="animate-pulse">
+              <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm border border-gray-700/50 rounded-3xl p-8 h-80">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="w-12 h-12 bg-gray-700 rounded-2xl"></div>
+                  <div className="w-20 h-6 bg-gray-700 rounded-full"></div>
+                </div>
+                <div className="space-y-4">
+                  <div className="h-6 bg-gray-700 rounded w-3/4"></div>
+                  <div className="h-4 bg-gray-800 rounded w-1/2"></div>
+                  <div className="h-4 bg-gray-800 rounded w-2/3"></div>
+                </div>
+                <div className="mt-8 space-y-2">
+                  <div className="h-3 bg-gray-800 rounded w-full"></div>
+                  <div className="h-3 bg-gray-800 rounded w-4/5"></div>
+                </div>
+                <div className="mt-6 flex space-x-3">
+                  <div className="w-20 h-8 bg-gray-700 rounded-lg"></div>
+                  <div className="w-16 h-8 bg-gray-700 rounded-lg"></div>
+                </div>
+              </div>
+            </div>
           ))}
         </div>
-      ) : verificationRequests.filter(r => r.status === 'pending').length === 0 ? (
-        <div className="text-center py-16">
-          <Clock className="h-16 w-16 text-gray-600 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-white mb-2">No Pending Requests</h3>
-          <p className="text-gray-400">You're all caught up! New verification requests will appear here.</p>
+      ) : issuedCredentials.length === 0 ? (
+        <div className="relative">
+          {/* Floating Background Elements */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute top-20 left-10 w-32 h-32 bg-purple-500/10 rounded-full blur-xl animate-float"></div>
+            <div className="absolute top-40 right-20 w-24 h-24 bg-blue-500/10 rounded-full blur-xl animate-float" style={{animationDelay: '1s'}}></div>
+            <div className="absolute bottom-20 left-1/3 w-40 h-40 bg-cyan-500/10 rounded-full blur-xl animate-float" style={{animationDelay: '2s'}}></div>
+          </div>
+          
+          {/* Enhanced Empty State */}
+          <div className="relative text-center py-20 animate-fadeInUp">
+            <div className="mb-8 relative inline-block">
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-xl blur-2xl animate-pulse"></div>
+              <div className="relative w-32 h-32 bg-gradient-to-br from-purple-900/40 to-blue-900/40 backdrop-blur-sm border border-purple-500/30 rounded-full flex items-center justify-center mx-auto animate-float">
+                <Award className="h-16 w-16 text-purple-400" />
+              </div>
+              <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center opacity-75">
+                <Plus className="h-4 w-4 text-white" />
+              </div>
+            </div>
+            
+            <h3 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent mb-4 animate-shimmer">
+              No Credentials Issued Yet
+            </h3>
+            <p className="text-gray-300 text-lg mb-8 max-w-md mx-auto leading-relaxed">
+              You haven't issued any credentials yet. Start building trust by issuing verifiable credentials to others.
+            </p>
+            
+            {/* Feature Highlights */}
+            <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto mb-10">
+              <div className="bg-gradient-to-br from-purple-900/30 to-purple-800/30 backdrop-blur-sm border border-purple-500/20 rounded-2xl p-6 animate-slideInUp">
+                <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-4 animate-float">
+                  <CheckCircle className="h-6 w-6 text-white" />
+                </div>
+                <h4 className="text-white font-semibold mb-2">Trusted Issuance</h4>
+                <p className="text-gray-400 text-sm">Issue tamper-proof credentials that can be instantly verified</p>
+              </div>
+              
+              <div className="bg-gradient-to-br from-blue-900/30 to-blue-800/30 backdrop-blur-sm border border-blue-500/20 rounded-2xl p-6 animate-slideInUp" style={{animationDelay: '0.1s'}}>
+                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mx-auto mb-4 animate-float" style={{animationDelay: '0.5s'}}>
+                  <Activity className="h-6 w-6 text-white" />
+                </div>
+                <h4 className="text-white font-semibold mb-2">Real-time Tracking</h4>
+                <p className="text-gray-400 text-sm">Monitor the status and usage of all issued credentials</p>
+              </div>
+              
+              <div className="bg-gradient-to-br from-cyan-900/30 to-cyan-800/30 backdrop-blur-sm border border-cyan-500/20 rounded-2xl p-6 animate-slideInUp" style={{animationDelay: '0.2s'}}>
+                <div className="w-12 h-12 bg-gradient-to-r from-cyan-500 to-cyan-600 rounded-xl flex items-center justify-center mx-auto mb-4 animate-float" style={{animationDelay: '1s'}}>
+                  <Fingerprint className="h-6 w-6 text-white" />
+                </div>
+                <h4 className="text-white font-semibold mb-2">Blockchain Security</h4>
+                <p className="text-gray-400 text-sm">All credentials are secured on the blockchain with cryptographic proof</p>
+              </div>
+            </div>
+            
+            <Button 
+              onClick={() => setShowCredentialForm(true)}
+              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-10 py-4 text-lg rounded-2xl font-bold shadow-2xl hover:shadow-purple-500/25 transition-all duration-300 transform hover:scale-105"
+            >
+              <Plus className="mr-3 h-6 w-6" />
+              Issue Your First Credential
+            </Button>
+          </div>
         </div>
       ) : (
-        <div className="space-y-6">
-          {verificationRequests
-            .filter(request => request.status === 'pending')
-            .map((request, index) => (
-            <Card key={request.id} className="glass-effect">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center mb-3">
-                      <div className="w-10 h-10 bg-gradient-to-r from-web3-blue to-web3-purple rounded-full flex items-center justify-center mr-3">
-                        {request.verifier?.userType === 'verifier' ? 
-                          <Building className="h-5 w-5 text-white" /> :
-                          <Briefcase className="h-5 w-5 text-white" />
-                        }
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold text-white" data-testid={`request-verifier-${index}`}>
-                          {request.verifier?.name || 'Unknown Verifier'}
-                        </h3>
-                        <p className="text-gray-400 text-sm">
-                          Verification Request • {new Date(request.requestedAt).toLocaleString()}
-                        </p>
-                      </div>
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {issuedCredentials.map((credential, index) => (
+            <Card key={credential.id} className="group relative overflow-hidden bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-sm border-purple-500/30 hover:border-purple-400/50 transition-all duration-500 transform hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20 animate-slideInUp" style={{animationDelay: `${index * 0.1}s`}}>
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-600/5 via-blue-600/5 to-cyan-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <CardContent className="p-8 relative z-10">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-blue-500 rounded-2xl flex items-center justify-center transform group-hover:rotate-12 transition-transform duration-500">
+                    <Award className="h-6 w-6 text-white" />
+                  </div>
+                  <span className={`text-sm font-bold capitalize px-3 py-1 rounded-full ${
+                    credential.status === 'active' ? 'text-green-400 bg-green-400/10 border border-green-400/30' :
+                    credential.status === 'expired' ? 'text-yellow-400 bg-yellow-400/10 border border-yellow-400/30' :
+                    credential.status === 'revoked' ? 'text-red-400 bg-red-400/10 border border-red-400/30' : 'text-blue-400 bg-blue-400/10 border border-blue-400/30'
+                  }`}>
+                    {credential.status || 'Active'}
+                  </span>
+                </div>
+                
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-xl font-bold text-white mb-2">{credential.type || 'Digital Certificate'}</h3>
+                    <p className="text-gray-300 text-sm">Issued to: <span className="font-semibold">{credential.holderName || 'Unknown Holder'}</span></p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-400">Credential ID:</span>
+                      <span className="text-gray-300 font-mono">{credential.id?.slice(0, 8)}...</span>
                     </div>
-                    <p className="text-gray-300 mb-4" data-testid={`request-message-${index}`}>
-                      {request.message || `Requesting verification of your ${request.credentialType}.`}
-                    </p>
-                    <div className="flex items-center text-sm text-gray-400">
-                      <CheckCircle className="h-4 w-4 mr-1" />
-                      <span>Credential: {request.credentialType}</span>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-400">Issue Date:</span>
+                      <span className="text-gray-300">{new Date(credential.issuedAt || Date.now()).toLocaleDateString()}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-400">Expiry Date:</span>
+                      <span className="text-gray-300">{credential.expiryDate ? new Date(credential.expiryDate).toLocaleDateString() : 'No Expiry'}</span>
                     </div>
                   </div>
-                  <div className="flex space-x-3 ml-6">
+                </div>
+                
+                <div className="mt-8 flex space-x-3">
+                  <Button
+                    size="sm"
+                    className="flex-1 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-xl font-semibold transition-all duration-300 transform hover:scale-105"
+                  >
+                    View Details
+                  </Button>
+                  {credential.status === 'active' && (
                     <Button
-                      onClick={() => handleRejectRequest(request.id)}
+                      size="sm"
                       variant="outline"
-                      className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
-                      data-testid={`button-reject-${index}`}
+                      className="border-red-500/50 text-red-400 hover:bg-red-500/20 hover:text-red-300 hover:border-red-400 rounded-xl font-semibold transition-all duration-300"
                     >
-                      <X className="h-4 w-4 mr-1" />
-                      Reject
+                      Revoke
                     </Button>
-                    <Button
-                      onClick={() => handleApproveRequest(request.id)}
-                      className="glow-button text-white"
-                      data-testid={`button-approve-${index}`}
-                    >
-                      <Check className="h-4 w-4 mr-1" />
-                      Approve
-                    </Button>
-                  </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -942,7 +1045,7 @@ const UserDashboard = () => {
       <div className="flex-1 overflow-auto">
         {activeSection === 'dashboard' && renderDashboard()}
         {activeSection === 'credentials' && renderCredentials()}
-        {activeSection === 'requests' && renderRequests()}
+        {activeSection === 'issued-credentials' && renderIssuedCredentials()}
         {activeSection === 'settings' && renderSettings()}
       </div>
 
