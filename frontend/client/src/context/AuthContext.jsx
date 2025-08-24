@@ -22,6 +22,11 @@ const authReducer = (state, action) => {
         error: action.payload, 
         isAuthenticated: false 
       };
+    case 'UPDATE_USER':
+      return {
+        ...state,
+        user: { ...state.user, ...action.payload }
+      };
     case 'LOGOUT':
       return { 
         user: null, 
@@ -99,6 +104,10 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const updateUser = (userData) => {
+    dispatch({ type: 'UPDATE_USER', payload: userData });
+  };
+
   const disconnect = () => {
     dispatch({ type: 'LOGOUT' });
     
@@ -143,6 +152,7 @@ export const AuthProvider = ({ children }) => {
   const value = {
     ...state,
     connectWallet,
+    updateUser,
     disconnect
   };
 

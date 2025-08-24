@@ -37,7 +37,7 @@ const UserSidebar = ({ activeSection, onSectionChange }) => {
             <p className="text-white font-semibold" data-testid="sidebar-user-name">
               {user?.name || 'User'}
             </p>
-            <p className="text-gray-400 text-sm">User</p>
+            <p className="text-gray-400 text-sm">Issuer</p>
           </div>
         </div>
         

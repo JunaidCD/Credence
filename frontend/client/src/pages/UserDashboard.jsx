@@ -20,14 +20,26 @@ import {
   Check,
   X,
   Building,
-  Briefcase
+  Briefcase,
+  User,
+  Save,
+  Wallet
 } from 'lucide-react';
 
 const UserDashboard = () => {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, updateUser } = useAuth();
   const [, setLocation] = useLocation();
   const [activeSection, setActiveSection] = useState('dashboard');
   const [showCredentialForm, setShowCredentialForm] = useState(false);
+  const [profileData, setProfileData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    designation: '',
+    department: '',
+    employeeId: ''
+  });
+  const [isFormChanged, setIsFormChanged] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -36,6 +48,21 @@ const UserDashboard = () => {
       setLocation('/');
     }
   }, [isAuthenticated, setLocation]);
+
+  // Initialize profile data when user changes
+  useEffect(() => {
+    if (user) {
+      setProfileData({
+        name: user.name || '',
+        email: user.email || '',
+        phone: '',
+        designation: '',
+        department: '',
+        employeeId: ''
+      });
+      setIsFormChanged(false);
+    }
+  }, [user]);
 
   // Queries
   const { data: credentials = [], isLoading: credentialsLoading } = useQuery({
@@ -351,72 +378,258 @@ const UserDashboard = () => {
     </div>
   );
 
-  const renderSettings = () => (
-    <div className="p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">Settings</h1>
-        <p className="text-gray-400">Manage your account and privacy settings</p>
-      </div>
+  const handleInputChange = (field, value) => {
+    setProfileData(prev => ({ ...prev, [field]: value }));
+    setIsFormChanged(true);
+  };
 
-      <div className="max-w-2xl space-y-6">
-        <Card className="glass-effect">
-          <CardHeader>
-            <CardTitle>Profile Information</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Display Name</label>
-              <input 
-                type="text" 
-                defaultValue={user.name} 
-                className="w-full bg-gray-800 border border-gray-700 text-white px-3 py-2 rounded-lg focus:ring-2 focus:ring-web3-purple focus:border-transparent"
-                data-testid="input-display-name"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Email Address</label>
-              <input 
-                type="email" 
-                defaultValue={user.email} 
-                className="w-full bg-gray-800 border border-gray-700 text-white px-3 py-2 rounded-lg focus:ring-2 focus:ring-web3-purple focus:border-transparent"
-                data-testid="input-email"
-              />
-            </div>
-          </CardContent>
-        </Card>
+  const validateForm = () => {
+    const requiredFields = ['name', 'email', 'phone', 'designation', 'department', 'employeeId'];
+    const emptyFields = requiredFields.filter(field => !profileData[field]?.trim());
+    
+    if (emptyFields.length > 0) {
+      toast({
+        title: "Validation Error",
+        description: "All fields are required. Please fill in all information.",
+        variant: "destructive"
+      });
+      return false;
+    }
 
-        <Card className="glass-effect">
-          <CardHeader>
-            <CardTitle>Connected Wallet</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <div className="h-8 w-8 text-web3-purple mr-3">
-                  <svg viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                  </svg>
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(profileData.email)) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid email address.",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSave = () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    // Update user data in the context so it reflects throughout the app
+    updateUser({
+      name: profileData.name,
+      email: profileData.email,
+      phone: profileData.phone,
+      designation: profileData.designation,
+      department: profileData.department,
+      employeeId: profileData.employeeId
+    });
+
+    toast({
+      title: "Profile Updated!",
+      description: "Your profile information has been saved successfully.",
+    });
+    setIsFormChanged(false);
+  };
+
+  const handleReset = () => {
+    setProfileData({
+      name: user?.name || '',
+      email: user?.email || '',
+      phone: '',
+      designation: '',
+      department: '',
+      employeeId: ''
+    });
+    setIsFormChanged(false);
+    toast({
+      title: "Form Reset",
+      description: "All fields have been reset to their original values.",
+    });
+  };
+
+  const renderSettings = () => {
+
+    return (
+      <div className="p-6">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-white mb-2">Settings</h1>
+          <p className="text-gray-400">Manage your account and privacy settings</p>
+        </div>
+
+        <div className="max-w-4xl space-y-6">
+          {/* Profile Information */}
+          <Card className="glass-effect">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <User className="mr-2 h-5 w-5 text-web3-purple" />
+                Profile Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Full Name *</label>
+                  <input 
+                    type="text" 
+                    value={profileData.name}
+                    onChange={(e) => handleInputChange('name', e.target.value)}
+                    placeholder="Enter your full name"
+                    required
+                    className="w-full bg-gray-800/50 border border-gray-700 text-white px-3 py-2 rounded-lg focus:ring-2 focus:ring-web3-purple focus:border-transparent"
+                    data-testid="input-display-name"
+                  />
                 </div>
                 <div>
-                  <p className="text-white font-medium">MetaMask</p>
-                  <p className="text-gray-400 text-sm font-mono" data-testid="wallet-address">
-                    {user.address?.slice(0, 6)}...{user.address?.slice(-4)}
-                  </p>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Email Address *</label>
+                  <input 
+                    type="email" 
+                    value={profileData.email}
+                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    placeholder="Enter your email address"
+                    required
+                    className="w-full bg-gray-800/50 border border-gray-700 text-white px-3 py-2 rounded-lg focus:ring-2 focus:ring-web3-purple focus:border-transparent"
+                    data-testid="input-email"
+                  />
                 </div>
               </div>
-              <Button
-                variant="outline"
-                className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
-                data-testid="button-disconnect-wallet"
-              >
-                Disconnect
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Phone Number *</label>
+                <input 
+                  type="tel" 
+                  value={profileData.phone}
+                  onChange={(e) => handleInputChange('phone', e.target.value)}
+                  placeholder="Enter your phone number"
+                  required
+                  className="w-full bg-gray-800/50 border border-gray-700 text-white px-3 py-2 rounded-lg focus:ring-2 focus:ring-web3-purple focus:border-transparent"
+                  data-testid="input-phone"
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Institutional Information */}
+          <Card className="glass-effect">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Building className="mr-2 h-5 w-5 text-web3-blue" />
+                Institutional Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Designation *</label>
+                  <input 
+                    type="text" 
+                    value={profileData.designation}
+                    onChange={(e) => handleInputChange('designation', e.target.value)}
+                    placeholder="e.g., Professor, Assistant Professor, Lecturer"
+                    required
+                    className="w-full bg-gray-800/50 border border-gray-700 text-white px-3 py-2 rounded-lg focus:ring-2 focus:ring-web3-blue focus:border-transparent"
+                    data-testid="input-designation"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Department *</label>
+                  <input 
+                    type="text" 
+                    value={profileData.department}
+                    onChange={(e) => handleInputChange('department', e.target.value)}
+                    placeholder="e.g., Computer Science, Mathematics"
+                    required
+                    className="w-full bg-gray-800/50 border border-gray-700 text-white px-3 py-2 rounded-lg focus:ring-2 focus:ring-web3-blue focus:border-transparent"
+                    data-testid="input-department"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Employee ID *</label>
+                <input 
+                  type="text" 
+                  value={profileData.employeeId}
+                  onChange={(e) => handleInputChange('employeeId', e.target.value)}
+                  placeholder="Enter your employee ID"
+                  required
+                  className="w-full bg-gray-800/50 border border-gray-700 text-white px-3 py-2 rounded-lg focus:ring-2 focus:ring-web3-blue focus:border-transparent"
+                  data-testid="input-employee-id"
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Action Buttons */}
+          <Card className="glass-effect">
+            <CardContent className="p-6">
+              <div className="flex justify-end space-x-4">
+                <Button
+                  onClick={handleReset}
+                  variant="outline"
+                  className="border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white px-6 py-2 flex items-center"
+                  data-testid="button-reset-form"
+                >
+                  <X className="mr-2 h-4 w-4" />
+                  Reset Form
+                </Button>
+                <Button
+                  onClick={handleSave}
+                  disabled={!isFormChanged}
+                  className={`px-8 py-2 font-semibold flex items-center ${
+                    isFormChanged 
+                      ? 'glow-button text-white' 
+                      : 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                  }`}
+                  data-testid="button-save-profile"
+                >
+                  <Save className="mr-2 h-4 w-4" />
+                  Save Changes
+                </Button>
+              </div>
+              {isFormChanged && (
+                <p className="text-yellow-400 text-sm mt-2 text-right">
+                  You have unsaved changes
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Connected Wallet */}
+          <Card className="glass-effect">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Wallet className="mr-2 h-5 w-5 text-web3-cyan" />
+                Connected Wallet
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <div className="h-8 w-8 text-web3-purple mr-3">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-white font-medium">MetaMask</p>
+                    <p className="text-gray-400 text-sm font-mono" data-testid="wallet-address">
+                      {user.address?.slice(0, 6)}...{user.address?.slice(-4)}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
+                  data-testid="button-disconnect-wallet"
+                >
+                  Disconnect
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="flex h-screen pt-16">
