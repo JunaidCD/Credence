@@ -21,7 +21,16 @@ import {
   FileText,
   Car,
   Eye,
-  Trash2
+  Trash2,
+  Sparkles,
+  Calendar,
+  Shield,
+  Zap,
+  BarChart3,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  Star
 } from 'lucide-react';
 
 const IssuerDashboard = () => {
@@ -215,98 +224,201 @@ const IssuerDashboard = () => {
   };
 
   const renderDashboard = () => (
-    <div className="p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">Issuer Dashboard</h1>
-        <p className="text-gray-400">Issue and manage verifiable credentials</p>
+    <div className="p-6 space-y-8">
+      {/* Enhanced Header with Welcome Message */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-900/20 via-blue-900/20 to-cyan-900/20 p-8 border border-purple-500/20">
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 via-blue-600/10 to-cyan-600/10 animate-pulse"></div>
+        <div className="relative z-10">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 via-blue-400 to-cyan-400 bg-clip-text text-transparent mb-2">
+                Welcome back, {user.name}
+              </h1>
+              <p className="text-gray-300 text-lg">Ready to issue some amazing credentials today?</p>
+            </div>
+            <div className="hidden md:flex items-center space-x-2">
+              <Sparkles className="h-8 w-8 text-yellow-400 animate-pulse" />
+              <div className="text-right">
+                <p className="text-sm text-gray-400">Current Time</p>
+                <p className="text-white font-semibold">{new Date().toLocaleTimeString()}</p>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center space-x-4 text-sm text-gray-400">
+            <div className="flex items-center space-x-1">
+              <Shield className="h-4 w-4 text-green-400" />
+              <span>Verified Issuer</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <Calendar className="h-4 w-4 text-blue-400" />
+              <span>{new Date().toLocaleDateString()}</span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Quick Stats */}
-      <div className="grid md:grid-cols-3 gap-6 mb-8">
-        <Card className="glass-effect">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-400">Total Issued</p>
-                <p className="text-3xl font-bold text-web3-purple" data-testid="stat-total-issued">
-                  {stats.totalIssued}
-                </p>
+      {/* Enhanced Quick Stats with Animations */}
+      <div className="grid md:grid-cols-3 gap-6">
+        <Card className="glass-effect hover:scale-105 transition-all duration-300 group relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-600/10 to-purple-800/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <CardContent className="p-6 relative z-10">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-3">
+                <div className="p-3 rounded-xl bg-purple-600/20 group-hover:bg-purple-600/30 transition-colors duration-300">
+                  <Award className="h-6 w-6 text-purple-400" />
+                </div>
+                <div>
+                  <p className="text-gray-400 text-sm font-medium">Total Issued</p>
+                  <p className="text-3xl font-bold text-white group-hover:text-purple-300 transition-colors duration-300" data-testid="stat-total-issued">
+                    {stats.totalIssued}
+                  </p>
+                </div>
               </div>
-              <Award className="h-8 w-8 text-web3-purple" />
+              <div className="text-right">
+                <div className="flex items-center space-x-1 text-green-400 text-sm">
+                  <TrendingUp className="h-4 w-4" />
+                  <span>+12%</span>
+                </div>
+              </div>
+            </div>
+            <div className="w-full bg-gray-800 rounded-full h-2">
+              <div className="bg-gradient-to-r from-purple-600 to-purple-400 h-2 rounded-full" style={{width: '75%'}}></div>
             </div>
           </CardContent>
         </Card>
         
-        <Card className="glass-effect">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-400">This Month</p>
-                <p className="text-3xl font-bold text-web3-blue" data-testid="stat-this-month">
-                  {stats.thisMonth}
-                </p>
+        <Card className="glass-effect hover:scale-105 transition-all duration-300 group relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 to-blue-800/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <CardContent className="p-6 relative z-10">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-3">
+                <div className="p-3 rounded-xl bg-blue-600/20 group-hover:bg-blue-600/30 transition-colors duration-300">
+                  <BarChart3 className="h-6 w-6 text-blue-400" />
+                </div>
+                <div>
+                  <p className="text-gray-400 text-sm font-medium">This Month</p>
+                  <p className="text-3xl font-bold text-white group-hover:text-blue-300 transition-colors duration-300" data-testid="stat-this-month">
+                    {stats.thisMonth}
+                  </p>
+                </div>
               </div>
-              <TrendingUp className="h-8 w-8 text-web3-blue" />
+              <div className="text-right">
+                <div className="flex items-center space-x-1 text-green-400 text-sm">
+                  <TrendingUp className="h-4 w-4" />
+                  <span>+8%</span>
+                </div>
+              </div>
+            </div>
+            <div className="w-full bg-gray-800 rounded-full h-2">
+              <div className="bg-gradient-to-r from-blue-600 to-blue-400 h-2 rounded-full" style={{width: '60%'}}></div>
             </div>
           </CardContent>
         </Card>
         
-        <Card className="glass-effect">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-400">Active Recipients</p>
-                <p className="text-3xl font-bold text-web3-cyan" data-testid="stat-active-recipients">
-                  {stats.activeRecipients}
-                </p>
+        <Card className="glass-effect hover:scale-105 transition-all duration-300 group relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-cyan-600/10 to-cyan-800/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <CardContent className="p-6 relative z-10">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-3">
+                <div className="p-3 rounded-xl bg-cyan-600/20 group-hover:bg-cyan-600/30 transition-colors duration-300">
+                  <Users className="h-6 w-6 text-cyan-400" />
+                </div>
+                <div>
+                  <p className="text-gray-400 text-sm font-medium">Active Recipients</p>
+                  <p className="text-3xl font-bold text-white group-hover:text-cyan-300 transition-colors duration-300" data-testid="stat-active-recipients">
+                    {stats.activeRecipients}
+                  </p>
+                </div>
               </div>
-              <Users className="h-8 w-8 text-web3-cyan" />
+              <div className="text-right">
+                <div className="flex items-center space-x-1 text-green-400 text-sm">
+                  <TrendingUp className="h-4 w-4" />
+                  <span>+15%</span>
+                </div>
+              </div>
+            </div>
+            <div className="w-full bg-gray-800 rounded-full h-2">
+              <div className="bg-gradient-to-r from-cyan-600 to-cyan-400 h-2 rounded-full" style={{width: '85%'}}></div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Recent Issuances */}
-      <Card className="glass-effect mb-8">
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Activity className="mr-2 h-5 w-5 text-web3-purple" />
-            Recent Issuances
-          </CardTitle>
+      {/* Enhanced Recent Issuances */}
+      <Card className="glass-effect hover:shadow-2xl transition-all duration-300 group">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center text-xl">
+              <div className="p-2 rounded-lg bg-purple-600/20 mr-3">
+                <Activity className="h-5 w-5 text-purple-400" />
+              </div>
+              Recent Issuances
+            </CardTitle>
+            <div className="flex items-center space-x-2 text-sm text-gray-400">
+              <Clock className="h-4 w-4" />
+              <span>Last 30 days</span>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {credentialsLoading ? (
             <div className="space-y-4">
               {[1, 2, 3].map(i => (
-                <Skeleton key={i} className="h-16 w-full" />
+                <div key={i} className="animate-pulse">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-gray-700 rounded-full"></div>
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-gray-700 rounded w-3/4"></div>
+                      <div className="h-3 bg-gray-800 rounded w-1/2"></div>
+                    </div>
+                    <div className="w-20 h-6 bg-gray-700 rounded"></div>
+                  </div>
+                </div>
               ))}
             </div>
           ) : issuedCredentials.length === 0 ? (
-            <p className="text-gray-400 text-center py-8">No credentials issued yet</p>
+            <div className="text-center py-16">
+              <div className="relative">
+                <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-purple-600/20 to-blue-600/20 flex items-center justify-center">
+                  <Award className="h-12 w-12 text-gray-600" />
+                </div>
+                <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-24 h-24 rounded-full bg-purple-600/10 animate-ping"></div>
+              </div>
+              <h3 className="text-xl font-semibold text-white mb-2">No credentials issued yet</h3>
+              <p className="text-gray-400 mb-6">Start your journey by issuing your first credential</p>
+            </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {issuedCredentials.slice(0, 5).map((credential, index) => {
                 const Icon = getCredentialIcon(credential.type);
                 return (
-                  <div key={credential.id} className="flex items-center justify-between py-3 border-b border-gray-800 last:border-b-0" data-testid={`recent-issuance-${index}`}>
-                    <div className="flex items-center">
-                      <div className={`w-10 h-10 bg-gradient-to-r ${getCredentialGradient(credential.type)} rounded-full flex items-center justify-center mr-3`}>
-                        <Icon className="h-5 w-5 text-white" />
+                  <div key={credential.id} className="group/item hover:bg-gray-800/30 rounded-xl p-4 transition-all duration-200 border border-transparent hover:border-purple-500/20" data-testid={`recent-issuance-${index}`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div className={`w-12 h-12 bg-gradient-to-r ${getCredentialGradient(credential.type)} rounded-xl flex items-center justify-center shadow-lg group-hover/item:scale-110 transition-transform duration-200`}>
+                          <Icon className="h-6 w-6 text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-white font-semibold group-hover/item:text-purple-300 transition-colors duration-200">{credential.title}</p>
+                          <div className="flex items-center space-x-2 text-sm text-gray-400">
+                            <span>Issued to {credential.metadata?.recipientName || 'Unknown'}</span>
+                            <span>•</span>
+                            <span>{new Date(credential.issueDate).toLocaleDateString()}</span>
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-white font-medium">{credential.title}</p>
-                        <p className="text-gray-400 text-sm">
-                          Issued to {credential.metadata?.recipientName || 'Unknown'} • {new Date(credential.issueDate).toLocaleDateString()}
-                        </p>
+                      <div className="flex items-center space-x-3">
+                        <div className="text-right">
+                          <div className={`flex items-center space-x-1 px-3 py-1 rounded-full text-sm font-medium ${
+                            credential.status === 'active' ? 'text-green-400 bg-green-500/20' : 
+                            credential.status === 'revoked' ? 'text-red-400 bg-red-500/20' : 'text-yellow-400 bg-yellow-500/20'
+                          }`}>
+                            {credential.status === 'active' ? <CheckCircle className="h-3 w-3" /> : <AlertCircle className="h-3 w-3" />}
+                            <span>{credential.status === 'active' ? 'Delivered' : credential.status}</span>
+                          </div>
+                        </div>
+                        <Star className="h-4 w-4 text-gray-600 group-hover/item:text-yellow-400 transition-colors duration-200 cursor-pointer" />
                       </div>
-                    </div>
-                    <div className="text-right">
-                      <span className={`text-sm font-medium ${
-                        credential.status === 'active' ? 'text-green-500' : 
-                        credential.status === 'revoked' ? 'text-red-500' : 'text-yellow-500'
-                      }`}>
-                        {credential.status === 'active' ? 'Delivered' : credential.status}
-                      </span>
                     </div>
                   </div>
                 );
@@ -316,169 +428,344 @@ const IssuerDashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Quick Issue Button */}
-      <div className="text-center">
-        <Button 
-          onClick={() => setActiveSection('issue')}
-          className="glow-button text-white px-8 py-4 text-lg font-semibold rounded-xl flex items-center mx-auto"
-          data-testid="button-quick-issue"
-        >
-          <PlusCircle className="mr-2 h-6 w-6" />
-          Issue New Credential
-        </Button>
+      {/* Enhanced Quick Action Section */}
+      <div className="grid md:grid-cols-2 gap-6">
+        <Card className="glass-effect hover:scale-105 transition-all duration-300 group cursor-pointer" onClick={() => setActiveSection('issue')}>
+          <CardContent className="p-8 text-center">
+            <div className="relative mb-6">
+              <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center shadow-2xl group-hover:shadow-purple-500/50 transition-all duration-300">
+                <PlusCircle className="h-8 w-8 text-white" />
+              </div>
+              <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-full bg-purple-600/20 animate-ping group-hover:animate-none"></div>
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2 group-hover:text-purple-300 transition-colors duration-300">Issue New Credential</h3>
+            <p className="text-gray-400 group-hover:text-gray-300 transition-colors duration-300">Create and issue a new verifiable credential</p>
+          </CardContent>
+        </Card>
+
+        <Card className="glass-effect hover:scale-105 transition-all duration-300 group cursor-pointer" onClick={() => setActiveSection('issued')}>
+          <CardContent className="p-8 text-center">
+            <div className="relative mb-6">
+              <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-cyan-600 to-blue-600 flex items-center justify-center shadow-2xl group-hover:shadow-cyan-500/50 transition-all duration-300">
+                <Eye className="h-8 w-8 text-white" />
+              </div>
+              <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-full bg-cyan-600/20 animate-ping group-hover:animate-none"></div>
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2 group-hover:text-cyan-300 transition-colors duration-300">View All Credentials</h3>
+            <p className="text-gray-400 group-hover:text-gray-300 transition-colors duration-300">Manage and track all issued credentials</p>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
 
   const renderIssue = () => (
-    <div className="p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">Issue Credential</h1>
-        <p className="text-gray-400">Create and issue a new verifiable credential</p>
+    <div className="p-6 space-y-8">
+      {/* Enhanced Header */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-900/20 via-blue-900/20 to-cyan-900/20 p-8 border border-purple-500/20">
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 via-blue-600/10 to-cyan-600/10 animate-pulse"></div>
+        <div className="relative z-10">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 via-blue-400 to-cyan-400 bg-clip-text text-transparent mb-2">
+                Issue New Credential
+              </h1>
+              <p className="text-gray-300 text-lg">Create and issue a verifiable credential with ease</p>
+            </div>
+            <div className="hidden md:flex items-center space-x-2">
+              <div className="p-3 rounded-full bg-purple-600/20">
+                <Send className="h-8 w-8 text-purple-400 floating-icon" />
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center space-x-4 text-sm text-gray-400">
+            <div className="flex items-center space-x-1">
+              <Shield className="h-4 w-4 text-green-400" />
+              <span>Secure Issuance</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <Zap className="h-4 w-4 text-yellow-400" />
+              <span>Instant Delivery</span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div className="max-w-3xl">
-        <Card className="glass-effect">
-          <CardContent className="p-6">
-            <form onSubmit={handleIssueCredential} className="space-y-6">
-              {/* Recipient Information */}
-              <div>
-                <h3 className="text-lg font-semibold text-white mb-4">Recipient Information</h3>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Full Name</label>
-                    <Input
-                      value={issueForm.recipientName}
-                      onChange={(e) => setIssueForm(prev => ({ ...prev, recipientName: e.target.value }))}
-                      placeholder="John Doe"
-                      className="bg-gray-800 border-gray-700 text-white focus:ring-web3-purple"
-                      required
-                      data-testid="input-recipient-name"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Recipient DID</label>
-                    <Input
-                      value={issueForm.recipientDID}
-                      onChange={(e) => setIssueForm(prev => ({ ...prev, recipientDID: e.target.value }))}
-                      placeholder="did:ethr:0x..."
-                      className="bg-gray-800 border-gray-700 text-white focus:ring-web3-purple"
-                      required
-                      data-testid="input-recipient-did"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Credential Details */}
-              <div>
-                <h3 className="text-lg font-semibold text-white mb-4">Credential Details</h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Credential Type</label>
-                    <Select
-                      value={issueForm.credentialType}
-                      onValueChange={(value) => setIssueForm(prev => ({ ...prev, credentialType: value }))}
-                    >
-                      <SelectTrigger className="bg-gray-800 border-gray-700 text-white focus:ring-web3-purple" data-testid="select-credential-type">
-                        <SelectValue placeholder="Select credential type..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="University Degree">University Degree</SelectItem>
-                        <SelectItem value="Professional Certificate">Professional Certificate</SelectItem>
-                        <SelectItem value="Employment Verification">Employment Verification</SelectItem>
-                        <SelectItem value="Training Certificate">Training Certificate</SelectItem>
-                        <SelectItem value="Achievement Award">Achievement Award</SelectItem>
-                        <SelectItem value="Other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
+      <div className="grid lg:grid-cols-3 gap-8">
+        {/* Enhanced Form */}
+        <div className="lg:col-span-2">
+          <Card className="glass-effect hover:shadow-2xl transition-all duration-300">
+            <CardContent className="p-8">
+              <form onSubmit={handleIssueCredential} className="space-y-8">
+                {/* Enhanced Recipient Information Section */}
+                <div className="relative">
+                  <div className="flex items-center mb-6">
+                    <div className="p-2 rounded-lg bg-blue-600/20 mr-3">
+                      <Users className="h-5 w-5 text-blue-400" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-white">Recipient Information</h3>
                   </div>
                   
-                  <div className="grid md:grid-cols-2 gap-4">
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="group">
+                      <label className="block text-sm font-medium text-gray-300 mb-3 flex items-center">
+                        <span>Full Name</span>
+                        <span className="text-red-400 ml-1">*</span>
+                      </label>
+                      <div className="relative">
+                        <Input
+                          value={issueForm.recipientName}
+                          onChange={(e) => setIssueForm(prev => ({ ...prev, recipientName: e.target.value }))}
+                          placeholder="Enter recipient's full name"
+                          className="bg-gray-800/50 border-gray-600 text-white focus:ring-purple-500 focus:border-purple-500 pl-4 pr-4 py-3 rounded-xl transition-all duration-200 group-hover:border-purple-400"
+                          required
+                          data-testid="input-recipient-name"
+                        />
+                        <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-600/10 to-blue-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"></div>
+                      </div>
+                    </div>
+                    
+                    <div className="group">
+                      <label className="block text-sm font-medium text-gray-300 mb-3 flex items-center">
+                        <span>Recipient DID</span>
+                        <span className="text-red-400 ml-1">*</span>
+                      </label>
+                      <div className="relative">
+                        <Input
+                          value={issueForm.recipientDID}
+                          onChange={(e) => setIssueForm(prev => ({ ...prev, recipientDID: e.target.value }))}
+                          placeholder="did:ethr:0x..."
+                          className="bg-gray-800/50 border-gray-600 text-white focus:ring-purple-500 focus:border-purple-500 pl-4 pr-4 py-3 rounded-xl transition-all duration-200 group-hover:border-purple-400 font-mono text-sm"
+                          required
+                          data-testid="input-recipient-did"
+                        />
+                        <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-600/10 to-blue-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Enhanced Credential Details Section */}
+                <div className="relative">
+                  <div className="flex items-center mb-6">
+                    <div className="p-2 rounded-lg bg-purple-600/20 mr-3">
+                      <Award className="h-5 w-5 text-purple-400" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-white">Credential Details</h3>
+                  </div>
+                  
+                  <div className="space-y-6">
+                    <div className="group">
+                      <label className="block text-sm font-medium text-gray-300 mb-3 flex items-center">
+                        <span>Credential Type</span>
+                        <span className="text-red-400 ml-1">*</span>
+                      </label>
+                      <div className="relative">
+                        <Select
+                          value={issueForm.credentialType}
+                          onValueChange={(value) => setIssueForm(prev => ({ ...prev, credentialType: value }))}
+                        >
+                          <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white focus:ring-purple-500 focus:border-purple-500 h-12 rounded-xl transition-all duration-200 group-hover:border-purple-400" data-testid="select-credential-type">
+                            <SelectValue placeholder="Select credential type..." />
+                          </SelectTrigger>
+                          <SelectContent className="bg-gray-800 border-gray-600">
+                            <SelectItem value="University Degree" className="text-white hover:bg-purple-600/20">🎓 University Degree</SelectItem>
+                            <SelectItem value="Professional Certificate" className="text-white hover:bg-purple-600/20">📜 Professional Certificate</SelectItem>
+                            <SelectItem value="Employment Verification" className="text-white hover:bg-purple-600/20">💼 Employment Verification</SelectItem>
+                            <SelectItem value="Training Certificate" className="text-white hover:bg-purple-600/20">🏆 Training Certificate</SelectItem>
+                            <SelectItem value="Achievement Award" className="text-white hover:bg-purple-600/20">🏅 Achievement Award</SelectItem>
+                            <SelectItem value="Other" className="text-white hover:bg-purple-600/20">📋 Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div className="group">
+                        <label className="block text-sm font-medium text-gray-300 mb-3 flex items-center">
+                          <span>Credential Title</span>
+                          <span className="text-red-400 ml-1">*</span>
+                        </label>
+                        <div className="relative">
+                          <Input
+                            value={issueForm.credentialTitle}
+                            onChange={(e) => setIssueForm(prev => ({ ...prev, credentialTitle: e.target.value }))}
+                            placeholder="Bachelor of Science in Computer Science"
+                            className="bg-gray-800/50 border-gray-600 text-white focus:ring-purple-500 focus:border-purple-500 pl-4 pr-4 py-3 rounded-xl transition-all duration-200 group-hover:border-purple-400"
+                            required
+                            data-testid="input-credential-title"
+                          />
+                          <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-600/10 to-blue-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"></div>
+                        </div>
+                      </div>
+                      
+                      <div className="group">
+                        <label className="block text-sm font-medium text-gray-300 mb-3 flex items-center">
+                          <span>Issue Date</span>
+                          <span className="text-red-400 ml-1">*</span>
+                        </label>
+                        <div className="relative">
+                          <Input
+                            type="date"
+                            value={issueForm.issueDate}
+                            onChange={(e) => setIssueForm(prev => ({ ...prev, issueDate: e.target.value }))}
+                            className="bg-gray-800/50 border-gray-600 text-white focus:ring-purple-500 focus:border-purple-500 pl-4 pr-4 py-3 rounded-xl transition-all duration-200 group-hover:border-purple-400"
+                            required
+                            data-testid="input-issue-date"
+                          />
+                          <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-600/10 to-blue-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"></div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div className="group">
+                        <label className="block text-sm font-medium text-gray-300 mb-3">Expiry Date (Optional)</label>
+                        <div className="relative">
+                          <Input
+                            type="date"
+                            value={issueForm.expiryDate}
+                            onChange={(e) => setIssueForm(prev => ({ ...prev, expiryDate: e.target.value }))}
+                            className="bg-gray-800/50 border-gray-600 text-white focus:ring-purple-500 focus:border-purple-500 pl-4 pr-4 py-3 rounded-xl transition-all duration-200 group-hover:border-purple-400"
+                            data-testid="input-expiry-date"
+                          />
+                          <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-600/10 to-blue-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"></div>
+                        </div>
+                      </div>
+                      
+                      <div className="group">
+                        <label className="block text-sm font-medium text-gray-300 mb-3">Grade/Score (Optional)</label>
+                        <div className="relative">
+                          <Input
+                            value={issueForm.grade}
+                            onChange={(e) => setIssueForm(prev => ({ ...prev, grade: e.target.value }))}
+                            placeholder="A+ or 95%"
+                            className="bg-gray-800/50 border-gray-600 text-white focus:ring-purple-500 focus:border-purple-500 pl-4 pr-4 py-3 rounded-xl transition-all duration-200 group-hover:border-purple-400"
+                            data-testid="input-grade"
+                          />
+                          <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-600/10 to-blue-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"></div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="group">
+                      <label className="block text-sm font-medium text-gray-300 mb-3">Additional Metadata (JSON)</label>
+                      <div className="relative">
+                        <Textarea
+                          value={issueForm.metadata}
+                          onChange={(e) => setIssueForm(prev => ({ ...prev, metadata: e.target.value }))}
+                          rows={4}
+                          placeholder='{"field_of_study": "Computer Science", "university": "Stanford University", "honors": ["Summa Cum Laude"]}'
+                          className="bg-gray-800/50 border-gray-600 text-white focus:ring-purple-500 focus:border-purple-500 font-mono text-sm p-4 rounded-xl transition-all duration-200 group-hover:border-purple-400"
+                          data-testid="textarea-metadata"
+                        />
+                        <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-600/10 to-blue-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Enhanced Action Buttons */}
+                <div className="flex flex-col sm:flex-row gap-4 pt-6">
+                  <Button 
+                    type="button" 
+                    variant="outline"
+                    className="flex-1 border-gray-600 text-gray-300 hover:bg-gray-800 hover:border-gray-500 py-3 rounded-xl transition-all duration-200"
+                    data-testid="button-save-draft"
+                  >
+                    <FileText className="mr-2 h-4 w-4" />
+                    Save as Draft
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    disabled={issueCredentialMutation.isPending}
+                    className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-6 py-3 rounded-xl font-semibold flex items-center justify-center shadow-lg hover:shadow-purple-500/25 transition-all duration-300 disabled:opacity-50"
+                    data-testid="button-issue-credential"
+                  >
+                    {issueCredentialMutation.isPending ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Issuing...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="mr-2 h-4 w-4" />
+                        Issue Credential
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Live Preview Card */}
+        <div className="lg:col-span-1">
+          <Card className="glass-effect sticky top-6">
+            <CardHeader>
+              <CardTitle className="flex items-center text-lg">
+                <div className="p-2 rounded-lg bg-cyan-600/20 mr-3">
+                  <Eye className="h-4 w-4 text-cyan-400" />
+                </div>
+                Live Preview
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="credential-card rounded-xl p-6 border border-purple-500/30 bg-gradient-to-br from-purple-900/20 to-blue-900/20">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-2">
+                    {issueForm.credentialType && (
+                      <div className={`w-8 h-8 bg-gradient-to-r ${getCredentialGradient(issueForm.credentialType)} rounded-lg flex items-center justify-center`}>
+                        {React.createElement(getCredentialIcon(issueForm.credentialType), { className: "h-4 w-4 text-white" })}
+                      </div>
+                    )}
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">Credential Title</label>
-                      <Input
-                        value={issueForm.credentialTitle}
-                        onChange={(e) => setIssueForm(prev => ({ ...prev, credentialTitle: e.target.value }))}
-                        placeholder="Bachelor of Science in Computer Science"
-                        className="bg-gray-800 border-gray-700 text-white focus:ring-web3-purple"
-                        required
-                        data-testid="input-credential-title"
-                      />
+                      <p className="text-xs text-gray-400">CREDENTIAL</p>
+                      <p className="text-sm font-semibold text-white">{issueForm.credentialType || 'Select Type'}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-gray-400">STATUS</p>
+                    <div className="flex items-center space-x-1">
+                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                      <span className="text-xs text-green-400">Ready to Issue</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs text-gray-400 uppercase tracking-wide">Title</p>
+                    <p className="text-white font-medium">{issueForm.credentialTitle || 'Enter credential title...'}</p>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-xs text-gray-400 uppercase tracking-wide">Recipient</p>
+                      <p className="text-white text-sm">{issueForm.recipientName || 'Enter name...'}</p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">Issue Date</label>
-                      <Input
-                        type="date"
-                        value={issueForm.issueDate}
-                        onChange={(e) => setIssueForm(prev => ({ ...prev, issueDate: e.target.value }))}
-                        className="bg-gray-800 border-gray-700 text-white focus:ring-web3-purple"
-                        required
-                        data-testid="input-issue-date"
-                      />
+                      <p className="text-xs text-gray-400 uppercase tracking-wide">Issue Date</p>
+                      <p className="text-white text-sm">{issueForm.issueDate ? new Date(issueForm.issueDate).toLocaleDateString() : 'Select date...'}</p>
                     </div>
                   </div>
                   
-                  <div className="grid md:grid-cols-2 gap-4">
+                  {issueForm.grade && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">Expiry Date (Optional)</label>
-                      <Input
-                        type="date"
-                        value={issueForm.expiryDate}
-                        onChange={(e) => setIssueForm(prev => ({ ...prev, expiryDate: e.target.value }))}
-                        className="bg-gray-800 border-gray-700 text-white focus:ring-web3-purple"
-                        data-testid="input-expiry-date"
-                      />
+                      <p className="text-xs text-gray-400 uppercase tracking-wide">Grade</p>
+                      <p className="text-white font-medium">{issueForm.grade}</p>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">Grade/Score (Optional)</label>
-                      <Input
-                        value={issueForm.grade}
-                        onChange={(e) => setIssueForm(prev => ({ ...prev, grade: e.target.value }))}
-                        placeholder="A+ or 95%"
-                        className="bg-gray-800 border-gray-700 text-white focus:ring-web3-purple"
-                        data-testid="input-grade"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Additional Metadata (JSON)</label>
-                    <Textarea
-                      value={issueForm.metadata}
-                      onChange={(e) => setIssueForm(prev => ({ ...prev, metadata: e.target.value }))}
-                      rows={4}
-                      placeholder='{"field_of_study": "Computer Science", "university": "Stanford University", "honors": ["Summa Cum Laude"]}'
-                      className="bg-gray-800 border-gray-700 text-white focus:ring-web3-purple font-mono text-sm"
-                      data-testid="textarea-metadata"
-                    />
-                  </div>
+                  )}
+                </div>
+                
+                <div className="mt-4 pt-4 border-t border-gray-700">
+                  <p className="text-xs text-gray-400">Issued by {user.name}</p>
                 </div>
               </div>
-
-              {/* Action Buttons */}
-              <div className="flex space-x-4">
-                <Button 
-                  type="button" 
-                  variant="outline"
-                  className="flex-1 border-gray-600 text-gray-300 hover:bg-gray-800"
-                  data-testid="button-save-draft"
-                >
-                  Save as Draft
-                </Button>
-                <Button 
-                  type="submit" 
-                  disabled={issueCredentialMutation.isPending}
-                  className="flex-1 glow-button text-white px-6 py-3 rounded-xl font-semibold flex items-center justify-center"
-                  data-testid="button-issue-credential"
-                >
-                  <Send className="mr-2 h-5 w-5" />
-                  {issueCredentialMutation.isPending ? 'Issuing...' : 'Issue Credential'}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
