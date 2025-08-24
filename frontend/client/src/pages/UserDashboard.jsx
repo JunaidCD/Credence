@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useLocation } from 'wouter';
 import UserSidebar from '@/components/UserSidebar';
 import CredentialCard from '@/components/CredentialCard';
+import CredentialForm from '@/components/CredentialForm';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -26,6 +27,7 @@ const UserDashboard = () => {
   const { user, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
   const [activeSection, setActiveSection] = useState('dashboard');
+  const [showCredentialForm, setShowCredentialForm] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -231,6 +233,7 @@ const UserDashboard = () => {
           <p className="text-gray-400">Manage and share your verifiable credentials</p>
         </div>
         <Button
+          onClick={() => setShowCredentialForm(true)}
           className="glow-button text-white px-6 py-3 rounded-xl font-semibold flex items-center"
           data-testid="button-add-credential"
         >
@@ -250,7 +253,10 @@ const UserDashboard = () => {
           <Award className="h-16 w-16 text-gray-600 mx-auto mb-4" />
           <h3 className="text-xl font-semibold text-white mb-2">No Credentials Yet</h3>
           <p className="text-gray-400 mb-6">Start by adding your first verifiable credential</p>
-          <Button className="glow-button text-white px-6 py-3 rounded-xl font-semibold">
+          <Button 
+            onClick={() => setShowCredentialForm(true)}
+            className="glow-button text-white px-6 py-3 rounded-xl font-semibold"
+          >
             <Plus className="mr-2 h-5 w-5" />
             Add First Credential
           </Button>
@@ -425,6 +431,11 @@ const UserDashboard = () => {
         {activeSection === 'requests' && renderRequests()}
         {activeSection === 'settings' && renderSettings()}
       </div>
+
+      <CredentialForm 
+        isOpen={showCredentialForm}
+        onClose={() => setShowCredentialForm(false)}
+      />
     </div>
   );
 };
