@@ -18,7 +18,8 @@ import {
   Activity,
   Search,
   TrendingUp,
-  Users
+  Users,
+  ClipboardList
 } from 'lucide-react';
 
 const VerifierDashboard = () => {
@@ -41,11 +42,19 @@ const VerifierDashboard = () => {
     }
   }, [isAuthenticated, user, setLocation]);
 
-  // Queries
-  const { data: verificationRequests = [], isLoading: requestsLoading } = useQuery({
-    queryKey: ['/api/verification-requests/verifier', user?.id],
+  // Queries - Changed to fetch issued credentials instead of verification requests
+  const { data: issuedCredentials = [], isLoading: credentialsLoading } = useQuery({
+    queryKey: ['/api/credentials/issued', user?.id],
     enabled: !!user?.id,
   });
+
+  // Search state for filtering credentials by DID
+  const [searchDID, setSearchDID] = useState('');
+  
+  // Filter credentials based on search DID
+  const filteredCredentials = issuedCredentials.filter(credential => 
+    !searchDID || credential.holderDID?.toLowerCase().includes(searchDID.toLowerCase())
+  );
 
   // Mutations
   const sendRequestMutation = useMutation({
@@ -108,10 +117,10 @@ const VerifierDashboard = () => {
   }
 
   const stats = {
-    total: verificationRequests.length,
-    approved: verificationRequests.filter(r => r.status === 'approved').length,
-    pending: verificationRequests.filter(r => r.status === 'pending').length,
-    rejected: verificationRequests.filter(r => r.status === 'rejected').length,
+    total: issuedCredentials.length,
+    active: issuedCredentials.filter(c => c.status === 'active').length,
+    expired: issuedCredentials.filter(c => c.status === 'expired').length,
+    revoked: issuedCredentials.filter(c => c.status === 'revoked').length,
   };
 
   const renderDashboard = () => (
@@ -127,7 +136,7 @@ const VerifierDashboard = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400">Total Requests</p>
+                <p className="text-gray-400">Total Credentials</p>
                 <p className="text-3xl font-bold text-web3-blue" data-testid="stat-total">
                   {stats.total}
                 </p>
@@ -141,9 +150,9 @@ const VerifierDashboard = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400">Approved</p>
-                <p className="text-3xl font-bold text-green-500" data-testid="stat-approved">
-                  {stats.approved}
+                <p className="text-gray-400">Active</p>
+                <p className="text-3xl font-bold text-green-500" data-testid="stat-active">
+                  {stats.active}
                 </p>
               </div>
               <CheckCircle className="h-8 w-8 text-green-500" />
@@ -155,9 +164,9 @@ const VerifierDashboard = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400">Pending</p>
-                <p className="text-3xl font-bold text-yellow-500" data-testid="stat-pending">
-                  {stats.pending}
+                <p className="text-gray-400">Expired</p>
+                <p className="text-3xl font-bold text-yellow-500" data-testid="stat-expired">
+                  {stats.expired}
                 </p>
               </div>
               <Clock className="h-8 w-8 text-yellow-500" />
@@ -169,9 +178,9 @@ const VerifierDashboard = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400">Rejected</p>
-                <p className="text-3xl font-bold text-red-500" data-testid="stat-rejected">
-                  {stats.rejected}
+                <p className="text-gray-400">Revoked</p>
+                <p className="text-3xl font-bold text-red-500" data-testid="stat-revoked">
+                  {stats.revoked}
                 </p>
               </div>
               <XCircle className="h-8 w-8 text-red-500" />
@@ -180,52 +189,52 @@ const VerifierDashboard = () => {
         </Card>
       </div>
 
-      {/* Recent Verifications */}
+      {/* Recent Issued Credentials */}
       <Card className="glass-effect">
         <CardHeader>
           <CardTitle className="flex items-center">
             <Activity className="mr-2 h-5 w-5 text-web3-blue" />
-            Recent Verifications
+            Recent Issued Credentials
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {requestsLoading ? (
+          {credentialsLoading ? (
             <div className="space-y-4">
               {[1, 2, 3].map(i => (
                 <Skeleton key={i} className="h-16 w-full" />
               ))}
             </div>
-          ) : verificationRequests.length === 0 ? (
-            <p className="text-gray-400 text-center py-8">No verification requests yet</p>
+          ) : issuedCredentials.length === 0 ? (
+            <p className="text-gray-400 text-center py-8">No credentials issued yet</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-800">
-                    <th className="text-left py-3 text-gray-400 font-medium">User DID</th>
+                    <th className="text-left py-3 text-gray-400 font-medium">Holder DID</th>
                     <th className="text-left py-3 text-gray-400 font-medium">Credential Type</th>
                     <th className="text-left py-3 text-gray-400 font-medium">Status</th>
-                    <th className="text-left py-3 text-gray-400 font-medium">Date</th>
+                    <th className="text-left py-3 text-gray-400 font-medium">Issue Date</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {verificationRequests.slice(0, 5).map((request, index) => (
-                    <tr key={request.id} className="border-b border-gray-800 last:border-b-0" data-testid={`recent-request-${index}`}>
+                  {issuedCredentials.slice(0, 5).map((credential, index) => (
+                    <tr key={credential.id} className="border-b border-gray-800 last:border-b-0" data-testid={`recent-credential-${index}`}>
                       <td className="py-3 font-mono text-sm text-gray-300">
-                        {request.user?.did ? `${request.user.did.slice(0, 20)}...` : 'N/A'}
+                        {credential.holderDID ? `${credential.holderDID.slice(0, 20)}...` : 'N/A'}
                       </td>
-                      <td className="py-3 text-white">{request.credentialType}</td>
+                      <td className="py-3 text-white">{credential.credentialType}</td>
                       <td className="py-3">
                         <span className={`px-2 py-1 rounded text-sm capitalize ${
-                          request.status === 'approved' ? 'text-green-500 bg-green-500 bg-opacity-20' :
-                          request.status === 'rejected' ? 'text-red-500 bg-red-500 bg-opacity-20' :
+                          credential.status === 'active' ? 'text-green-500 bg-green-500 bg-opacity-20' :
+                          credential.status === 'revoked' ? 'text-red-500 bg-red-500 bg-opacity-20' :
                           'text-yellow-500 bg-yellow-500 bg-opacity-20'
                         }`}>
-                          {request.status}
+                          {credential.status}
                         </span>
                       </td>
                       <td className="py-3 text-gray-400">
-                        {new Date(request.requestedAt).toLocaleDateString()}
+                        {new Date(credential.issuedAt).toLocaleDateString()}
                       </td>
                     </tr>
                   ))}
@@ -350,85 +359,131 @@ const VerifierDashboard = () => {
   const renderRequests = () => (
     <div className="p-6">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">Verification Requests</h1>
-        <p className="text-gray-400">Track the status of your verification requests</p>
+        <h1 className="text-3xl font-bold text-white mb-2">Issued Credentials</h1>
+        <p className="text-gray-400">View and manage all issued credentials</p>
+      </div>
+
+      {/* Search Bar */}
+      <div className="mb-6">
+        <Card className="glass-effect">
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-4">
+              <div className="flex-1">
+                <Input
+                  value={searchDID}
+                  onChange={(e) => setSearchDID(e.target.value)}
+                  placeholder="Search credentials by DID..."
+                  className="bg-gray-800 border-gray-700 text-white focus:ring-web3-blue"
+                  data-testid="search-did-input"
+                />
+              </div>
+              <Button
+                variant="outline"
+                className="border-web3-blue text-web3-blue hover:bg-web3-blue hover:text-white"
+                data-testid="search-button"
+              >
+                <Search className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Filter Tabs */}
       <div className="flex space-x-4 mb-6">
         <Button className="px-4 py-2 bg-web3-blue bg-opacity-20 text-web3-blue rounded-lg font-medium">
-          All Requests
+          All Credentials
         </Button>
         <Button variant="ghost" className="px-4 py-2 text-gray-400 hover:text-white">
-          Pending
+          Active
         </Button>
         <Button variant="ghost" className="px-4 py-2 text-gray-400 hover:text-white">
-          Approved
+          Expired
         </Button>
         <Button variant="ghost" className="px-4 py-2 text-gray-400 hover:text-white">
-          Rejected
+          Revoked
         </Button>
       </div>
 
-      {/* Requests Table */}
+      {/* Credentials Table */}
       <Card className="glass-effect">
         <CardContent className="p-0">
-          {requestsLoading ? (
+          {credentialsLoading ? (
             <div className="p-6 space-y-4">
               {[1, 2, 3, 4, 5].map(i => (
                 <Skeleton key={i} className="h-16 w-full" />
               ))}
             </div>
-          ) : verificationRequests.length === 0 ? (
+          ) : filteredCredentials.length === 0 ? (
             <div className="text-center py-16">
-              <Send className="h-16 w-16 text-gray-600 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-white mb-2">No Requests Yet</h3>
-              <p className="text-gray-400">Start by sending your first verification request</p>
+              <ClipboardList className="h-16 w-16 text-gray-600 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-white mb-2">
+                {searchDID ? 'No Matching Credentials' : 'No Credentials Issued Yet'}
+              </h3>
+              <p className="text-gray-400">
+                {searchDID ? 'Try adjusting your search criteria' : 'Issued credentials will appear here'}
+              </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-800">
                   <tr>
-                    <th className="text-left py-4 px-6 text-gray-400 font-medium">Request ID</th>
-                    <th className="text-left py-4 px-6 text-gray-400 font-medium">User DID</th>
+                    <th className="text-left py-4 px-6 text-gray-400 font-medium">Credential ID</th>
+                    <th className="text-left py-4 px-6 text-gray-400 font-medium">Holder DID</th>
                     <th className="text-left py-4 px-6 text-gray-400 font-medium">Credential Type</th>
                     <th className="text-left py-4 px-6 text-gray-400 font-medium">Status</th>
-                    <th className="text-left py-4 px-6 text-gray-400 font-medium">Date Sent</th>
+                    <th className="text-left py-4 px-6 text-gray-400 font-medium">Issue Date</th>
+                    <th className="text-left py-4 px-6 text-gray-400 font-medium">Expiry Date</th>
                     <th className="text-left py-4 px-6 text-gray-400 font-medium">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {verificationRequests.map((request, index) => (
-                    <tr key={request.id} className="border-b border-gray-800 hover:bg-gray-800 hover:bg-opacity-50" data-testid={`request-row-${index}`}>
+                  {filteredCredentials.map((credential, index) => (
+                    <tr key={credential.id} className="border-b border-gray-800 hover:bg-gray-800 hover:bg-opacity-50" data-testid={`credential-row-${index}`}>
                       <td className="py-4 px-6 font-mono text-sm text-gray-300">
-                        #{request.id.slice(-6)}
+                        #{credential.id.slice(-6)}
                       </td>
                       <td className="py-4 px-6 font-mono text-sm text-gray-300">
-                        {request.user?.did ? `${request.user.did.slice(0, 20)}...` : 'N/A'}
+                        {credential.holderDID ? `${credential.holderDID.slice(0, 20)}...` : 'N/A'}
                       </td>
-                      <td className="py-4 px-6 text-white">{request.credentialType}</td>
+                      <td className="py-4 px-6 text-white">{credential.credentialType}</td>
                       <td className="py-4 px-6">
                         <span className={`px-3 py-1 rounded-full text-sm capitalize ${
-                          request.status === 'approved' ? 'text-green-500 bg-green-500 bg-opacity-20' :
-                          request.status === 'rejected' ? 'text-red-500 bg-red-500 bg-opacity-20' :
+                          credential.status === 'active' ? 'text-green-500 bg-green-500 bg-opacity-20' :
+                          credential.status === 'revoked' ? 'text-red-500 bg-red-500 bg-opacity-20' :
                           'text-yellow-500 bg-yellow-500 bg-opacity-20'
                         }`}>
-                          {request.status}
+                          {credential.status}
                         </span>
                       </td>
                       <td className="py-4 px-6 text-gray-400">
-                        {new Date(request.requestedAt).toLocaleDateString()}
+                        {new Date(credential.issuedAt).toLocaleDateString()}
+                      </td>
+                      <td className="py-4 px-6 text-gray-400">
+                        {credential.expiryDate ? new Date(credential.expiryDate).toLocaleDateString() : 'No expiry'}
                       </td>
                       <td className="py-4 px-6">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          className="text-web3-blue hover:text-web3-purple"
-                          data-testid={`button-view-${index}`}
-                        >
-                          View Details
-                        </Button>
+                        <div className="flex space-x-2">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            className="text-web3-blue hover:text-web3-purple"
+                            data-testid={`button-view-${index}`}
+                          >
+                            View
+                          </Button>
+                          {credential.status === 'active' && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              className="text-red-400 hover:text-red-300"
+                              data-testid={`button-revoke-${index}`}
+                            >
+                              Revoke
+                            </Button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -451,7 +506,7 @@ const VerifierDashboard = () => {
       <div className="flex-1 overflow-auto">
         {activeSection === 'dashboard' && renderDashboard()}
         {activeSection === 'search' && renderSearch()}
-        {activeSection === 'requests' && renderRequests()}
+        {(activeSection === 'requests' || activeSection === 'issued-credentials') && renderRequests()}
         {activeSection === 'settings' && (
           <div className="p-6">
             <h1 className="text-3xl font-bold text-white mb-2">Settings</h1>

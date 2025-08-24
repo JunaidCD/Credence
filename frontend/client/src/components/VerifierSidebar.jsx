@@ -20,7 +20,7 @@ const VerifierSidebar = ({ activeSection, onSectionChange }) => {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'search', label: 'Search DID', icon: Search },
-    { id: 'requests', label: 'Verification Requests', icon: ClipboardList },
+    { id: 'issued-credentials', label: 'Issued Credentials', icon: ClipboardList },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
