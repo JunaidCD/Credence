@@ -35,18 +35,74 @@ import {
   Calendar
 } from 'lucide-react';
 
-// CSS styles for modern UI effects (animations disabled)
+// Advanced CSS styles for modern UI effects
 const styles = `
   .glass-effect {
     background: rgba(17, 25, 40, 0.75);
     backdrop-filter: blur(16px) saturate(180%);
     border: 1px solid rgba(255, 255, 255, 0.125);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   }
   
   .credential-card {
     background: linear-gradient(135deg, rgba(17, 25, 40, 0.9) 0%, rgba(30, 41, 59, 0.9) 100%);
     backdrop-filter: blur(20px);
     border: 1px solid rgba(139, 92, 246, 0.3);
+    box-shadow: 0 20px 40px rgba(139, 92, 246, 0.1);
+  }
+  
+  .advanced-card {
+    background: linear-gradient(145deg, rgba(30, 41, 59, 0.8) 0%, rgba(17, 25, 40, 0.9) 100%);
+    backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .advanced-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 35px 70px rgba(139, 92, 246, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    border-color: rgba(139, 92, 246, 0.4);
+  }
+  
+  .neon-glow {
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.3), 0 0 40px rgba(139, 92, 246, 0.1);
+  }
+  
+  .gradient-text {
+    background: linear-gradient(135deg, #8B5CF6, #06B6D4, #10B981);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .floating-element {
+    position: relative;
+    z-index: 1;
+  }
+  
+  .floating-element::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg, #8B5CF6, #06B6D4, #10B981, #F59E0B);
+    border-radius: inherit;
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  
+  .floating-element:hover::before {
+    opacity: 0.7;
+  }
+  
+  .mesh-gradient {
+    background: radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.3) 0%, transparent 50%);
   }
 `;
 
@@ -423,37 +479,39 @@ const UserDashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Quick Actions */}
-      <div className="mt-10 grid md:grid-cols-2 gap-6">
-        <Card 
-          className="glass-effect group cursor-pointer" 
+      {/* Advanced Quick Actions */}
+      <div className="grid md:grid-cols-2 gap-8 mt-12">
+        <div 
+          className="advanced-card rounded-3xl p-10 floating-element group cursor-pointer relative overflow-hidden"
           onClick={() => setActiveSection('credentials')}
         >
-          <CardContent className="p-8 text-center">
-            <div className="relative mb-6">
-              <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center shadow-2xl group-hover:shadow-purple-500/50">
-                <Award className="h-8 w-8 text-white" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-500/20 to-transparent rounded-full blur-xl"></div>
+          <div className="relative z-10 text-center">
+            <div className="mb-8">
+              <div className="w-24 h-24 mx-auto rounded-3xl bg-gradient-to-br from-purple-500 via-purple-600 to-blue-600 flex items-center justify-center shadow-2xl neon-glow">
+                <Award className="h-12 w-12 text-white" />
               </div>
             </div>
-            <h3 className="text-xl font-bold text-white mb-2 group-hover:text-purple-300">My Credentials</h3>
-            <p className="text-gray-400 group-hover:text-gray-300">View and manage your digital credentials</p>
-          </CardContent>
-        </Card>
+            <h3 className="text-2xl font-bold text-white mb-3 group-hover:text-purple-300">My Credentials</h3>
+            <p className="text-gray-400 text-lg group-hover:text-gray-300">Manage your digital identity assets</p>
+          </div>
+        </div>
 
-        <Card 
-          className="glass-effect group cursor-pointer" 
+        <div 
+          className="advanced-card rounded-3xl p-10 floating-element group cursor-pointer relative overflow-hidden"
           onClick={() => setActiveSection('notifications')}
         >
-          <CardContent className="p-8 text-center">
-            <div className="relative mb-6">
-              <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-cyan-600 to-blue-600 flex items-center justify-center shadow-2xl group-hover:shadow-cyan-500/50">
-                <Bell className="h-8 w-8 text-white" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-cyan-500/20 to-transparent rounded-full blur-xl"></div>
+          <div className="relative z-10 text-center">
+            <div className="mb-8">
+              <div className="w-24 h-24 mx-auto rounded-3xl bg-gradient-to-br from-cyan-500 via-cyan-600 to-blue-600 flex items-center justify-center shadow-2xl neon-glow">
+                <Bell className="h-12 w-12 text-white" />
               </div>
             </div>
-            <h3 className="text-xl font-bold text-white mb-2 group-hover:text-cyan-300">Notifications</h3>
-            <p className="text-gray-400 group-hover:text-gray-300">View verification requests and notifications</p>
-          </CardContent>
-        </Card>
+            <h3 className="text-2xl font-bold text-white mb-3 group-hover:text-cyan-300">Notifications</h3>
+            <p className="text-gray-400 text-lg group-hover:text-gray-300">Stay updated with activities</p>
+          </div>
+        </div>
       </div>
     </div>
   );
