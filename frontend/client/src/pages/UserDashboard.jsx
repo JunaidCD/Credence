@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext.jsx';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
@@ -25,7 +25,13 @@ import {
   Wallet,
   Plus,
   ShieldX,
-  Archive
+  Archive,
+  Sparkles,
+  TrendingUp,
+  Zap,
+  Star,
+  Globe,
+  Layers
 } from 'lucide-react';
 
 const UserDashboard = () => {
@@ -34,10 +40,55 @@ const UserDashboard = () => {
   const [activeSection, setActiveSection] = useState('dashboard');
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const canvasRef = useRef(null);
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [particles, setParticles] = useState([]);
   
   // Revoke credentials state
   const [selectedCredentials, setSelectedCredentials] = useState([]);
   const [filter, setFilter] = useState('all'); // all, expired, old
+
+  // Particle animation effect
+  useEffect(() => {
+    const createParticles = () => {
+      const newParticles = [];
+      for (let i = 0; i < 50; i++) {
+        newParticles.push({
+          id: i,
+          x: Math.random() * window.innerWidth,
+          y: Math.random() * window.innerHeight,
+          size: Math.random() * 3 + 1,
+          speedX: (Math.random() - 0.5) * 0.5,
+          speedY: (Math.random() - 0.5) * 0.5,
+          opacity: Math.random() * 0.5 + 0.1
+        });
+      }
+      setParticles(newParticles);
+    };
+    
+    createParticles();
+    
+    const animateParticles = () => {
+      setParticles(prev => prev.map(particle => ({
+        ...particle,
+        x: particle.x + particle.speedX,
+        y: particle.y + particle.speedY,
+        x: particle.x > window.innerWidth ? 0 : particle.x < 0 ? window.innerWidth : particle.x,
+        y: particle.y > window.innerHeight ? 0 : particle.y < 0 ? window.innerHeight : particle.y
+      })));
+    };
+    
+    const interval = setInterval(animateParticles, 50);
+    return () => clearInterval(interval);
+  }, []);
+  
+  // Real-time clock
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     if (!isAuthenticated || (user && user.userType !== 'user')) {
@@ -134,39 +185,68 @@ const UserDashboard = () => {
   }
 
   const renderDashboard = () => (
-    <div className="p-6 min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-blue-900/20">
-      {/* Enhanced Welcome Header */}
+    <div className="p-6 min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-blue-900/20 relative overflow-hidden">
+      {/* Animated Background Particles */}
+      <div className="absolute inset-0 pointer-events-none">
+        {particles.map(particle => (
+          <div
+            key={particle.id}
+            className="absolute w-1 h-1 bg-gradient-to-r from-purple-400 to-blue-400 rounded-full animate-pulse"
+            style={{
+              left: `${particle.x}px`,
+              top: `${particle.y}px`,
+              opacity: particle.opacity,
+              transform: `scale(${particle.size})`
+            }}
+          />
+        ))}
+      </div>
+      
+      {/* Enhanced Welcome Header with Real-time Elements */}
       <div className="mb-8 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 via-blue-600/20 to-cyan-600/20 rounded-3xl blur-xl"></div>
-        <div className="relative bg-gradient-to-r from-gray-800/80 to-gray-900/80 backdrop-blur-sm rounded-3xl p-8 border border-purple-500/30">
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 via-blue-600/20 to-cyan-600/20 rounded-3xl blur-xl animate-pulse"></div>
+        <div className="relative bg-gradient-to-r from-gray-800/90 to-gray-900/90 backdrop-blur-xl rounded-3xl p-8 border border-purple-500/30 shadow-2xl">
           <div className="flex items-center justify-between">
             <div className="animate-fadeInUp">
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 via-blue-400 to-cyan-400 bg-clip-text text-transparent mb-3 animate-shimmer" data-testid="dashboard-welcome">
-                Welcome back, {user.name}! ✨
-              </h1>
-              <p className="text-gray-300 text-lg">Manage your digital identity and verifiable credentials</p>
-              <div className="flex items-center mt-4 space-x-4">
-                <div className="flex items-center text-green-400">
-                  <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
-                  <span className="text-sm">Verified Identity</span>
+              <div className="flex items-center space-x-3 mb-3">
+                <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-400 via-blue-400 to-cyan-400 bg-clip-text text-transparent animate-shimmer" data-testid="dashboard-welcome">
+                  Welcome back, {user.name}!
+                </h1>
+                <div className="animate-bounce">
+                  <Sparkles className="h-8 w-8 text-yellow-400" />
                 </div>
-                <div className="text-gray-400 text-sm">
-                  {new Date().toLocaleDateString('en-US', { 
-                    weekday: 'long', 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
+              </div>
+              <p className="text-gray-300 text-xl mb-4">Manage your digital identity and verifiable credentials</p>
+              <div className="flex items-center mt-4 space-x-6">
+                <div className="flex items-center text-green-400 bg-green-400/10 px-4 py-2 rounded-full border border-green-400/30">
+                  <div className="w-3 h-3 bg-green-400 rounded-full mr-3 animate-pulse"></div>
+                  <span className="text-sm font-semibold">Verified Identity</span>
+                </div>
+                <div className="flex items-center text-blue-400 bg-blue-400/10 px-4 py-2 rounded-full border border-blue-400/30">
+                  <Globe className="h-4 w-4 mr-2" />
+                  <span className="text-sm font-semibold">Decentralized Network</span>
+                </div>
+                <div className="text-gray-400 text-sm bg-gray-700/50 px-4 py-2 rounded-full">
+                  <Clock className="h-4 w-4 inline mr-2" />
+                  {currentTime.toLocaleTimeString('en-US', { 
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
                   })}
                 </div>
               </div>
             </div>
             <div className="hidden md:block animate-bounceIn">
               <div className="relative">
-                <div className="w-20 h-20 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center animate-float">
-                  <Fingerprint className="h-10 w-10 text-white" />
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full blur-xl opacity-50 animate-pulse"></div>
+                <div className="relative w-24 h-24 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center animate-float shadow-2xl">
+                  <Fingerprint className="h-12 w-12 text-white" />
                 </div>
-                <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                  <CheckCircle className="h-4 w-4 text-white" />
+                <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center animate-bounce">
+                  <CheckCircle className="h-5 w-5 text-white" />
+                </div>
+                <div className="absolute -bottom-2 -left-2 w-6 h-6 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center animate-spin">
+                  <Star className="h-3 w-3 text-white" />
                 </div>
               </div>
             </div>
@@ -205,31 +285,41 @@ const UserDashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Enhanced Quick Stats */}
+      {/* Enhanced Quick Stats with Advanced Animations */}
       <div className="grid md:grid-cols-3 gap-8 mb-10">
-        <Card className="group relative overflow-hidden bg-gradient-to-br from-purple-900/40 to-purple-800/40 backdrop-blur-sm border-purple-500/30 hover:border-purple-400/50 transition-all duration-500 transform hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20 animate-slideInUp">
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+        <Card className="group relative overflow-hidden bg-gradient-to-br from-purple-900/50 to-purple-800/50 backdrop-blur-xl border-purple-500/40 hover:border-purple-400/60 transition-all duration-700 transform hover:scale-110 hover:shadow-2xl hover:shadow-purple-500/30 animate-slideInUp">
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 via-blue-500 to-cyan-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-700"></div>
           <CardContent className="p-8 relative z-10">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-300 text-sm font-medium mb-2">Total Credentials</p>
-                <div className="flex items-center space-x-2">
-                  <p className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-purple-600 bg-clip-text text-transparent animate-countUp" data-testid="stat-credentials">
+                <div className="flex items-center space-x-2 mb-3">
+                  <p className="text-gray-300 text-sm font-medium">Total Credentials</p>
+                  <TrendingUp className="h-4 w-4 text-green-400 animate-bounce" />
+                </div>
+                <div className="flex items-center space-x-3">
+                  <p className="text-5xl font-bold bg-gradient-to-r from-purple-400 to-purple-600 bg-clip-text text-transparent animate-countUp" data-testid="stat-credentials">
                     {myCredentials.length}
                   </p>
-                  <div className="text-green-400 text-sm font-semibold bg-green-400/10 px-2 py-1 rounded-full">
-                    +12%
+                  <div className="flex flex-col space-y-1">
+                    <div className="text-green-400 text-sm font-semibold bg-green-400/20 px-3 py-1 rounded-full border border-green-400/30 animate-pulse">
+                      +12%
+                    </div>
+                    <div className="text-xs text-gray-400">vs last month</div>
                   </div>
                 </div>
-                <div className="w-full bg-gray-700/50 rounded-full h-2 mt-3">
-                  <div className="bg-gradient-to-r from-purple-500 to-purple-600 h-2 rounded-full animate-progressBar" style={{width: '75%'}}></div>
+                <div className="w-full bg-gray-700/50 rounded-full h-3 mt-4 overflow-hidden">
+                  <div className="bg-gradient-to-r from-purple-500 via-purple-400 to-purple-600 h-3 rounded-full animate-progressBar shadow-lg" style={{width: '75%'}}></div>
                 </div>
               </div>
               <div className="relative">
-                <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center transform group-hover:rotate-12 transition-transform duration-500 animate-float">
-                  <Award className="h-8 w-8 text-white" />
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl blur-lg opacity-50 animate-pulse"></div>
+                <div className="relative w-18 h-18 bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center transform group-hover:rotate-12 transition-transform duration-700 animate-float shadow-2xl">
+                  <Award className="h-9 w-9 text-white" />
                 </div>
-                <div className="absolute -top-2 -right-2 w-6 h-6 bg-purple-500 rounded-full opacity-75"></div>
+                <div className="absolute -top-2 -right-2 w-7 h-7 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center animate-spin">
+                  <Sparkles className="h-4 w-4 text-white" />
+                </div>
               </div>
             </div>
           </CardContent>

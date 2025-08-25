@@ -257,6 +257,54 @@ const IssuerDashboard = () => {
         </div>
       </div>
 
+      {/* Enhanced DID Display */}
+      <Card className="credential-card mb-8 bg-gradient-to-r from-gray-800/90 to-gray-900/90 backdrop-blur-sm border-purple-500/30 shadow-2xl animate-slideInLeft">
+        <CardContent className="p-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="p-4 rounded-xl bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-sm">
+                <Shield className="h-8 w-8 text-purple-400" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-white mb-2">Your Issuer DID</h3>
+                <p className="text-gray-400 text-sm mb-3">Your unique decentralized identifier for credential issuance</p>
+                <div className="flex items-center space-x-3">
+                  <code className="bg-gray-800/80 text-purple-300 px-4 py-2 rounded-lg font-mono text-sm border border-purple-500/20">
+                    {user?.did || 'did:ethr:0x' + (user?.id ? user.id.slice(-8) : '...')}
+                  </code>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-purple-500/30 text-purple-400 hover:bg-purple-500/10 hover:border-purple-400 transition-all duration-200"
+                    onClick={() => {
+                      navigator.clipboard.writeText(user?.did || 'did:ethr:0x' + (user?.id ? user.id.slice(-8) : '...'));
+                      toast({
+                        title: "DID Copied",
+                        description: "Your DID has been copied to clipboard",
+                      });
+                    }}
+                  >
+                    Copy DID
+                  </Button>
+                </div>
+              </div>
+            </div>
+            <div className="hidden md:flex items-center space-x-4">
+              <div className="text-right">
+                <div className="flex items-center space-x-2 text-green-400 text-sm mb-1">
+                  <CheckCircle className="h-4 w-4" />
+                  <span>Verified Issuer</span>
+                </div>
+                <div className="flex items-center space-x-2 text-blue-400 text-sm">
+                  <Activity className="h-4 w-4" />
+                  <span>Active Status</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Enhanced Quick Stats with Animations */}
       <div className="grid md:grid-cols-3 gap-6">
         <Card className="glass-effect hover:scale-105 transition-all duration-300 group relative overflow-hidden">
@@ -793,19 +841,56 @@ const IssuerDashboard = () => {
             Other
           </Button>
         </div>
-        <div className="flex space-x-3">
-          <Input
-            placeholder="Search credentials..."
-            className="bg-gray-800 border-gray-700 text-white focus:ring-web3-purple"
-            data-testid="input-search-credentials"
-          />
-          <Button
-            variant="outline"
-            className="border-web3-purple text-web3-purple hover:bg-web3-purple hover:text-white"
-            data-testid="button-search"
-          >
-            <Eye className="h-4 w-4" />
-          </Button>
+        <div className="relative flex-1 max-w-md">
+          <div className="relative group">
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 via-blue-600/20 to-cyan-600/20 rounded-xl blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300"></div>
+            <div className="relative flex items-center">
+              <div className="absolute left-4 z-10">
+                <div className="p-1 rounded-lg bg-purple-600/20 group-hover:bg-purple-600/30 transition-colors duration-200">
+                  <Eye className="h-4 w-4 text-purple-400 group-hover:text-purple-300" />
+                </div>
+              </div>
+              <Input
+                placeholder="Search by credential ID, holder name, or type..."
+                className="bg-gray-800/80 backdrop-blur-sm border-purple-500/30 text-white pl-14 pr-12 py-3 rounded-xl focus:ring-2 focus:ring-purple-500/50 focus:border-purple-400 hover:border-purple-400/50 transition-all duration-200 placeholder:text-gray-500 group-hover:bg-gray-800/90"
+                data-testid="input-search-credentials"
+              />
+              <div className="absolute right-3 flex items-center space-x-2">
+                <div className="text-xs text-gray-500 hidden md:block">
+                  <kbd className="px-2 py-1 bg-gray-700/50 rounded text-xs border border-gray-600/50">⌘K</kbd>
+                </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 w-6 p-0 text-gray-500 hover:text-purple-400 hover:bg-purple-500/10 transition-all duration-200"
+                >
+                  <Zap className="h-3 w-3" />
+                </Button>
+              </div>
+            </div>
+          </div>
+          
+          {/* Advanced Search Filters */}
+          <div className="absolute top-full left-0 right-0 mt-2 p-4 bg-gray-800/95 backdrop-blur-sm border border-purple-500/20 rounded-xl shadow-2xl opacity-0 invisible group-focus-within:opacity-100 group-focus-within:visible transition-all duration-300 z-50">
+            <div className="flex flex-wrap gap-2 mb-3">
+              <span className="text-xs text-gray-400 font-medium">Quick Filters:</span>
+              <button className="px-2 py-1 text-xs bg-purple-600/20 text-purple-300 rounded-md hover:bg-purple-600/30 transition-colors">
+                Active
+              </button>
+              <button className="px-2 py-1 text-xs bg-blue-600/20 text-blue-300 rounded-md hover:bg-blue-600/30 transition-colors">
+                This Month
+              </button>
+              <button className="px-2 py-1 text-xs bg-cyan-600/20 text-cyan-300 rounded-md hover:bg-cyan-600/30 transition-colors">
+                Degrees
+              </button>
+              <button className="px-2 py-1 text-xs bg-green-600/20 text-green-300 rounded-md hover:bg-green-600/30 transition-colors">
+                Certificates
+              </button>
+            </div>
+            <div className="text-xs text-gray-500">
+              <span className="font-medium">Tips:</span> Use quotes for exact matches, type "status:active" for status filtering
+            </div>
+          </div>
         </div>
       </div>
 
@@ -913,70 +998,300 @@ const IssuerDashboard = () => {
   );
 
   const renderSettings = () => (
-    <div className="p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">Settings</h1>
-        <p className="text-gray-400">Configure your issuer settings</p>
+    <div className="p-6 space-y-8">
+      {/* Enhanced Header */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-900/20 via-blue-900/20 to-cyan-900/20 p-8 border border-purple-500/20">
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 via-blue-600/10 to-cyan-600/10 animate-pulse"></div>
+        <div className="relative z-10">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 via-blue-400 to-cyan-400 bg-clip-text text-transparent mb-2">
+                Settings & Configuration
+              </h1>
+              <p className="text-gray-300 text-lg">Customize your issuer profile and preferences</p>
+            </div>
+            <div className="hidden md:flex items-center space-x-2">
+              <div className="p-3 rounded-full bg-purple-600/20">
+                <Shield className="h-8 w-8 text-purple-400 floating-icon" />
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center space-x-4 text-sm text-gray-400">
+            <div className="flex items-center space-x-1">
+              <CheckCircle className="h-4 w-4 text-green-400" />
+              <span>Auto-save enabled</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <Zap className="h-4 w-4 text-yellow-400" />
+              <span>Real-time sync</span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div className="max-w-2xl space-y-6">
-        <Card className="glass-effect">
-          <CardHeader>
-            <CardTitle>Institution Information</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Institution Name</label>
-              <Input 
-                defaultValue={user.name} 
-                className="bg-gray-800 border-gray-700 text-white focus:ring-web3-purple"
-                data-testid="input-institution-name"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Contact Email</label>
-              <Input 
-                type="email" 
-                defaultValue={user.email} 
-                className="bg-gray-800 border-gray-700 text-white focus:ring-web3-purple"
-                data-testid="input-contact-email"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Institution Type</label>
-              <Select defaultValue="university">
-                <SelectTrigger className="bg-gray-800 border-gray-700 text-white focus:ring-web3-purple" data-testid="select-institution-type">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="university">University</SelectItem>
-                  <SelectItem value="company">Company</SelectItem>
-                  <SelectItem value="government">Government Agency</SelectItem>
-                  <SelectItem value="certification-body">Certification Body</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="grid lg:grid-cols-3 gap-8">
+        {/* Main Settings Panel */}
+        <div className="lg:col-span-2 space-y-8">
+          {/* Institution Information */}
+          <Card className="glass-effect hover:shadow-2xl transition-all duration-300 group">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center text-xl">
+                  <div className="p-2 rounded-lg bg-purple-600/20 mr-3 group-hover:bg-purple-600/30 transition-colors duration-300">
+                    <Activity className="h-5 w-5 text-purple-400" />
+                  </div>
+                  Institution Information
+                </CardTitle>
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                  <span className="text-xs text-green-400">Live</span>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="group/field">
+                  <label className="block text-sm font-medium text-gray-300 mb-3 flex items-center">
+                    <span>Institution Name</span>
+                    <span className="text-red-400 ml-1">*</span>
+                  </label>
+                  <div className="relative">
+                    <Input 
+                      defaultValue={user.name} 
+                      className="bg-gray-800/50 border-purple-500/30 text-white focus:ring-2 focus:ring-purple-500/50 focus:border-purple-400 hover:border-purple-400/50 transition-all duration-200 pl-4 pr-4 py-3 rounded-xl group-hover/field:bg-gray-800/70"
+                      data-testid="input-institution-name"
+                    />
+                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-600/10 to-blue-600/10 opacity-0 group-hover/field:opacity-100 transition-opacity duration-200 pointer-events-none"></div>
+                  </div>
+                </div>
+                
+                <div className="group/field">
+                  <label className="block text-sm font-medium text-gray-300 mb-3 flex items-center">
+                    <span>Contact Email</span>
+                    <span className="text-red-400 ml-1">*</span>
+                  </label>
+                  <div className="relative">
+                    <Input 
+                      type="email" 
+                      defaultValue={user.email} 
+                      className="bg-gray-800/50 border-purple-500/30 text-white focus:ring-2 focus:ring-purple-500/50 focus:border-purple-400 hover:border-purple-400/50 transition-all duration-200 pl-4 pr-4 py-3 rounded-xl group-hover/field:bg-gray-800/70"
+                      data-testid="input-contact-email"
+                    />
+                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-600/10 to-blue-600/10 opacity-0 group-hover/field:opacity-100 transition-opacity duration-200 pointer-events-none"></div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="group/field">
+                <label className="block text-sm font-medium text-gray-300 mb-3">Institution Type</label>
+                <Select defaultValue="university">
+                  <SelectTrigger className="bg-gray-800/50 border-purple-500/30 text-white focus:ring-2 focus:ring-purple-500/50 focus:border-purple-400 h-12 rounded-xl transition-all duration-200 group-hover/field:border-purple-400/50" data-testid="select-institution-type">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-800 border-gray-600">
+                    <SelectItem value="university" className="text-white hover:bg-purple-600/20">🎓 University</SelectItem>
+                    <SelectItem value="company" className="text-white hover:bg-purple-600/20">🏢 Company</SelectItem>
+                    <SelectItem value="government" className="text-white hover:bg-purple-600/20">🏛️ Government Agency</SelectItem>
+                    <SelectItem value="certification-body" className="text-white hover:bg-purple-600/20">📜 Certification Body</SelectItem>
+                    <SelectItem value="other" className="text-white hover:bg-purple-600/20">🔧 Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-        <Card className="glass-effect">
-          <CardHeader>
-            <CardTitle>Credential Templates</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-400 mb-4">
-              Create and manage templates for commonly issued credentials
-            </p>
-            <Button 
-              variant="outline"
-              className="border-web3-purple text-web3-purple hover:bg-web3-purple hover:text-white"
-              data-testid="button-manage-templates"
-            >
-              Manage Templates
-            </Button>
-          </CardContent>
-        </Card>
+              <div className="flex justify-end pt-4">
+                <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-6 py-2 rounded-xl transition-all duration-200 shadow-lg hover:shadow-purple-500/25">
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Save Changes
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Security Settings */}
+          <Card className="glass-effect hover:shadow-2xl transition-all duration-300 group">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center text-xl">
+                <div className="p-2 rounded-lg bg-green-600/20 mr-3 group-hover:bg-green-600/30 transition-colors duration-300">
+                  <Shield className="h-5 w-5 text-green-400" />
+                </div>
+                Security & Privacy
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between p-4 bg-gray-800/30 rounded-xl border border-green-500/20">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 rounded-lg bg-green-600/20">
+                    <CheckCircle className="h-5 w-5 text-green-400" />
+                  </div>
+                  <div>
+                    <h4 className="text-white font-medium">Two-Factor Authentication</h4>
+                    <p className="text-gray-400 text-sm">Add an extra layer of security to your account</p>
+                  </div>
+                </div>
+                <Button variant="outline" className="border-green-500/30 text-green-400 hover:bg-green-500/10">
+                  Enable
+                </Button>
+              </div>
+              
+              <div className="flex items-center justify-between p-4 bg-gray-800/30 rounded-xl border border-blue-500/20">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 rounded-lg bg-blue-600/20">
+                    <Activity className="h-5 w-5 text-blue-400" />
+                  </div>
+                  <div>
+                    <h4 className="text-white font-medium">Activity Monitoring</h4>
+                    <p className="text-gray-400 text-sm">Track credential issuance and access logs</p>
+                  </div>
+                </div>
+                <Button variant="outline" className="border-blue-500/30 text-blue-400 hover:bg-blue-500/10">
+                  Configure
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Credential Templates */}
+          <Card className="glass-effect hover:shadow-2xl transition-all duration-300 group">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center text-xl">
+                <div className="p-2 rounded-lg bg-cyan-600/20 mr-3 group-hover:bg-cyan-600/30 transition-colors duration-300">
+                  <FileText className="h-5 w-5 text-cyan-400" />
+                </div>
+                Credential Templates
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-400 mb-6">
+                Create and manage templates for commonly issued credentials to streamline your workflow
+              </p>
+              
+              <div className="grid md:grid-cols-2 gap-4 mb-6">
+                <div className="p-4 bg-gray-800/30 rounded-xl border border-cyan-500/20 hover:border-cyan-400/40 transition-colors duration-200">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <GraduationCap className="h-5 w-5 text-cyan-400" />
+                    <h4 className="text-white font-medium">Degree Templates</h4>
+                  </div>
+                  <p className="text-gray-400 text-sm">3 active templates</p>
+                </div>
+                
+                <div className="p-4 bg-gray-800/30 rounded-xl border border-purple-500/20 hover:border-purple-400/40 transition-colors duration-200">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <Award className="h-5 w-5 text-purple-400" />
+                    <h4 className="text-white font-medium">Certificate Templates</h4>
+                  </div>
+                  <p className="text-gray-400 text-sm">5 active templates</p>
+                </div>
+              </div>
+              
+              <div className="flex space-x-3">
+                <Button 
+                  className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white px-6 py-2 rounded-xl transition-all duration-200 shadow-lg hover:shadow-cyan-500/25"
+                  data-testid="button-manage-templates"
+                >
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Create Template
+                </Button>
+                <Button 
+                  variant="outline"
+                  className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 px-6 py-2 rounded-xl"
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  Manage All
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Sidebar */}
+        <div className="space-y-6">
+          {/* Quick Stats */}
+          <Card className="glass-effect">
+            <CardHeader>
+              <CardTitle className="text-lg">Account Overview</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-400">Account Status</span>
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                  <span className="text-green-400 text-sm">Active</span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-400">Credentials Issued</span>
+                <span className="text-white font-semibold">{stats.totalIssued}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-400">This Month</span>
+                <span className="text-white font-semibold">{stats.thisMonth}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-400">Active Recipients</span>
+                <span className="text-white font-semibold">{stats.activeRecipients}</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Quick Actions */}
+          <Card className="glass-effect">
+            <CardHeader>
+              <CardTitle className="text-lg">Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button 
+                variant="outline" 
+                className="w-full justify-start border-purple-500/30 text-purple-400 hover:bg-purple-500/10"
+                onClick={() => setActiveSection('issue')}
+              >
+                <PlusCircle className="h-4 w-4 mr-2" />
+                Issue Credential
+              </Button>
+              <Button 
+                variant="outline" 
+                className="w-full justify-start border-blue-500/30 text-blue-400 hover:bg-blue-500/10"
+                onClick={() => setActiveSection('issued')}
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                View All Credentials
+              </Button>
+              <Button 
+                variant="outline" 
+                className="w-full justify-start border-gray-500/30 text-gray-400 hover:bg-gray-500/10"
+              >
+                <Activity className="h-4 w-4 mr-2" />
+                Export Data
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Support */}
+          <Card className="glass-effect">
+            <CardHeader>
+              <CardTitle className="text-lg">Need Help?</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button 
+                variant="ghost" 
+                className="w-full justify-start text-gray-400 hover:text-white hover:bg-gray-800/50"
+              >
+                📚 Documentation
+              </Button>
+              <Button 
+                variant="ghost" 
+                className="w-full justify-start text-gray-400 hover:text-white hover:bg-gray-800/50"
+              >
+                💬 Contact Support
+              </Button>
+              <Button 
+                variant="ghost" 
+                className="w-full justify-start text-gray-400 hover:text-white hover:bg-gray-800/50"
+              >
+                🔄 System Status
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
