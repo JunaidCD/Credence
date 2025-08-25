@@ -1265,30 +1265,108 @@ const IssuerDashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Support */}
-          <Card className="glass-effect">
-            <CardHeader>
-              <CardTitle className="text-lg">Need Help?</CardTitle>
+          {/* Enhanced Support Section */}
+          <Card className="glass-effect hover:shadow-2xl transition-all duration-300 group relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/10 to-purple-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <CardHeader className="relative z-10">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg flex items-center">
+                  <div className="p-2 rounded-lg bg-indigo-600/20 mr-3 group-hover:bg-indigo-600/30 transition-colors duration-300">
+                    <Activity className="h-5 w-5 text-indigo-400" />
+                  </div>
+                  Need Help?
+                </CardTitle>
+                <div className="w-2 h-2 bg-indigo-400 rounded-full animate-pulse"></div>
+              </div>
+              <p className="text-gray-400 text-sm">Get assistance and resources</p>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <Button 
-                variant="ghost" 
-                className="w-full justify-start text-gray-400 hover:text-white hover:bg-gray-800/50"
-              >
-                📚 Documentation
-              </Button>
-              <Button 
-                variant="ghost" 
-                className="w-full justify-start text-gray-400 hover:text-white hover:bg-gray-800/50"
-              >
-                💬 Contact Support
-              </Button>
-              <Button 
-                variant="ghost" 
-                className="w-full justify-start text-gray-400 hover:text-white hover:bg-gray-800/50"
-              >
-                🔄 System Status
-              </Button>
+            <CardContent className="space-y-4 relative z-10">
+              <div className="p-4 bg-gradient-to-r from-blue-600/10 to-cyan-600/10 rounded-xl border border-blue-500/20 hover:border-blue-400/40 transition-all duration-200 group/item cursor-pointer">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 rounded-lg bg-blue-600/20 group-hover/item:bg-blue-600/30 transition-colors duration-200">
+                    <FileText className="h-4 w-4 text-blue-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-white font-medium group-hover/item:text-blue-300 transition-colors duration-200">Documentation</h4>
+                    <p className="text-gray-400 text-xs">Comprehensive guides and tutorials</p>
+                  </div>
+                  <div className="opacity-0 group-hover/item:opacity-100 transition-opacity duration-200">
+                    <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center">
+                      <span className="text-blue-400 text-xs">→</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 bg-gradient-to-r from-green-600/10 to-emerald-600/10 rounded-xl border border-green-500/20 hover:border-green-400/40 transition-all duration-200 group/item cursor-pointer">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 rounded-lg bg-green-600/20 group-hover/item:bg-green-600/30 transition-colors duration-200">
+                    <Users className="h-4 w-4 text-green-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-white font-medium group-hover/item:text-green-300 transition-colors duration-200">Contact Support</h4>
+                    <p className="text-gray-400 text-xs">Get help from our expert team</p>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                    <div className="opacity-0 group-hover/item:opacity-100 transition-opacity duration-200">
+                      <div className="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center">
+                        <span className="text-green-400 text-xs">→</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 bg-gradient-to-r from-orange-600/10 to-yellow-600/10 rounded-xl border border-orange-500/20 hover:border-orange-400/40 transition-all duration-200 group/item cursor-pointer">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 rounded-lg bg-orange-600/20 group-hover/item:bg-orange-600/30 transition-colors duration-200">
+                    <Activity className="h-4 w-4 text-orange-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-white font-medium group-hover/item:text-orange-300 transition-colors duration-200">System Status</h4>
+                    <p className="text-gray-400 text-xs">Check service availability</p>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-1">
+                      <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                      <span className="text-xs text-green-400">Online</span>
+                    </div>
+                    <div className="opacity-0 group-hover/item:opacity-100 transition-opacity duration-200">
+                      <div className="w-6 h-6 rounded-full bg-orange-500/20 flex items-center justify-center">
+                        <span className="text-orange-400 text-xs">→</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 bg-gradient-to-r from-purple-600/10 to-pink-600/10 rounded-xl border border-purple-500/20 hover:border-purple-400/40 transition-all duration-200 group/item cursor-pointer">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 rounded-lg bg-purple-600/20 group-hover/item:bg-purple-600/30 transition-colors duration-200">
+                    <Zap className="h-4 w-4 text-purple-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-white font-medium group-hover/item:text-purple-300 transition-colors duration-200">Feature Requests</h4>
+                    <p className="text-gray-400 text-xs">Suggest new features and improvements</p>
+                  </div>
+                  <div className="opacity-0 group-hover/item:opacity-100 transition-opacity duration-200">
+                    <div className="w-6 h-6 rounded-full bg-purple-500/20 flex items-center justify-center">
+                      <span className="text-purple-400 text-xs">→</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 pt-4 border-t border-gray-700/50">
+                <div className="flex items-center justify-between text-xs text-gray-500">
+                  <span>Response time: ~2 hours</span>
+                  <div className="flex items-center space-x-1">
+                    <div className="w-1 h-1 bg-green-400 rounded-full"></div>
+                    <span>24/7 Support</span>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
