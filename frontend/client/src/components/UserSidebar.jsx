@@ -1,8 +1,8 @@
 import { 
   LayoutDashboard, 
   Award, 
-  Mail, 
-  Settings, 
+  Bell, 
+  ShieldX, 
   LogOut,
   User
 } from 'lucide-react';
@@ -21,8 +21,8 @@ const UserSidebar = ({ activeSection, onSectionChange }) => {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'credentials', label: 'My Credentials', icon: Award },
-    { id: 'issued-credentials', label: 'Issued Credentials', icon: Award },
-    { id: 'settings', label: 'Settings', icon: Settings },
+    { id: 'notifications', label: 'Notifications', icon: Bell },
+    { id: 'revoke-credentials', label: 'Revoke Credentials', icon: ShieldX },
   ];
 
   return (
@@ -37,7 +37,7 @@ const UserSidebar = ({ activeSection, onSectionChange }) => {
             <p className="text-white font-semibold" data-testid="sidebar-user-name">
               {user?.name || 'User'}
             </p>
-            <p className="text-gray-400 text-sm">Issuer</p>
+            <p className="text-gray-400 text-sm">User</p>
           </div>
         </div>
         

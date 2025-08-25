@@ -5,7 +5,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useLocation } from 'wouter';
 import UserSidebar from '@/components/UserSidebar';
 import CredentialCard from '@/components/CredentialCard';
-import CredentialForm from '@/components/CredentialForm';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -16,62 +15,39 @@ import {
   CheckCircle, 
   Activity, 
   Copy,
-  Plus,
   Check,
   X,
-  Building,
-  Briefcase,
+  Bell,
+  Shield,
+  Trash2,
+  Eye,
   User,
-  Save,
-  Wallet
+  Wallet,
+  Plus,
+  ShieldX,
+  Archive
 } from 'lucide-react';
 
 const UserDashboard = () => {
-  const { user, isAuthenticated, updateUser } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
   const [activeSection, setActiveSection] = useState('dashboard');
-  const [showCredentialForm, setShowCredentialForm] = useState(false);
-  const [profileData, setProfileData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    designation: '',
-    department: '',
-    employeeId: ''
-  });
-  const [isFormChanged, setIsFormChanged] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  // Revoke credentials state
+  const [selectedCredentials, setSelectedCredentials] = useState([]);
+  const [filter, setFilter] = useState('all'); // all, expired, old
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated || (user && user.userType !== 'user')) {
       setLocation('/');
     }
-  }, [isAuthenticated, setLocation]);
+  }, [isAuthenticated, user, setLocation]);
 
-  // Initialize profile data when user changes
-  useEffect(() => {
-    if (user) {
-      setProfileData({
-        name: user.name || '',
-        email: user.email || '',
-        phone: '',
-        designation: '',
-        department: '',
-        employeeId: ''
-      });
-      setIsFormChanged(false);
-    }
-  }, [user]);
-
-  // Queries
-  const { data: credentials = [], isLoading: credentialsLoading } = useQuery({
+  // Queries - User-specific data
+  const { data: myCredentials = [], isLoading: credentialsLoading } = useQuery({
     queryKey: ['/api/credentials/user', user?.id],
-    enabled: !!user?.id,
-  });
-
-  const { data: issuedCredentials = [], isLoading: credentialsIssuedLoading } = useQuery({
-    queryKey: ['/api/credentials/issued', user?.id],
     enabled: !!user?.id,
   });
 
@@ -96,6 +72,33 @@ const UserDashboard = () => {
     }
   });
 
+  const revokeCredentialMutation = useMutation({
+    mutationFn: async (credentialId) => {
+      const response = await fetch(`/api/credentials/${credentialId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'revoked' })
+      });
+      if (!response.ok) throw new Error('Failed to revoke credential');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['credentials', user?.id]);
+      toast({
+        title: "Success",
+        description: "Credential revoked successfully",
+      });
+      setSelectedCredentials([]);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
   const handleApproveRequest = (requestId) => {
     updateRequestMutation.mutate({ requestId, status: 'approved' });
     toast({
@@ -110,6 +113,10 @@ const UserDashboard = () => {
       title: "Request Rejected", 
       description: "Verification request has been rejected.",
     });
+  };
+
+  const handleRevokeCredential = (credentialId) => {
+    revokeCredentialMutation.mutate(credentialId);
   };
 
   const copyDID = () => {
@@ -208,7 +215,7 @@ const UserDashboard = () => {
                 <p className="text-gray-300 text-sm font-medium mb-2">Total Credentials</p>
                 <div className="flex items-center space-x-2">
                   <p className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-purple-600 bg-clip-text text-transparent animate-countUp" data-testid="stat-credentials">
-                    {credentials.length}
+                    {myCredentials.length}
                   </p>
                   <div className="text-green-400 text-sm font-semibold bg-green-400/10 px-2 py-1 rounded-full">
                     +12%
@@ -362,31 +369,37 @@ const UserDashboard = () => {
 
       {/* Quick Actions */}
       <div className="mt-10 grid md:grid-cols-2 gap-6">
-        <Card className="group relative overflow-hidden bg-gradient-to-br from-purple-900/40 to-purple-800/40 backdrop-blur-sm border-purple-500/30 hover:border-purple-400/50 transition-all duration-500 transform hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20 cursor-pointer animate-slideInLeft">
+        <Card 
+          className="group relative overflow-hidden bg-gradient-to-br from-purple-900/40 to-purple-800/40 backdrop-blur-sm border-purple-500/30 hover:border-purple-400/50 transition-all duration-500 transform hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20 cursor-pointer animate-slideInLeft"
+          onClick={() => setActiveSection('credentials')}
+        >
           <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
           <CardContent className="p-8 relative z-10">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-xl font-bold text-white mb-2">Issue New Credential</h3>
-                <p className="text-gray-300">Create and issue a new verifiable credential</p>
+                <h3 className="text-xl font-bold text-white mb-2">My Credentials</h3>
+                <p className="text-gray-300">View and manage your digital credentials</p>
               </div>
               <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center transform group-hover:rotate-12 transition-transform duration-500 animate-float">
-                <Plus className="h-8 w-8 text-white" />
+                <Award className="h-8 w-8 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="group relative overflow-hidden bg-gradient-to-br from-blue-900/40 to-blue-800/40 backdrop-blur-sm border-blue-500/30 hover:border-blue-400/50 transition-all duration-500 transform hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/20 cursor-pointer animate-slideInRight">
+        <Card 
+          className="group relative overflow-hidden bg-gradient-to-br from-blue-900/40 to-blue-800/40 backdrop-blur-sm border-blue-500/30 hover:border-blue-400/50 transition-all duration-500 transform hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/20 cursor-pointer animate-slideInRight"
+          onClick={() => setActiveSection('notifications')}
+        >
           <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
           <CardContent className="p-8 relative z-10">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-xl font-bold text-white mb-2">View All Credentials</h3>
-                <p className="text-gray-300">Browse and manage your credential collection</p>
+                <h3 className="text-xl font-bold text-white mb-2">Notifications</h3>
+                <p className="text-gray-300">View verification requests and notifications</p>
               </div>
               <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center transform group-hover:rotate-12 transition-transform duration-500 animate-float" style={{animationDelay: '0.5s'}}>
-                <Award className="h-8 w-8 text-white" />
+                <Bell className="h-8 w-8 text-white" />
               </div>
             </div>
           </CardContent>
@@ -401,29 +414,17 @@ const UserDashboard = () => {
       <div className="mb-10 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 via-blue-600/20 to-cyan-600/20 rounded-3xl blur-xl"></div>
         <div className="relative bg-gradient-to-r from-gray-800/80 to-gray-900/80 backdrop-blur-sm rounded-3xl p-8 border border-purple-500/30">
-          <div className="flex justify-between items-center">
-            <div className="animate-fadeInUp">
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 via-blue-400 to-cyan-400 bg-clip-text text-transparent mb-3 animate-shimmer">My Credentials ✨</h1>
-              <p className="text-gray-300 text-lg">Manage and share your verifiable credentials</p>
-              <div className="flex items-center mt-4 space-x-4">
-                <div className="flex items-center text-blue-400">
-                  <div className="w-2 h-2 bg-blue-400 rounded-full mr-2"></div>
-                  <span className="text-sm">Credential Vault</span>
-                </div>
-                <div className="text-gray-400 text-sm">
-                  {credentials.length} {credentials.length === 1 ? 'Credential' : 'Credentials'} Stored
-                </div>
+          <div className="animate-fadeInUp">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 via-blue-400 to-cyan-400 bg-clip-text text-transparent mb-3 animate-shimmer">My Credentials ✨</h1>
+            <p className="text-gray-300 text-lg">View and manage your verifiable credentials</p>
+            <div className="flex items-center mt-4 space-x-4">
+              <div className="flex items-center text-blue-400">
+                <div className="w-2 h-2 bg-blue-400 rounded-full mr-2"></div>
+                <span className="text-sm">Credential Vault</span>
               </div>
-            </div>
-            <div className="animate-bounceIn">
-              <Button
-                onClick={() => setShowCredentialForm(true)}
-                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-8 py-4 text-lg rounded-2xl font-bold shadow-2xl hover:shadow-purple-500/25 transition-all duration-300 transform hover:scale-105 flex items-center"
-                data-testid="button-add-credential"
-              >
-                <Plus className="mr-3 h-6 w-6" />
-                Add Credential
-              </Button>
+              <div className="text-gray-400 text-sm">
+                {myCredentials.length} {myCredentials.length === 1 ? 'Credential' : 'Credentials'} Stored
+              </div>
             </div>
           </div>
         </div>
@@ -455,7 +456,7 @@ const UserDashboard = () => {
             </div>
           ))}
         </div>
-      ) : credentials.length === 0 ? (
+      ) : myCredentials.length === 0 ? (
         <div className="relative">
           {/* Floating Background Elements */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -521,131 +522,7 @@ const UserDashboard = () => {
         </div>
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {credentials.map((credential, index) => (
-            <div key={credential.id} className="animate-slideInUp" style={{animationDelay: `${index * 0.1}s`}}>
-              <CredentialCard credential={credential} />
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-
-  const renderIssuedCredentials = () => (
-    <div className="p-6 min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-blue-900/20">
-      {/* Enhanced Header */}
-      <div className="mb-10 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 via-blue-600/20 to-cyan-600/20 rounded-3xl blur-xl"></div>
-        <div className="relative bg-gradient-to-r from-gray-800/80 to-gray-900/80 backdrop-blur-sm rounded-3xl p-8 border border-purple-500/30">
-          <div className="animate-fadeInUp">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 via-blue-400 to-cyan-400 bg-clip-text text-transparent mb-3 animate-shimmer">Issued Credentials ✨</h1>
-            <p className="text-gray-300 text-lg">View and manage all credentials you have issued to others</p>
-            <div className="flex items-center mt-4 space-x-4">
-              <div className="flex items-center text-green-400">
-                <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
-                <span className="text-sm">Active Issuer</span>
-              </div>
-              <div className="text-gray-400 text-sm">
-                {issuedCredentials.length} {issuedCredentials.length === 1 ? 'Credential' : 'Credentials'} Issued
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {credentialsIssuedLoading ? (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {[1, 2, 3, 4, 5, 6].map(i => (
-            <div key={i} className="animate-pulse">
-              <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm border border-gray-700/50 rounded-3xl p-8 h-80">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="w-12 h-12 bg-gray-700 rounded-2xl"></div>
-                  <div className="w-20 h-6 bg-gray-700 rounded-full"></div>
-                </div>
-                <div className="space-y-4">
-                  <div className="h-6 bg-gray-700 rounded w-3/4"></div>
-                  <div className="h-4 bg-gray-800 rounded w-1/2"></div>
-                  <div className="h-4 bg-gray-800 rounded w-2/3"></div>
-                </div>
-                <div className="mt-8 space-y-2">
-                  <div className="h-3 bg-gray-800 rounded w-full"></div>
-                  <div className="h-3 bg-gray-800 rounded w-4/5"></div>
-                </div>
-                <div className="mt-6 flex space-x-3">
-                  <div className="w-20 h-8 bg-gray-700 rounded-lg"></div>
-                  <div className="w-16 h-8 bg-gray-700 rounded-lg"></div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : issuedCredentials.length === 0 ? (
-        <div className="relative">
-          {/* Floating Background Elements */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute top-20 left-10 w-32 h-32 bg-purple-500/10 rounded-full blur-xl animate-float"></div>
-            <div className="absolute top-40 right-20 w-24 h-24 bg-blue-500/10 rounded-full blur-xl animate-float" style={{animationDelay: '1s'}}></div>
-            <div className="absolute bottom-20 left-1/3 w-40 h-40 bg-cyan-500/10 rounded-full blur-xl animate-float" style={{animationDelay: '2s'}}></div>
-          </div>
-          
-          {/* Enhanced Empty State */}
-          <div className="relative text-center py-20 animate-fadeInUp">
-            <div className="mb-8 relative inline-block">
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-xl blur-2xl animate-pulse"></div>
-              <div className="relative w-32 h-32 bg-gradient-to-br from-purple-900/40 to-blue-900/40 backdrop-blur-sm border border-purple-500/30 rounded-full flex items-center justify-center mx-auto animate-float">
-                <Award className="h-16 w-16 text-purple-400" />
-              </div>
-              <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center opacity-75">
-                <Plus className="h-4 w-4 text-white" />
-              </div>
-            </div>
-            
-            <h3 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent mb-4 animate-shimmer">
-              No Credentials Issued Yet
-            </h3>
-            <p className="text-gray-300 text-lg mb-8 max-w-md mx-auto leading-relaxed">
-              You haven't issued any credentials yet. Start building trust by issuing verifiable credentials to others.
-            </p>
-            
-            {/* Feature Highlights */}
-            <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto mb-10">
-              <div className="bg-gradient-to-br from-purple-900/30 to-purple-800/30 backdrop-blur-sm border border-purple-500/20 rounded-2xl p-6 animate-slideInUp">
-                <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-4 animate-float">
-                  <CheckCircle className="h-6 w-6 text-white" />
-                </div>
-                <h4 className="text-white font-semibold mb-2">Trusted Issuance</h4>
-                <p className="text-gray-400 text-sm">Issue tamper-proof credentials that can be instantly verified</p>
-              </div>
-              
-              <div className="bg-gradient-to-br from-blue-900/30 to-blue-800/30 backdrop-blur-sm border border-blue-500/20 rounded-2xl p-6 animate-slideInUp" style={{animationDelay: '0.1s'}}>
-                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mx-auto mb-4 animate-float" style={{animationDelay: '0.5s'}}>
-                  <Activity className="h-6 w-6 text-white" />
-                </div>
-                <h4 className="text-white font-semibold mb-2">Real-time Tracking</h4>
-                <p className="text-gray-400 text-sm">Monitor the status and usage of all issued credentials</p>
-              </div>
-              
-              <div className="bg-gradient-to-br from-cyan-900/30 to-cyan-800/30 backdrop-blur-sm border border-cyan-500/20 rounded-2xl p-6 animate-slideInUp" style={{animationDelay: '0.2s'}}>
-                <div className="w-12 h-12 bg-gradient-to-r from-cyan-500 to-cyan-600 rounded-xl flex items-center justify-center mx-auto mb-4 animate-float" style={{animationDelay: '1s'}}>
-                  <Fingerprint className="h-6 w-6 text-white" />
-                </div>
-                <h4 className="text-white font-semibold mb-2">Blockchain Security</h4>
-                <p className="text-gray-400 text-sm">All credentials are secured on the blockchain with cryptographic proof</p>
-              </div>
-            </div>
-            
-            <Button 
-              onClick={() => setShowCredentialForm(true)}
-              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-10 py-4 text-lg rounded-2xl font-bold shadow-2xl hover:shadow-purple-500/25 transition-all duration-300 transform hover:scale-105"
-            >
-              <Plus className="mr-3 h-6 w-6" />
-              Issue Your First Credential
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {issuedCredentials.map((credential, index) => (
+          {myCredentials.map((credential, index) => (
             <Card key={credential.id} className="group relative overflow-hidden bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-sm border-purple-500/30 hover:border-purple-400/50 transition-all duration-500 transform hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20 animate-slideInUp" style={{animationDelay: `${index * 0.1}s`}}>
               <div className="absolute inset-0 bg-gradient-to-r from-purple-600/5 via-blue-600/5 to-cyan-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
               <CardContent className="p-8 relative z-10">
@@ -665,7 +542,7 @@ const UserDashboard = () => {
                 <div className="space-y-4">
                   <div>
                     <h3 className="text-xl font-bold text-white mb-2">{credential.type || 'Digital Certificate'}</h3>
-                    <p className="text-gray-300 text-sm">Issued to: <span className="font-semibold">{credential.holderName || 'Unknown Holder'}</span></p>
+                    <p className="text-gray-300 text-sm">Issued by: <span className="font-semibold">{credential.issuerName || 'Unknown Issuer'}</span></p>
                   </div>
                   
                   <div className="space-y-2">
@@ -689,14 +566,17 @@ const UserDashboard = () => {
                     size="sm"
                     className="flex-1 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-xl font-semibold transition-all duration-300 transform hover:scale-105"
                   >
+                    <Eye className="h-4 w-4 mr-2" />
                     View Details
                   </Button>
                   {credential.status === 'active' && (
                     <Button
                       size="sm"
                       variant="outline"
+                      onClick={() => handleRevokeCredential(credential.id)}
                       className="border-red-500/50 text-red-400 hover:bg-red-500/20 hover:text-red-300 hover:border-red-400 rounded-xl font-semibold transition-all duration-300"
                     >
+                      <Trash2 className="h-4 w-4 mr-2" />
                       Revoke
                     </Button>
                   )}
@@ -709,324 +589,27 @@ const UserDashboard = () => {
     </div>
   );
 
-  const handleInputChange = (field, value) => {
-    setProfileData(prev => ({ ...prev, [field]: value }));
-    setIsFormChanged(true);
-  };
-
-  const validateForm = () => {
-    const requiredFields = ['name', 'email', 'phone', 'designation', 'department', 'employeeId'];
-    const emptyFields = requiredFields.filter(field => !profileData[field]?.trim());
-    
-    if (emptyFields.length > 0) {
-      toast({
-        title: "Validation Error",
-        description: "All fields are required. Please fill in all information.",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(profileData.email)) {
-      toast({
-        title: "Invalid Email",
-        description: "Please enter a valid email address.",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    return true;
-  };
-
-  const handleSave = () => {
-    if (!validateForm()) {
-      return;
-    }
-
-    // Update user data in the context so it reflects throughout the app
-    updateUser({
-      name: profileData.name,
-      email: profileData.email,
-      phone: profileData.phone,
-      designation: profileData.designation,
-      department: profileData.department,
-      employeeId: profileData.employeeId
-    });
-
-    toast({
-      title: "Profile Updated!",
-      description: "Your profile information has been saved successfully.",
-    });
-    setIsFormChanged(false);
-  };
-
-  const handleReset = () => {
-    setProfileData({
-      name: user?.name || '',
-      email: user?.email || '',
-      phone: '',
-      designation: '',
-      department: '',
-      employeeId: ''
-    });
-    setIsFormChanged(false);
-    toast({
-      title: "Form Reset",
-      description: "All fields have been reset to their original values.",
-    });
-  };
-
-  const renderSettings = () => {
-
+  const renderNotifications = () => {
     return (
-      <div className="p-6 min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-blue-900/20">
-        {/* Enhanced Settings Header */}
-        <div className="mb-10 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 via-blue-600/20 to-cyan-600/20 rounded-3xl blur-xl"></div>
-          <div className="relative bg-gradient-to-r from-gray-800/80 to-gray-900/80 backdrop-blur-sm rounded-3xl p-8 border border-purple-500/30">
-            <div className="flex items-center justify-between">
-              <div className="animate-fadeInUp">
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 via-blue-400 to-cyan-400 bg-clip-text text-transparent mb-3 animate-shimmer">Settings </h1>
-                <p className="text-gray-300 text-lg">Manage your account and privacy settings</p>
-                <div className="flex items-center mt-4 space-x-4">
-                  <div className="flex items-center text-green-400">
-                    <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
-                    <span className="text-sm">Account Active</span>
-                  </div>
-                  <div className="text-gray-400 text-sm">
-                    Profile Configuration
-                  </div>
-                </div>
-              </div>
-              <div className="hidden md:block animate-bounceIn">
-                <div className="relative">
-                  <div className="w-20 h-20 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center animate-float">
-                    <User className="h-10 w-10 text-white" />
-                  </div>
-                  <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                    <CheckCircle className="h-4 w-4 text-white" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+      <div className="p-8">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent mb-4">
+            Notifications
+          </h1>
+          <p className="text-gray-300 text-lg">
+            Stay updated with your credential activities
+          </p>
         </div>
 
-        <div className="max-w-6xl space-y-8">
-          {/* Enhanced Profile Information */}
-          <Card className="group relative overflow-hidden bg-gradient-to-br from-purple-900/40 to-purple-800/40 backdrop-blur-sm border-purple-500/30 hover:border-purple-400/50 transition-all duration-500 shadow-2xl animate-slideInUp">
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <CardHeader className="relative z-10">
-              <CardTitle className="flex items-center text-xl font-bold text-white">
-                <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
-                  <User className="h-5 w-5 text-white" />
+        <div className="space-y-4">
+          <Card className="glass-effect border-purple-500/20">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <Bell className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-300 mb-2">No Notifications</h3>
+                  <p className="text-gray-400">You're all caught up! No new notifications at this time.</p>
                 </div>
-                Profile Information
-                <div className="ml-auto">
-                  <div className="w-3 h-3 bg-purple-400 rounded-full opacity-75"></div>
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="relative z-10 space-y-6">
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="group/input">
-                  <label className="block text-sm font-semibold text-gray-200 mb-3">Full Name *</label>
-                  <div className="relative">
-                    <input 
-                      type="text" 
-                      value={profileData.name}
-                      onChange={(e) => handleInputChange('name', e.target.value)}
-                      placeholder="Enter your full name"
-                      required
-                      className="w-full bg-gradient-to-r from-gray-800/80 to-gray-900/80 border border-purple-500/30 text-white px-4 py-3 rounded-xl focus:ring-2 focus:ring-purple-400 focus:border-purple-400 transition-all duration-300 hover:border-purple-400/50 group-hover/input:shadow-lg group-hover/input:shadow-purple-500/10"
-                      data-testid="input-display-name"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-r from-purple-600/5 to-blue-600/5 rounded-xl opacity-0 group-hover/input:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
-                  </div>
-                </div>
-                <div className="group/input">
-                  <label className="block text-sm font-semibold text-gray-200 mb-3">Email Address *</label>
-                  <div className="relative">
-                    <input 
-                      type="email" 
-                      value={profileData.email}
-                      onChange={(e) => handleInputChange('email', e.target.value)}
-                      placeholder="Enter your email address"
-                      required
-                      className="w-full bg-gradient-to-r from-gray-800/80 to-gray-900/80 border border-purple-500/30 text-white px-4 py-3 rounded-xl focus:ring-2 focus:ring-purple-400 focus:border-purple-400 transition-all duration-300 hover:border-purple-400/50 group-hover/input:shadow-lg group-hover/input:shadow-purple-500/10"
-                      data-testid="input-email"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-r from-purple-600/5 to-blue-600/5 rounded-xl opacity-0 group-hover/input:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
-                  </div>
-                </div>
-              </div>
-              <div className="group/input">
-                <label className="block text-sm font-semibold text-gray-200 mb-3">Phone Number *</label>
-                <div className="relative">
-                  <input 
-                    type="tel" 
-                    value={profileData.phone}
-                    onChange={(e) => handleInputChange('phone', e.target.value)}
-                    placeholder="Enter your phone number"
-                    required
-                    className="w-full bg-gradient-to-r from-gray-800/80 to-gray-900/80 border border-purple-500/30 text-white px-4 py-3 rounded-xl focus:ring-2 focus:ring-purple-400 focus:border-purple-400 transition-all duration-300 hover:border-purple-400/50 group-hover/input:shadow-lg group-hover/input:shadow-purple-500/10"
-                    data-testid="input-phone"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-r from-purple-600/5 to-blue-600/5 rounded-xl opacity-0 group-hover/input:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Enhanced Institutional Information */}
-          <Card className="group relative overflow-hidden bg-gradient-to-br from-blue-900/40 to-blue-800/40 backdrop-blur-sm border-blue-500/30 hover:border-blue-400/50 transition-all duration-500 shadow-2xl animate-slideInUp" style={{animationDelay: '0.1s'}}>
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <CardHeader className="relative z-10">
-              <CardTitle className="flex items-center text-xl font-bold text-white">
-                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mr-3">
-                  <Building className="h-5 w-5 text-white" />
-                </div>
-                Institutional Information
-                <div className="ml-auto">
-                  <div className="w-3 h-3 bg-blue-400 rounded-full opacity-75"></div>
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="relative z-10 space-y-6">
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="group/input">
-                  <label className="block text-sm font-semibold text-gray-200 mb-3">Designation *</label>
-                  <div className="relative">
-                    <input 
-                      type="text" 
-                      value={profileData.designation}
-                      onChange={(e) => handleInputChange('designation', e.target.value)}
-                      placeholder="e.g., Professor, Assistant Professor, Lecturer"
-                      required
-                      className="w-full bg-gradient-to-r from-gray-800/80 to-gray-900/80 border border-blue-500/30 text-white px-4 py-3 rounded-xl focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all duration-300 hover:border-blue-400/50 group-hover/input:shadow-lg group-hover/input:shadow-blue-500/10"
-                      data-testid="input-designation"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 to-cyan-600/5 rounded-xl opacity-0 group-hover/input:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
-                  </div>
-                </div>
-                <div className="group/input">
-                  <label className="block text-sm font-semibold text-gray-200 mb-3">Department *</label>
-                  <div className="relative">
-                    <input 
-                      type="text" 
-                      value={profileData.department}
-                      onChange={(e) => handleInputChange('department', e.target.value)}
-                      placeholder="e.g., Computer Science, Mathematics"
-                      required
-                      className="w-full bg-gradient-to-r from-gray-800/80 to-gray-900/80 border border-blue-500/30 text-white px-4 py-3 rounded-xl focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all duration-300 hover:border-blue-400/50 group-hover/input:shadow-lg group-hover/input:shadow-blue-500/10"
-                      data-testid="input-department"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 to-cyan-600/5 rounded-xl opacity-0 group-hover/input:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
-                  </div>
-                </div>
-              </div>
-              <div className="group/input">
-                <label className="block text-sm font-semibold text-gray-200 mb-3">Employee ID *</label>
-                <div className="relative">
-                  <input 
-                    type="text" 
-                    value={profileData.employeeId}
-                    onChange={(e) => handleInputChange('employeeId', e.target.value)}
-                    placeholder="Enter your employee ID"
-                    required
-                    className="w-full bg-gradient-to-r from-gray-800/80 to-gray-900/80 border border-blue-500/30 text-white px-4 py-3 rounded-xl focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all duration-300 hover:border-blue-400/50 group-hover/input:shadow-lg group-hover/input:shadow-blue-500/10"
-                    data-testid="input-employee-id"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 to-cyan-600/5 rounded-xl opacity-0 group-hover/input:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Enhanced Action Buttons */}
-          <Card className="group relative overflow-hidden bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-sm border-purple-500/30 hover:border-purple-400/50 transition-all duration-500 shadow-2xl animate-slideInUp" style={{animationDelay: '0.2s'}}>
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-600/5 via-blue-600/5 to-cyan-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <CardContent className="p-8 relative z-10">
-              <div className="flex flex-col sm:flex-row justify-end space-y-4 sm:space-y-0 sm:space-x-6">
-                <Button
-                  onClick={handleReset}
-                  variant="outline"
-                  className="border-2 border-gray-600/50 text-gray-300 hover:bg-gray-800/80 hover:text-white hover:border-gray-500 px-8 py-3 flex items-center rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
-                  data-testid="button-reset-form"
-                >
-                  <X className="mr-2 h-5 w-5" />
-                  Reset Form
-                </Button>
-                <Button
-                  onClick={handleSave}
-                  disabled={!isFormChanged}
-                  className={`px-10 py-3 font-bold flex items-center rounded-xl transition-all duration-300 transform hover:scale-105 ${
-                    isFormChanged 
-                      ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-2xl hover:shadow-purple-500/25' 
-                      : 'bg-gray-700/50 text-gray-400 cursor-not-allowed border border-gray-600/30'
-                  }`}
-                  data-testid="button-save-profile"
-                >
-                  <Save className="mr-2 h-5 w-5" />
-                  Save Changes
-                </Button>
-              </div>
-              {isFormChanged && (
-                <div className="mt-4 p-4 bg-gradient-to-r from-yellow-900/20 to-orange-900/20 border border-yellow-500/30 rounded-xl">
-                  <p className="text-yellow-400 text-sm font-medium flex items-center">
-                    <div className="w-2 h-2 bg-yellow-400 rounded-full mr-2 opacity-75"></div>
-                    You have unsaved changes
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Enhanced Connected Wallet */}
-          <Card className="group relative overflow-hidden bg-gradient-to-br from-cyan-900/40 to-cyan-800/40 backdrop-blur-sm border-cyan-500/30 hover:border-cyan-400/50 transition-all duration-500 shadow-2xl animate-slideInUp" style={{animationDelay: '0.3s'}}>
-            <div className="absolute inset-0 bg-gradient-to-r from-cyan-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <CardHeader className="relative z-10">
-              <CardTitle className="flex items-center text-xl font-bold text-white">
-                <div className="w-8 h-8 bg-gradient-to-r from-cyan-500 to-cyan-600 rounded-lg flex items-center justify-center mr-3">
-                  <Wallet className="h-5 w-5 text-white" />
-                </div>
-                Connected Wallet
-                <div className="ml-auto">
-                  <div className="w-3 h-3 bg-green-400 rounded-full opacity-75"></div>
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="relative z-10">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0">
-                <div className="flex items-center">
-                  <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-blue-500 rounded-xl flex items-center justify-center mr-4 animate-float">
-                    <svg viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6 text-white">
-                      <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-white font-bold text-lg">MetaMask</p>
-                    <div className="flex items-center space-x-2">
-                      <p className="text-gray-300 text-sm font-mono bg-gray-800/50 px-3 py-1 rounded-lg border border-cyan-500/20" data-testid="wallet-address">
-                        {user.address?.slice(0, 6)}...{user.address?.slice(-4)}
-                      </p>
-                      <div className="flex items-center text-green-400 text-xs">
-                        <div className="w-2 h-2 bg-green-400 rounded-full mr-1 opacity-75"></div>
-                        Connected
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <Button
-                  variant="outline"
-                  className="border-2 border-red-500/50 text-red-400 hover:bg-red-500/20 hover:text-red-300 hover:border-red-400 px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-red-500/10"
-                  data-testid="button-disconnect-wallet"
-                >
-                  Disconnect
-                </Button>
               </div>
             </CardContent>
           </Card>
@@ -1035,24 +618,295 @@ const UserDashboard = () => {
     );
   };
 
-  return (
-    <div className="flex h-screen pt-16">
-      <UserSidebar 
-        activeSection={activeSection} 
-        onSectionChange={setActiveSection}
-      />
+  const renderRevokeCredentials = () => {
+
+    const handleBulkRevoke = async () => {
+      if (selectedCredentials.length === 0) return;
       
-      <div className="flex-1 overflow-auto">
+      try {
+        await Promise.all(
+          selectedCredentials.map(id => revokeCredentialMutation.mutateAsync(id))
+        );
+      } catch (error) {
+        console.error('Bulk revoke failed:', error);
+      }
+    };
+
+    const toggleCredentialSelection = (credentialId) => {
+      setSelectedCredentials(prev => 
+        prev.includes(credentialId) 
+          ? prev.filter(id => id !== credentialId)
+          : [...prev, credentialId]
+      );
+    };
+
+    const getFilteredCredentials = () => {
+      if (!myCredentials) return [];
+      
+      const now = new Date();
+      return myCredentials.filter(cred => {
+        if (cred.status === 'revoked') return false;
+        
+        switch (filter) {
+          case 'expired':
+            return new Date(cred.expiryDate) < now;
+          case 'old':
+            const sixMonthsAgo = new Date();
+            sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+            return new Date(cred.issuedAt) < sixMonthsAgo;
+          default:
+            return true;
+        }
+      });
+    };
+
+    const filteredCredentials = getFilteredCredentials();
+    const expiredCount = myCredentials?.filter(c => c.status !== 'revoked' && new Date(c.expiryDate) < new Date()).length || 0;
+    const oldCount = myCredentials?.filter(c => {
+      if (c.status === 'revoked') return false;
+      const sixMonthsAgo = new Date();
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+      return new Date(c.issuedAt) < sixMonthsAgo;
+    }).length || 0;
+
+    return (
+      <div className="p-8">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent mb-4">
+            Revoke Credentials
+          </h1>
+          <p className="text-gray-300 text-lg">
+            Manage and invalidate old or expired credentials
+          </p>
+        </div>
+
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card className="glass-effect border-red-500/20 hover:border-red-400/40 transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-red-400 text-sm font-medium">Expired Credentials</p>
+                  <p className="text-3xl font-bold text-white">{expiredCount}</p>
+                </div>
+                <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center">
+                  <Clock className="h-6 w-6 text-red-400" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="glass-effect border-orange-500/20 hover:border-orange-400/40 transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-orange-400 text-sm font-medium">Old Credentials (6+ months)</p>
+                  <p className="text-3xl font-bold text-white">{oldCount}</p>
+                </div>
+                <div className="w-12 h-12 bg-orange-500/20 rounded-full flex items-center justify-center">
+                  <Archive className="h-6 w-6 text-orange-400" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="glass-effect border-purple-500/20 hover:border-purple-400/40 transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-purple-400 text-sm font-medium">Selected for Revocation</p>
+                  <p className="text-3xl font-bold text-white">{selectedCredentials.length}</p>
+                </div>
+                <div className="w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center">
+                  <Shield className="h-6 w-6 text-purple-400" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Filter Tabs */}
+        <div className="flex space-x-1 mb-6 bg-gray-800/50 p-1 rounded-lg w-fit">
+          {[
+            { id: 'all', label: 'All Credentials', count: filteredCredentials.length },
+            { id: 'expired', label: 'Expired', count: expiredCount },
+            { id: 'old', label: 'Old (6+ months)', count: oldCount }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setFilter(tab.id)}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                filter === tab.id
+                  ? 'bg-red-500 text-white shadow-lg'
+                  : 'text-gray-300 hover:text-white hover:bg-gray-700/50'
+              }`}
+            >
+              {tab.label} ({tab.count})
+            </button>
+          ))}
+        </div>
+
+        {/* Bulk Actions */}
+        {selectedCredentials.length > 0 && (
+          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <Shield className="h-5 w-5 text-red-400" />
+                <span className="text-red-400 font-medium">
+                  {selectedCredentials.length} credential(s) selected for revocation
+                </span>
+              </div>
+              <div className="flex space-x-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedCredentials([])}
+                  className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                >
+                  Clear Selection
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleBulkRevoke}
+                  disabled={revokeCredentialMutation.isPending}
+                  className="bg-red-500 hover:bg-red-600 text-white"
+                >
+                  {revokeCredentialMutation.isPending ? 'Revoking...' : 'Revoke Selected'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Credentials List */}
+        {credentialsLoading ? (
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="glass-effect border-gray-700/50">
+                <CardContent className="p-6">
+                  <div className="flex items-center space-x-4">
+                    <Skeleton className="w-6 h-6 rounded" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-1/3" />
+                      <Skeleton className="h-3 w-1/2" />
+                    </div>
+                    <Skeleton className="w-20 h-8" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : filteredCredentials.length === 0 ? (
+          <Card className="glass-effect border-gray-700/50">
+            <CardContent className="p-12">
+              <div className="text-center">
+                <Shield className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-gray-300 mb-2">
+                  {filter === 'all' ? 'No Credentials to Revoke' : 
+                   filter === 'expired' ? 'No Expired Credentials' : 
+                   'No Old Credentials'}
+                </h3>
+                <p className="text-gray-400">
+                  {filter === 'all' ? 'All your credentials are active and valid.' :
+                   filter === 'expired' ? 'All your credentials are still valid.' :
+                   'All your credentials are recent.'}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {filteredCredentials.map((credential) => {
+              const isExpired = new Date(credential.expiryDate) < new Date();
+              const isOld = (() => {
+                const sixMonthsAgo = new Date();
+                sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+                return new Date(credential.issuedAt) < sixMonthsAgo;
+              })();
+              const isSelected = selectedCredentials.includes(credential.id);
+
+              return (
+                <Card key={credential.id} className={`glass-effect transition-all duration-300 ${
+                  isSelected ? 'border-red-500/50 bg-red-500/5' : 'border-gray-700/50 hover:border-gray-600/50'
+                }`}>
+                  <CardContent className="p-6">
+                    <div className="flex items-center space-x-4">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleCredentialSelection(credential.id)}
+                        className="w-5 h-5 rounded border-gray-600 bg-gray-700 text-red-500 focus:ring-red-500 focus:ring-offset-gray-800"
+                      />
+                      
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <h3 className="text-lg font-semibold text-white">{credential.type}</h3>
+                          <div className="flex space-x-2">
+                            {isExpired && (
+                              <span className="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded-full border border-red-500/30">
+                                Expired
+                              </span>
+                            )}
+                            {isOld && (
+                              <span className="px-2 py-1 bg-orange-500/20 text-orange-400 text-xs rounded-full border border-orange-500/30">
+                                Old
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                          <div>
+                            <p className="text-gray-400">Issued</p>
+                            <p className="text-gray-200">{new Date(credential.issuedAt).toLocaleDateString()}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-400">Expires</p>
+                            <p className={`${isExpired ? 'text-red-400' : 'text-gray-200'}`}>
+                              {new Date(credential.expiryDate).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-gray-400">Issuer</p>
+                            <p className="text-gray-200">{credential.issuer?.name || 'Unknown'}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-400">Status</p>
+                            <p className="text-green-400">{credential.status}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => revokeCredentialMutation.mutate(credential.id)}
+                        disabled={revokeCredentialMutation.isPending}
+                        className="border-red-500/50 text-red-400 hover:bg-red-500/10 hover:border-red-400"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Revoke
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="flex min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-blue-900/20">
+      <UserSidebar activeSection={activeSection} onSectionChange={setActiveSection} />
+      <div className="flex-1">
         {activeSection === 'dashboard' && renderDashboard()}
         {activeSection === 'credentials' && renderCredentials()}
-        {activeSection === 'issued-credentials' && renderIssuedCredentials()}
-        {activeSection === 'settings' && renderSettings()}
+        {activeSection === 'notifications' && renderNotifications()}
+        {activeSection === 'revoke-credentials' && renderRevokeCredentials()}
       </div>
-
-      <CredentialForm 
-        isOpen={showCredentialForm}
-        onClose={() => setShowCredentialForm(false)}
-      />
     </div>
   );
 };

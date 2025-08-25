@@ -29,6 +29,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
         
         user = await storage.createUser(userData);
+      } else {
+        // Update existing user's userType if it's different
+        if (user.userType !== userType) {
+          user = await storage.updateUser(user.id, { userType });
+        }
       }
 
       res.json({ user });
