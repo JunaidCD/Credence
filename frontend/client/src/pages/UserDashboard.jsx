@@ -618,14 +618,6 @@ const UserDashboard = () => {
                 <p className="text-gray-400 text-sm">You own and control your credentials - no third-party dependencies</p>
               </div>
             </div>
-            
-            <Button 
-              onClick={() => setShowCredentialForm(true)}
-              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-10 py-4 text-lg rounded-2xl font-bold shadow-2xl hover:shadow-purple-500/25 transition-all duration-300 transform hover:scale-105"
-            >
-              <Plus className="mr-3 h-6 w-6" />
-              Add Your First Credential
-            </Button>
           </div>
         </div>
       ) : (

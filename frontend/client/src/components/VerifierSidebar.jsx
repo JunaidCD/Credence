@@ -1,7 +1,7 @@
 import { 
   LayoutDashboard, 
   Search, 
-  ClipboardList, 
+  CheckCircle, 
   Settings, 
   LogOut
 } from 'lucide-react';
@@ -20,7 +20,7 @@ const VerifierSidebar = ({ activeSection, onSectionChange }) => {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'search', label: 'Search DID', icon: Search },
-    { id: 'issued-credentials', label: 'Issued Credentials', icon: ClipboardList },
+    { id: 'approved-requests', label: 'Approved Requests', icon: CheckCircle },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
