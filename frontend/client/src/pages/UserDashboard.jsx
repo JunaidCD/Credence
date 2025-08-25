@@ -31,8 +31,24 @@ import {
   Zap,
   Star,
   Globe,
-  Layers
+  Layers,
+  Calendar
 } from 'lucide-react';
+
+// CSS styles for modern UI effects (animations disabled)
+const styles = `
+  .glass-effect {
+    background: rgba(17, 25, 40, 0.75);
+    backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.125);
+  }
+  
+  .credential-card {
+    background: linear-gradient(135deg, rgba(17, 25, 40, 0.9) 0%, rgba(30, 41, 59, 0.9) 100%);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+  }
+`;
 
 const UserDashboard = () => {
   const { user, isAuthenticated } = useAuth();
@@ -42,45 +58,11 @@ const UserDashboard = () => {
   const queryClient = useQueryClient();
   const canvasRef = useRef(null);
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [particles, setParticles] = useState([]);
   
   // Revoke credentials state
   const [selectedCredentials, setSelectedCredentials] = useState([]);
   const [filter, setFilter] = useState('all'); // all, expired, old
 
-  // Particle animation effect
-  useEffect(() => {
-    const createParticles = () => {
-      const newParticles = [];
-      for (let i = 0; i < 50; i++) {
-        newParticles.push({
-          id: i,
-          x: Math.random() * window.innerWidth,
-          y: Math.random() * window.innerHeight,
-          size: Math.random() * 3 + 1,
-          speedX: (Math.random() - 0.5) * 0.5,
-          speedY: (Math.random() - 0.5) * 0.5,
-          opacity: Math.random() * 0.5 + 0.1
-        });
-      }
-      setParticles(newParticles);
-    };
-    
-    createParticles();
-    
-    const animateParticles = () => {
-      setParticles(prev => prev.map(particle => ({
-        ...particle,
-        x: particle.x + particle.speedX,
-        y: particle.y + particle.speedY,
-        x: particle.x > window.innerWidth ? 0 : particle.x < 0 ? window.innerWidth : particle.x,
-        y: particle.y > window.innerHeight ? 0 : particle.y < 0 ? window.innerHeight : particle.y
-      })));
-    };
-    
-    const interval = setInterval(animateParticles, 50);
-    return () => clearInterval(interval);
-  }, []);
   
   // Real-time clock
   useEffect(() => {
@@ -88,6 +70,16 @@ const UserDashboard = () => {
       setCurrentTime(new Date());
     }, 1000);
     return () => clearInterval(timer);
+  }, []);
+
+  // Inject CSS styles
+  useEffect(() => {
+    const styleElement = document.createElement('style');
+    styleElement.textContent = styles;
+    document.head.appendChild(styleElement);
+    return () => {
+      document.head.removeChild(styleElement);
+    };
   }, []);
 
   useEffect(() => {
@@ -185,218 +177,192 @@ const UserDashboard = () => {
   }
 
   const renderDashboard = () => (
-    <div className="p-6 min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-blue-900/20 relative overflow-hidden">
-      {/* Animated Background Particles */}
-      <div className="absolute inset-0 pointer-events-none">
-        {particles.map(particle => (
-          <div
-            key={particle.id}
-            className="absolute w-1 h-1 bg-gradient-to-r from-purple-400 to-blue-400 rounded-full animate-pulse"
-            style={{
-              left: `${particle.x}px`,
-              top: `${particle.y}px`,
-              opacity: particle.opacity,
-              transform: `scale(${particle.size})`
-            }}
-          />
-        ))}
-      </div>
-      
-      {/* Enhanced Welcome Header with Real-time Elements */}
-      <div className="mb-8 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 via-blue-600/20 to-cyan-600/20 rounded-3xl blur-xl animate-pulse"></div>
-        <div className="relative bg-gradient-to-r from-gray-800/90 to-gray-900/90 backdrop-blur-xl rounded-3xl p-8 border border-purple-500/30 shadow-2xl">
-          <div className="flex items-center justify-between">
-            <div className="animate-fadeInUp">
-              <div className="flex items-center space-x-3 mb-3">
-                <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-400 via-blue-400 to-cyan-400 bg-clip-text text-transparent animate-shimmer" data-testid="dashboard-welcome">
-                  Welcome back, {user.name}!
-                </h1>
-                <div className="animate-bounce">
-                  <Sparkles className="h-8 w-8 text-yellow-400" />
-                </div>
-              </div>
-              <p className="text-gray-300 text-xl mb-4">Manage your digital identity and verifiable credentials</p>
-              <div className="flex items-center mt-4 space-x-6">
-                <div className="flex items-center text-green-400 bg-green-400/10 px-4 py-2 rounded-full border border-green-400/30">
-                  <div className="w-3 h-3 bg-green-400 rounded-full mr-3 animate-pulse"></div>
-                  <span className="text-sm font-semibold">Verified Identity</span>
-                </div>
-                <div className="flex items-center text-blue-400 bg-blue-400/10 px-4 py-2 rounded-full border border-blue-400/30">
-                  <Globe className="h-4 w-4 mr-2" />
-                  <span className="text-sm font-semibold">Decentralized Network</span>
-                </div>
-                <div className="text-gray-400 text-sm bg-gray-700/50 px-4 py-2 rounded-full">
-                  <Clock className="h-4 w-4 inline mr-2" />
-                  {currentTime.toLocaleTimeString('en-US', { 
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit'
-                  })}
-                </div>
+    <div className="p-6 space-y-8">
+      {/* Enhanced Header with Welcome Message */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-900/20 via-blue-900/20 to-cyan-900/20 p-8 border border-purple-500/20">
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 via-blue-600/10 to-cyan-600/10"></div>
+        <div className="relative z-10">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 via-blue-400 to-cyan-400 bg-clip-text text-transparent mb-2" data-testid="dashboard-welcome">
+                Welcome back, {user.name}!
+              </h1>
+              <p className="text-gray-300 text-lg">Manage your digital identity and verifiable credentials</p>
+            </div>
+            <div className="hidden md:flex items-center space-x-2">
+              <Sparkles className="h-8 w-8 text-yellow-400" />
+              <div className="text-right">
+                <p className="text-sm text-gray-400">Current Time</p>
+                <p className="text-white font-semibold">{currentTime.toLocaleTimeString()}</p>
               </div>
             </div>
-            <div className="hidden md:block animate-bounceIn">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full blur-xl opacity-50 animate-pulse"></div>
-                <div className="relative w-24 h-24 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center animate-float shadow-2xl">
-                  <Fingerprint className="h-12 w-12 text-white" />
-                </div>
-                <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center animate-bounce">
-                  <CheckCircle className="h-5 w-5 text-white" />
-                </div>
-                <div className="absolute -bottom-2 -left-2 w-6 h-6 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center animate-spin">
-                  <Star className="h-3 w-3 text-white" />
-                </div>
-              </div>
+          </div>
+          <div className="flex items-center space-x-4 text-sm text-gray-400">
+            <div className="flex items-center space-x-1">
+              <Shield className="h-4 w-4 text-green-400" />
+              <span>Verified Identity</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <Calendar className="h-4 w-4 text-blue-400" />
+              <span>{new Date().toLocaleDateString()}</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Enhanced DID Display */}
-      <Card className="credential-card mb-8 bg-gradient-to-r from-gray-800/90 to-gray-900/90 backdrop-blur-sm border-purple-500/30 shadow-2xl animate-slideInLeft">
+      <Card className="credential-card mb-8 bg-gradient-to-r from-gray-800/90 to-gray-900/90 backdrop-blur-sm border-purple-500/30 shadow-2xl">
         <CardContent className="p-8">
           <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <h3 className="text-xl font-bold mb-4 flex items-center text-white">
-                <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg flex items-center justify-center mr-3">
-                  <Fingerprint className="h-5 w-5 text-white" />
+            <div className="flex items-center space-x-4">
+              <div className="p-4 rounded-xl bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-sm">
+                <Shield className="h-8 w-8 text-purple-400" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-white mb-2">Your User DID</h3>
+                <p className="text-gray-400 text-sm mb-3">Your unique decentralized identifier</p>
+                <div className="flex items-center space-x-3">
+                  <code className="bg-gray-800/80 text-purple-300 px-4 py-2 rounded-lg font-mono text-sm border border-purple-500/20">
+                    {user?.did || `did:ethr:0x${user?.id ? user.id.slice(-8) : '...'}`}
+                  </code>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-purple-500/30 text-purple-400 hover:bg-purple-500/10 hover:border-purple-400 transition-all duration-200"
+                    onClick={() => {
+                      const didToCopy = user?.did || `did:ethr:0x${user?.id ? user.id.slice(-8) : '...'}`;
+                      navigator.clipboard.writeText(didToCopy);
+                      toast({
+                        title: "DID Copied",
+                        description: "Your DID has been copied to clipboard",
+                      });
+                    }}
+                  >
+                    Copy DID
+                  </Button>
                 </div>
-                Your Decentralized Identity (DID)
-              </h3>
-              <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-xl blur-sm group-hover:blur-none transition-all duration-300"></div>
-                <code className="relative block text-sm text-gray-100 bg-gradient-to-r from-gray-800 to-gray-900 px-4 py-3 rounded-xl font-mono break-all border border-purple-500/30 hover:border-purple-400/50 transition-all duration-300" data-testid="user-did">
-                  {user.did}
-                </code>
               </div>
             </div>
-            <Button
-              onClick={copyDID}
-              size="sm"
-              className="ml-6 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-6 py-3 text-sm rounded-xl font-semibold shadow-lg hover:shadow-purple-500/25 transition-all duration-300 transform hover:scale-105"
-              data-testid="button-copy-did"
-            >
-              <Copy className="h-4 w-4 mr-2" />
-              Copy DID
-            </Button>
+            <div className="hidden md:flex items-center space-x-4">
+              <div className="text-right">
+                <div className="flex items-center space-x-2 text-green-400 text-sm mb-1">
+                  <CheckCircle className="h-4 w-4" />
+                  <span>Verified User</span>
+                </div>
+                <div className="flex items-center space-x-2 text-blue-400 text-sm">
+                  <Activity className="h-4 w-4" />
+                  <span>Active Status</span>
+                </div>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Enhanced Quick Stats with Advanced Animations */}
-      <div className="grid md:grid-cols-3 gap-8 mb-10">
-        <Card className="group relative overflow-hidden bg-gradient-to-br from-purple-900/50 to-purple-800/50 backdrop-blur-xl border-purple-500/40 hover:border-purple-400/60 transition-all duration-700 transform hover:scale-110 hover:shadow-2xl hover:shadow-purple-500/30 animate-slideInUp">
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 via-blue-500 to-cyan-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-700"></div>
-          <CardContent className="p-8 relative z-10">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="flex items-center space-x-2 mb-3">
-                  <p className="text-gray-300 text-sm font-medium">Total Credentials</p>
-                  <TrendingUp className="h-4 w-4 text-green-400 animate-bounce" />
+      {/* Enhanced Quick Stats with Animations */}
+      <div className="grid md:grid-cols-3 gap-6">
+        <Card className="glass-effect group relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-600/10 to-purple-800/10 opacity-0 group-hover:opacity-100"></div>
+          <CardContent className="p-6 relative z-10">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-3">
+                <div className="p-3 rounded-xl bg-purple-600/20 group-hover:bg-purple-600/30">
+                  <Award className="h-6 w-6 text-purple-400" />
                 </div>
-                <div className="flex items-center space-x-3">
-                  <p className="text-5xl font-bold bg-gradient-to-r from-purple-400 to-purple-600 bg-clip-text text-transparent animate-countUp" data-testid="stat-credentials">
+                <div>
+                  <p className="text-gray-400 text-sm font-medium">Total Credentials</p>
+                  <p className="text-3xl font-bold text-white group-hover:text-purple-300" data-testid="stat-total-credentials">
                     {myCredentials.length}
                   </p>
-                  <div className="flex flex-col space-y-1">
-                    <div className="text-green-400 text-sm font-semibold bg-green-400/20 px-3 py-1 rounded-full border border-green-400/30 animate-pulse">
-                      +12%
-                    </div>
-                    <div className="text-xs text-gray-400">vs last month</div>
-                  </div>
-                </div>
-                <div className="w-full bg-gray-700/50 rounded-full h-3 mt-4 overflow-hidden">
-                  <div className="bg-gradient-to-r from-purple-500 via-purple-400 to-purple-600 h-3 rounded-full animate-progressBar shadow-lg" style={{width: '75%'}}></div>
                 </div>
               </div>
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl blur-lg opacity-50 animate-pulse"></div>
-                <div className="relative w-18 h-18 bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center transform group-hover:rotate-12 transition-transform duration-700 animate-float shadow-2xl">
-                  <Award className="h-9 w-9 text-white" />
-                </div>
-                <div className="absolute -top-2 -right-2 w-7 h-7 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center animate-spin">
-                  <Sparkles className="h-4 w-4 text-white" />
+              <div className="text-right">
+                <div className="flex items-center space-x-1 text-green-400 text-sm">
+                  <TrendingUp className="h-4 w-4" />
+                  <span>+12%</span>
                 </div>
               </div>
+            </div>
+            <div className="w-full bg-gray-800 rounded-full h-2">
+              <div className="bg-gradient-to-r from-purple-600 to-purple-400 h-2 rounded-full" style={{width: '75%'}}></div>
             </div>
           </CardContent>
         </Card>
         
-        <Card className="group relative overflow-hidden bg-gradient-to-br from-blue-900/40 to-blue-800/40 backdrop-blur-sm border-blue-500/30 hover:border-blue-400/50 transition-all duration-500 transform hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/20 animate-slideInUp" style={{animationDelay: '0.1s'}}>
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-          <CardContent className="p-8 relative z-10">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-300 text-sm font-medium mb-2">Pending Requests</p>
-                <div className="flex items-center space-x-2">
-                  <p className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent animate-countUp" data-testid="stat-pending">
+        <Card className="glass-effect group relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 to-blue-800/10 opacity-0 group-hover:opacity-100"></div>
+          <CardContent className="p-6 relative z-10">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-3">
+                <div className="p-3 rounded-xl bg-blue-600/20 group-hover:bg-blue-600/30">
+                  <Clock className="h-6 w-6 text-blue-400" />
+                </div>
+                <div>
+                  <p className="text-gray-400 text-sm font-medium">Pending Requests</p>
+                  <p className="text-3xl font-bold text-white group-hover:text-blue-300" data-testid="stat-pending-requests">
                     {verificationRequests.filter(r => r.status === 'pending').length}
                   </p>
-                  <div className="text-yellow-400 text-sm font-semibold bg-yellow-400/10 px-2 py-1 rounded-full">
-                    +8%
-                  </div>
-                </div>
-                <div className="w-full bg-gray-700/50 rounded-full h-2 mt-3">
-                  <div className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full animate-progressBar" style={{width: '60%', animationDelay: '0.2s'}}></div>
                 </div>
               </div>
-              <div className="relative">
-                <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center transform group-hover:rotate-12 transition-transform duration-500 animate-float" style={{animationDelay: '0.5s'}}>
-                  <Clock className="h-8 w-8 text-white" />
+              <div className="text-right">
+                <div className="flex items-center space-x-1 text-green-400 text-sm">
+                  <TrendingUp className="h-4 w-4" />
+                  <span>+8%</span>
                 </div>
-                <div className="absolute -top-2 -right-2 w-6 h-6 bg-blue-500 rounded-full opacity-75"></div>
               </div>
+            </div>
+            <div className="w-full bg-gray-800 rounded-full h-2">
+              <div className="bg-gradient-to-r from-blue-600 to-blue-400 h-2 rounded-full" style={{width: '60%'}}></div>
             </div>
           </CardContent>
         </Card>
         
-        <Card className="group relative overflow-hidden bg-gradient-to-br from-cyan-900/40 to-cyan-800/40 backdrop-blur-sm border-cyan-500/30 hover:border-cyan-400/50 transition-all duration-500 transform hover:scale-105 hover:shadow-2xl hover:shadow-cyan-500/20 animate-slideInUp" style={{animationDelay: '0.2s'}}>
-          <div className="absolute inset-0 bg-gradient-to-r from-cyan-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-          <CardContent className="p-8 relative z-10">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-300 text-sm font-medium mb-2">Verified Shares</p>
-                <div className="flex items-center space-x-2">
-                  <p className="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-cyan-600 bg-clip-text text-transparent animate-countUp" data-testid="stat-shares">
+        <Card className="glass-effect group relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-cyan-600/10 to-cyan-800/10 opacity-0 group-hover:opacity-100"></div>
+          <CardContent className="p-6 relative z-10">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-3">
+                <div className="p-3 rounded-xl bg-cyan-600/20 group-hover:bg-cyan-600/30">
+                  <CheckCircle className="h-6 w-6 text-cyan-400" />
+                </div>
+                <div>
+                  <p className="text-gray-400 text-sm font-medium">Verified Shares</p>
+                  <p className="text-3xl font-bold text-white group-hover:text-cyan-300" data-testid="stat-verified-shares">
                     {verificationRequests.filter(r => r.status === 'approved').length}
                   </p>
-                  <div className="text-green-400 text-sm font-semibold bg-green-400/10 px-2 py-1 rounded-full">
-                    +15%
-                  </div>
-                </div>
-                <div className="w-full bg-gray-700/50 rounded-full h-2 mt-3">
-                  <div className="bg-gradient-to-r from-cyan-500 to-cyan-600 h-2 rounded-full animate-progressBar" style={{width: '85%', animationDelay: '0.4s'}}></div>
                 </div>
               </div>
-              <div className="relative">
-                <div className="w-16 h-16 bg-gradient-to-r from-cyan-500 to-cyan-600 rounded-2xl flex items-center justify-center transform group-hover:rotate-12 transition-transform duration-500 animate-float" style={{animationDelay: '1s'}}>
-                  <CheckCircle className="h-8 w-8 text-white" />
+              <div className="text-right">
+                <div className="flex items-center space-x-1 text-green-400 text-sm">
+                  <TrendingUp className="h-4 w-4" />
+                  <span>+15%</span>
                 </div>
-                <div className="absolute -top-2 -right-2 w-6 h-6 bg-cyan-500 rounded-full opacity-75"></div>
               </div>
+            </div>
+            <div className="w-full bg-gray-800 rounded-full h-2">
+              <div className="bg-gradient-to-r from-cyan-600 to-cyan-400 h-2 rounded-full" style={{width: '85%'}}></div>
             </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Enhanced Recent Activity */}
-      <Card className="group relative overflow-hidden bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-sm border-purple-500/30 hover:border-purple-400/50 transition-all duration-500 shadow-2xl animate-slideInUp" style={{animationDelay: '0.3s'}}>
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-600/5 via-blue-600/5 to-cyan-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-        <CardHeader className="relative z-10">
-          <CardTitle className="flex items-center text-xl font-bold text-white">
-            <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg flex items-center justify-center mr-3">
-              <Activity className="h-5 w-5 text-white" />
+      <Card className="glass-effect group">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center text-xl">
+              <div className="p-2 rounded-lg bg-purple-600/20 mr-3">
+                <Activity className="h-5 w-5 text-purple-400" />
+              </div>
+              Recent Activity
+            </CardTitle>
+            <div className="flex items-center space-x-2 text-sm text-gray-400">
+              <Clock className="h-4 w-4" />
+              <span>Last 30 days</span>
             </div>
-            Recent Activity
-            <div className="ml-auto">
-              <div className="w-3 h-3 bg-green-400 rounded-full opacity-75"></div>
-            </div>
-          </CardTitle>
+          </div>
         </CardHeader>
-        <CardContent className="relative z-10">
+        <CardContent>
           {requestsLoading ? (
             <div className="space-y-4">
               {[1, 2, 3].map(i => (
@@ -423,8 +389,8 @@ const UserDashboard = () => {
           ) : (
             <div className="space-y-4">
               {verificationRequests.slice(0, 3).map((request, index) => (
-                <div key={request.id} className="group/item relative p-4 rounded-xl bg-gradient-to-r from-gray-800/50 to-gray-900/50 border border-gray-700/50 hover:border-purple-500/30 transition-all duration-300 transform hover:scale-[1.02] animate-slideInLeft" style={{animationDelay: `${index * 0.1}s`}} data-testid={`activity-${index}`}>
-                  <div className="absolute inset-0 bg-gradient-to-r from-purple-600/5 to-blue-600/5 rounded-xl opacity-0 group-hover/item:opacity-100 transition-opacity duration-300"></div>
+                <div key={request.id} className="group/item relative p-4 rounded-xl bg-gradient-to-r from-gray-800/50 to-gray-900/50 border border-gray-700/50 hover:border-purple-500/30" data-testid={`activity-${index}`}>
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-600/5 to-blue-600/5 rounded-xl opacity-0 group-hover/item:opacity-100"></div>
                   <div className="relative flex items-center justify-between">
                     <div className="flex items-center">
                       <div className={`w-4 h-4 rounded-full mr-4 ${
@@ -460,38 +426,32 @@ const UserDashboard = () => {
       {/* Quick Actions */}
       <div className="mt-10 grid md:grid-cols-2 gap-6">
         <Card 
-          className="group relative overflow-hidden bg-gradient-to-br from-purple-900/40 to-purple-800/40 backdrop-blur-sm border-purple-500/30 hover:border-purple-400/50 transition-all duration-500 transform hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20 cursor-pointer animate-slideInLeft"
+          className="glass-effect group cursor-pointer" 
           onClick={() => setActiveSection('credentials')}
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-          <CardContent className="p-8 relative z-10">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-xl font-bold text-white mb-2">My Credentials</h3>
-                <p className="text-gray-300">View and manage your digital credentials</p>
-              </div>
-              <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center transform group-hover:rotate-12 transition-transform duration-500 animate-float">
+          <CardContent className="p-8 text-center">
+            <div className="relative mb-6">
+              <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center shadow-2xl group-hover:shadow-purple-500/50">
                 <Award className="h-8 w-8 text-white" />
               </div>
             </div>
+            <h3 className="text-xl font-bold text-white mb-2 group-hover:text-purple-300">My Credentials</h3>
+            <p className="text-gray-400 group-hover:text-gray-300">View and manage your digital credentials</p>
           </CardContent>
         </Card>
 
         <Card 
-          className="group relative overflow-hidden bg-gradient-to-br from-blue-900/40 to-blue-800/40 backdrop-blur-sm border-blue-500/30 hover:border-blue-400/50 transition-all duration-500 transform hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/20 cursor-pointer animate-slideInRight"
+          className="glass-effect group cursor-pointer" 
           onClick={() => setActiveSection('notifications')}
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-          <CardContent className="p-8 relative z-10">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-xl font-bold text-white mb-2">Notifications</h3>
-                <p className="text-gray-300">View verification requests and notifications</p>
-              </div>
-              <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center transform group-hover:rotate-12 transition-transform duration-500 animate-float" style={{animationDelay: '0.5s'}}>
+          <CardContent className="p-8 text-center">
+            <div className="relative mb-6">
+              <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-cyan-600 to-blue-600 flex items-center justify-center shadow-2xl group-hover:shadow-cyan-500/50">
                 <Bell className="h-8 w-8 text-white" />
               </div>
             </div>
+            <h3 className="text-xl font-bold text-white mb-2 group-hover:text-cyan-300">Notifications</h3>
+            <p className="text-gray-400 group-hover:text-gray-300">View verification requests and notifications</p>
           </CardContent>
         </Card>
       </div>
@@ -504,8 +464,8 @@ const UserDashboard = () => {
       <div className="mb-10 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 via-blue-600/20 to-cyan-600/20 rounded-3xl blur-xl"></div>
         <div className="relative bg-gradient-to-r from-gray-800/80 to-gray-900/80 backdrop-blur-sm rounded-3xl p-8 border border-purple-500/30">
-          <div className="animate-fadeInUp">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 via-blue-400 to-cyan-400 bg-clip-text text-transparent mb-3 animate-shimmer">My Credentials ✨</h1>
+          <div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 via-blue-400 to-cyan-400 bg-clip-text text-transparent mb-3">My Credentials ✨</h1>
             <p className="text-gray-300 text-lg">View and manage your verifiable credentials</p>
             <div className="flex items-center mt-4 space-x-4">
               <div className="flex items-center text-blue-400">
@@ -550,16 +510,16 @@ const UserDashboard = () => {
         <div className="relative">
           {/* Floating Background Elements */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute top-20 left-10 w-32 h-32 bg-purple-500/10 rounded-full blur-xl animate-float"></div>
-            <div className="absolute top-40 right-20 w-24 h-24 bg-blue-500/10 rounded-full blur-xl animate-float" style={{animationDelay: '1s'}}></div>
-            <div className="absolute bottom-20 left-1/3 w-40 h-40 bg-cyan-500/10 rounded-full blur-xl animate-float" style={{animationDelay: '2s'}}></div>
+            <div className="absolute top-20 left-10 w-32 h-32 bg-purple-500/10 rounded-full blur-xl"></div>
+            <div className="absolute top-40 right-20 w-24 h-24 bg-blue-500/10 rounded-full blur-xl"></div>
+            <div className="absolute bottom-20 left-1/3 w-40 h-40 bg-cyan-500/10 rounded-full blur-xl"></div>
           </div>
           
           {/* Enhanced Empty State */}
-          <div className="relative text-center py-20 animate-fadeInUp">
+          <div className="relative text-center py-20">
             <div className="mb-8 relative inline-block">
               <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-xl blur-2xl animate-pulse"></div>
-              <div className="relative w-32 h-32 bg-gradient-to-br from-purple-900/40 to-blue-900/40 backdrop-blur-sm border border-purple-500/30 rounded-full flex items-center justify-center mx-auto animate-float">
+              <div className="relative w-32 h-32 bg-gradient-to-br from-purple-900/40 to-blue-900/40 backdrop-blur-sm border border-purple-500/30 rounded-full flex items-center justify-center mx-auto">
                 <Award className="h-16 w-16 text-purple-400" />
               </div>
               <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center opacity-75">
@@ -567,7 +527,7 @@ const UserDashboard = () => {
               </div>
             </div>
             
-            <h3 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent mb-4 animate-shimmer">
+            <h3 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent mb-4">
               No Credentials Yet
             </h3>
             <p className="text-gray-300 text-lg mb-8 max-w-md mx-auto leading-relaxed">
@@ -614,10 +574,10 @@ const UserDashboard = () => {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {myCredentials.map((credential, index) => (
             <Card key={credential.id} className="group relative overflow-hidden bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-sm border-purple-500/30 hover:border-purple-400/50 transition-all duration-500 transform hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20 animate-slideInUp" style={{animationDelay: `${index * 0.1}s`}}>
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-600/5 via-blue-600/5 to-cyan-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-600/5 via-blue-600/5 to-cyan-600/5 opacity-0 group-hover:opacity-100"></div>
               <CardContent className="p-8 relative z-10">
                 <div className="flex items-center justify-between mb-6">
-                  <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-blue-500 rounded-2xl flex items-center justify-center transform group-hover:rotate-12 transition-transform duration-500">
+                  <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-blue-500 rounded-2xl flex items-center justify-center group-hover:rotate-12">
                     <Award className="h-6 w-6 text-white" />
                   </div>
                   <span className={`text-sm font-bold capitalize px-3 py-1 rounded-full ${
@@ -654,7 +614,7 @@ const UserDashboard = () => {
                 <div className="mt-8 flex space-x-3">
                   <Button
                     size="sm"
-                    className="flex-1 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-xl font-semibold transition-all duration-300 transform hover:scale-105"
+                    className="flex-1 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-xl font-semibold"
                   >
                     <Eye className="h-4 w-4 mr-2" />
                     View Details
@@ -664,7 +624,7 @@ const UserDashboard = () => {
                       size="sm"
                       variant="outline"
                       onClick={() => handleRevokeCredential(credential.id)}
-                      className="border-red-500/50 text-red-400 hover:bg-red-500/20 hover:text-red-300 hover:border-red-400 rounded-xl font-semibold transition-all duration-300"
+                      className="border-red-500/50 text-red-400 hover:bg-red-500/20 hover:text-red-300 hover:border-red-400 rounded-xl font-semibold"
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
                       Revoke
