@@ -720,23 +720,20 @@ const VerifierDashboard = () => {
                       <SelectItem value="University Degree" className="text-white hover:bg-gray-700">
                         🎓 University Degree
                       </SelectItem>
-                      <SelectItem value="PAN Card" className="text-white hover:bg-gray-700">
-                        🆔 PAN Card
-                      </SelectItem>
-                      <SelectItem value="Driving License" className="text-white hover:bg-gray-700">
-                        🚗 Driving License
-                      </SelectItem>
                       <SelectItem value="Professional Certificate" className="text-white hover:bg-gray-700">
-                        🏆 Professional Certificate
+                        📜 Professional Certificate
                       </SelectItem>
                       <SelectItem value="Employment Verification" className="text-white hover:bg-gray-700">
                         💼 Employment Verification
                       </SelectItem>
-                      <SelectItem value="Address Proof" className="text-white hover:bg-gray-700">
-                        🏠 Address Proof
+                      <SelectItem value="Training Certificate" className="text-white hover:bg-gray-700">
+                        🏆 Training Certificate
+                      </SelectItem>
+                      <SelectItem value="Achievement Award" className="text-white hover:bg-gray-700">
+                        🥇 Achievement Award
                       </SelectItem>
                       <SelectItem value="Other" className="text-white hover:bg-gray-700">
-                        📄 Other
+                        📑 Other
                       </SelectItem>
                     </SelectContent>
                   </Select>
