@@ -18,22 +18,26 @@ import {
   Activity,
   PlusCircle,
   Send,
-  GraduationCap,
+  Sparkles,
+  Shield,
   FileText,
-  Car,
   Eye,
   Trash2,
-  Sparkles,
   Calendar,
-  Shield,
-  Zap,
-  BarChart3,
   Clock,
   CheckCircle,
   AlertCircle,
-  Star,
+  AlertTriangle,
+  Copy,
+  GraduationCap,
+  User,
+  Briefcase,
+  Settings,
   Wallet,
-  Link
+  BarChart3,
+  Link,
+  Zap,
+  Star
 } from 'lucide-react';
 
 const IssuerDashboard = () => {
@@ -67,6 +71,11 @@ const IssuerDashboard = () => {
     metadata: ''
   });
 
+  // Filter states for issued credentials
+  const [searchTerm, setSearchTerm] = useState('');
+  const [didInput, setDidInput] = useState('');
+  const [activeFilter, setActiveFilter] = useState('all');
+
   useEffect(() => {
     if (!isAuthenticated || (user && user.userType !== 'issuer')) {
       setLocation('/');
@@ -78,13 +87,23 @@ const IssuerDashboard = () => {
     const initWeb3 = async () => {
       try {
         const initialized = await Web3Service.init();
-        if (initialized && Web3Service.isConnected()) {
-          setWalletConnected(true);
-          setWalletAddress(Web3Service.getAccount());
-          
-          // Check if user is registered as issuer on blockchain
-          const eligibility = await Web3Service.checkIssuerEligibility();
-          setIsBlockchainRegistered(eligibility.isRegistered);
+        if (initialized) {
+          // Check if MetaMask is already connected
+          try {
+            const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+            if (accounts.length > 0) {
+              // Wallet is already connected, establish the connection
+              const connection = await Web3Service.connectWallet();
+              setWalletConnected(true);
+              setWalletAddress(connection.account);
+              
+              // Check if user is registered as issuer on blockchain
+              const eligibility = await Web3Service.checkIssuerEligibility();
+              setIsBlockchainRegistered(eligibility.isRegistered);
+            }
+          } catch (error) {
+            console.log('No existing wallet connection found');
+          }
         }
       } catch (error) {
         console.error('Web3 initialization failed:', error);
@@ -222,58 +241,87 @@ const IssuerDashboard = () => {
     }
   };
 
-  // Queries
-  const { data: issuedCredentials = [], isLoading: credentialsLoading } = useQuery({
-    queryKey: ['/api/credentials/issuer', user?.id],
-    enabled: !!user?.id,
+  // Queries - Fetch credentials from blockchain
+  const { data: issuedCredentials = [], isLoading: credentialsLoading, refetch: refetchCredentials } = useQuery({
+    queryKey: ['blockchain-credentials', walletAddress],
+    queryFn: async () => {
+      if (!walletAddress || !isBlockchainRegistered) {
+        return [];
+      }
+      try {
+        const blockchainCredentials = await Web3Service.getIssuerCredentials();
+        // Transform blockchain data to match expected format
+        return blockchainCredentials.map(cred => ({
+          id: cred.id,
+          title: JSON.parse(cred.data).title || 'Untitled Credential',
+          type: cred.credentialType,
+          status: cred.isActive && !cred.isRevoked ? 'active' : 'revoked',
+          issueDate: new Date(cred.issuedAt * 1000).toISOString(),
+          expiryDate: cred.expiresAt > 0 ? new Date(cred.expiresAt * 1000).toISOString() : null,
+          metadata: JSON.parse(cred.data),
+          userId: cred.holder
+        }));
+      } catch (error) {
+        console.error('Failed to fetch blockchain credentials:', error);
+        return [];
+      }
+    },
+    enabled: !!walletAddress && isBlockchainRegistered,
+    refetchInterval: 10000, // Refetch every 10 seconds
   });
 
   // Mutations
   const issueCredentialMutation = useMutation({
     mutationFn: async (credentialData) => {
-      // First, find user by DID
-      const userResponse = await fetch(`/api/users/did/${credentialData.recipientDID}`);
-      if (!userResponse.ok) {
-        throw new Error('Recipient with this DID not found');
+      // Validate recipient DID format and extract address
+      const recipientDID = credentialData.recipientDID;
+      if (!recipientDID.startsWith('did:ethr:0x')) {
+        throw new Error('Invalid DID format. Must be did:ethr:0x...');
       }
-      const recipient = await userResponse.json();
+      
+      const recipientAddress = recipientDID.replace('did:ethr:', '');
+      if (!/^0x[a-fA-F0-9]{40}$/.test(recipientAddress)) {
+        throw new Error('Invalid Ethereum address in DID');
+      }
 
       // Parse metadata
-      let parsedMetadata = {};
+      let parsedMetadata = {
+        issuer: user.name,
+        title: credentialData.credentialTitle,
+        recipientName: credentialData.recipientName
+      };
+      
       if (credentialData.metadata) {
         try {
-          parsedMetadata = JSON.parse(credentialData.metadata);
+          const additionalMetadata = JSON.parse(credentialData.metadata);
+          parsedMetadata = { ...parsedMetadata, ...additionalMetadata };
         } catch (e) {
-          parsedMetadata = { description: credentialData.metadata };
+          parsedMetadata.description = credentialData.metadata;
         }
       }
-
-      // Add issuer info to metadata
-      parsedMetadata.issuer = user.name;
+      
       if (credentialData.grade) {
         parsedMetadata.grade = credentialData.grade;
       }
 
-      // Issue credential
-      const response = await fetch('/api/credentials', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: recipient.id,
-          issuerId: user.id,
-          type: credentialData.credentialType,
-          title: credentialData.credentialTitle,
-          issueDate: new Date(credentialData.issueDate),
-          expiryDate: credentialData.expiryDate ? new Date(credentialData.expiryDate) : null,
-          metadata: parsedMetadata
-        })
-      });
+      // Calculate expiry timestamp (use far future date if no expiry specified)
+      const expiryTimestamp = credentialData.expiryDate 
+        ? Math.floor(new Date(credentialData.expiryDate).getTime() / 1000)
+        : Math.floor(new Date('2099-12-31').getTime() / 1000); // Far future date for "no expiry"
+
+      // Issue credential via blockchain using Web3Service
+      const result = await Web3Service.issueCredential(
+        recipientAddress,
+        credentialData.credentialType,
+        parsedMetadata,
+        expiryTimestamp
+      );
       
-      if (!response.ok) throw new Error('Failed to issue credential');
-      return response.json();
+      return result;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/credentials/issuer'] });
+    onSuccess: (result) => {
+      // Refetch blockchain credentials instead of API
+      refetchCredentials();
       setIssueForm({
         recipientName: '',
         recipientDID: '',
@@ -285,8 +333,8 @@ const IssuerDashboard = () => {
         metadata: ''
       });
       toast({
-        title: "Credential Issued",
-        description: "Credential has been issued successfully!",
+        title: "Credential Issued Successfully!",
+        description: `Transaction hash: ${result.transactionHash.slice(0, 10)}... | Credential ID: ${result.credentialId}`,
       });
     },
     onError: (error) => {
@@ -300,17 +348,12 @@ const IssuerDashboard = () => {
 
   const revokeCredentialMutation = useMutation({
     mutationFn: async (credentialId) => {
-      const response = await fetch(`/api/credentials/${credentialId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'revoked' })
-      });
-      
-      if (!response.ok) throw new Error('Failed to revoke credential');
-      return response.json();
+      // Use blockchain revocation instead of API
+      return await Web3Service.revokeCredential(credentialId);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/credentials/issuer'] });
+      // Refetch blockchain credentials instead of API
+      refetchCredentials();
       toast({
         title: "Credential Revoked",
         description: "Credential has been revoked successfully.",
@@ -325,13 +368,35 @@ const IssuerDashboard = () => {
     }
   });
 
-  const handleIssueCredential = (e) => {
+  const handleIssueCredential = async (e) => {
     e.preventDefault();
-    if (!issueForm.recipientDID || !issueForm.credentialType || !issueForm.credentialTitle) {
+    
+    // Validate required fields
+    if (!issueForm.recipientDID || !issueForm.credentialType || !issueForm.credentialTitle || !issueForm.recipientName) {
       toast({
         variant: "destructive",
         title: "Missing Information",
-        description: "Please fill in all required fields.",
+        description: "Please fill in all required fields including recipient name.",
+      });
+      return;
+    }
+
+    // Check wallet connection
+    if (!walletAddress) {
+      toast({
+        variant: "destructive",
+        title: "Wallet Not Connected",
+        description: "Please connect your MetaMask wallet first.",
+      });
+      return;
+    }
+
+    // Check if registered as issuer
+    if (!isBlockchainRegistered) {
+      toast({
+        variant: "destructive",
+        title: "Not Registered",
+        description: "Please register as an issuer on the blockchain first.",
       });
       return;
     }
@@ -343,6 +408,43 @@ const IssuerDashboard = () => {
     if (window.confirm('Are you sure you want to revoke this credential? This action cannot be undone.')) {
       revokeCredentialMutation.mutate(credentialId);
     }
+  };
+
+  const handleSearchByDID = () => {
+    if (didInput.trim()) {
+      setSearchTerm(didInput.trim());
+      toast({
+        title: "Searching...",
+        description: `Looking for credentials issued to ${didInput.trim()}`,
+      });
+    } else {
+      setSearchTerm('');
+      toast({
+        variant: "destructive",
+        title: "Invalid Input",
+        description: "Please enter a valid DID to search",
+      });
+    }
+  };
+
+  // Helper function to get valid recipient DIDs
+  const getValidRecipientDIDs = () => {
+    return [
+      { account: 'Account 2', did: 'did:ethr:0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC' },
+      { account: 'Account 3', did: 'did:ethr:0x90F79bf6EB2c4f870365E785982E1f101E93b906' },
+      { account: 'Account 4', did: 'did:ethr:0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65' },
+      { account: 'Account 5', did: 'did:ethr:0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc' },
+      { account: 'Account 6', did: 'did:ethr:0x976EA74026E726554dB657fA54763abd0C3a0aa9' },
+      { account: 'Account 7', did: 'did:ethr:0x14dC79964da2C08b23698B3D3cc7Ca32193d9955' }
+    ];
+  };
+
+  const copyDIDToClipboard = (did) => {
+    navigator.clipboard.writeText(did);
+    toast({
+      title: "DID Copied!",
+      description: "Recipient DID copied to clipboard.",
+    });
   };
 
   const getCredentialIcon = (type) => {
@@ -753,40 +855,81 @@ const IssuerDashboard = () => {
                     <h3 className="text-xl font-semibold text-white">Recipient Information</h3>
                   </div>
                   
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="group">
-                      <label className="block text-sm font-medium text-gray-300 mb-3 flex items-center">
-                        <span>Full Name</span>
-                        <span className="text-red-400 ml-1">*</span>
-                      </label>
-                      <div className="relative">
-                        <Input
-                          value={issueForm.recipientName}
-                          onChange={(e) => setIssueForm(prev => ({ ...prev, recipientName: e.target.value }))}
-                          placeholder="Enter recipient's full name"
-                          className="bg-gray-800/50 border-gray-600 text-white focus:ring-purple-500 focus:border-purple-500 pl-4 pr-4 py-3 rounded-xl transition-all duration-200 group-hover:border-purple-400"
-                          required
-                          data-testid="input-recipient-name"
-                        />
-                        <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-600/10 to-blue-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"></div>
+                  <div className="space-y-6">
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div className="group">
+                        <label className="block text-sm font-medium text-gray-300 mb-3 flex items-center">
+                          <span>Full Name</span>
+                          <span className="text-red-400 ml-1">*</span>
+                        </label>
+                        <div className="relative">
+                          <Input
+                            value={issueForm.recipientName}
+                            onChange={(e) => setIssueForm(prev => ({ ...prev, recipientName: e.target.value }))}
+                            placeholder="Enter recipient's full name"
+                            className="bg-gray-800/50 border-gray-600 text-white focus:ring-purple-500 focus:border-purple-500 pl-4 pr-4 py-3 rounded-xl transition-all duration-200 group-hover:border-purple-400"
+                            required
+                            data-testid="input-recipient-name"
+                          />
+                          <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-600/10 to-blue-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"></div>
+                        </div>
+                      </div>
+                      
+                      <div className="group">
+                        <label className="block text-sm font-medium text-gray-300 mb-3 flex items-center">
+                          <span>Recipient DID</span>
+                          <span className="text-red-400 ml-1">*</span>
+                        </label>
+                        <div className="relative">
+                          <Input
+                            value={issueForm.recipientDID}
+                            onChange={(e) => setIssueForm(prev => ({ ...prev, recipientDID: e.target.value }))}
+                            placeholder="did:ethr:0x..."
+                            className="bg-gray-800/50 border-gray-600 text-white focus:ring-purple-500 focus:border-purple-500 pl-4 pr-4 py-3 rounded-xl transition-all duration-200 group-hover:border-purple-400 font-mono text-sm"
+                            required
+                            data-testid="input-recipient-did"
+                          />
+                          <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-600/10 to-blue-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"></div>
+                        </div>
                       </div>
                     </div>
                     
-                    <div className="group">
-                      <label className="block text-sm font-medium text-gray-300 mb-3 flex items-center">
-                        <span>Recipient DID</span>
-                        <span className="text-red-400 ml-1">*</span>
-                      </label>
-                      <div className="relative">
-                        <Input
-                          value={issueForm.recipientDID}
-                          onChange={(e) => setIssueForm(prev => ({ ...prev, recipientDID: e.target.value }))}
-                          placeholder="did:ethr:0x..."
-                          className="bg-gray-800/50 border-gray-600 text-white focus:ring-purple-500 focus:border-purple-500 pl-4 pr-4 py-3 rounded-xl transition-all duration-200 group-hover:border-purple-400 font-mono text-sm"
-                          required
-                          data-testid="input-recipient-did"
-                        />
-                        <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-600/10 to-blue-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"></div>
+                    {/* Valid Recipients Helper - Moved outside grid */}
+                    <div className="p-4 bg-gray-800/30 rounded-xl border border-gray-600/50">
+                      <div className="flex items-center mb-3">
+                        <Users className="h-4 w-4 text-blue-400 mr-2" />
+                        <span className="text-sm font-medium text-gray-300">Valid Recipients (Accounts 2-7)</span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                        {getValidRecipientDIDs().map((recipient, index) => (
+                          <div key={index} className="flex items-center justify-between p-2 bg-gray-700/50 rounded-lg hover:bg-gray-700/70 transition-colors">
+                            <div className="flex flex-col min-w-0 flex-1">
+                              <span className="text-xs text-gray-400">{recipient.account}</span>
+                              <span className="text-xs font-mono text-gray-300 truncate">{recipient.did}</span>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setIssueForm(prev => ({ ...prev, recipientDID: recipient.did }));
+                                toast({
+                                  title: "DID Selected",
+                                  description: `Selected ${recipient.account} as recipient.`,
+                                });
+                              }}
+                              className="h-8 w-8 p-0 hover:bg-blue-600/20 text-blue-400 hover:text-blue-300 flex-shrink-0 ml-2"
+                            >
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-3 p-2 bg-yellow-900/20 rounded-lg border border-yellow-600/30">
+                        <div className="flex items-center">
+                          <AlertTriangle className="h-4 w-4 text-yellow-400 mr-2 flex-shrink-0" />
+                          <span className="text-xs text-yellow-300">Only accounts 2-7 can receive credentials. Accounts 0-1 cannot send to themselves or other accounts.</span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1003,79 +1146,157 @@ const IssuerDashboard = () => {
     </div>
   );
 
+  // Filter credentials based on search term and active filter
+  const filteredCredentials = issuedCredentials.filter(credential => {
+    // Search filter - prioritize DID search
+    const recipientDID = credential.userId ? `did:ethr:${credential.userId}` : '';
+    const matchesSearch = searchTerm === '' || 
+      recipientDID.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      credential.userId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      credential.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      credential.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      credential.metadata?.recipientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      credential.id.toString().includes(searchTerm);
+
+    // Category filter
+    let matchesFilter = true;
+    switch (activeFilter) {
+      case 'degrees':
+        matchesFilter = credential.type.toLowerCase().includes('degree');
+        break;
+      case 'certificates':
+        matchesFilter = credential.type.toLowerCase().includes('certificate');
+        break;
+      case 'active':
+        matchesFilter = credential.status === 'active';
+        break;
+      case 'revoked':
+        matchesFilter = credential.status === 'revoked';
+        break;
+      case 'thismonth':
+        const thisMonth = new Date();
+        const credentialDate = new Date(credential.issueDate);
+        matchesFilter = credentialDate.getMonth() === thisMonth.getMonth() && 
+                       credentialDate.getFullYear() === thisMonth.getFullYear();
+        break;
+      default:
+        matchesFilter = true;
+    }
+
+    return matchesSearch && matchesFilter;
+  });
+
   const renderIssued = () => (
-    <div className="p-6">
+    <div className="p-6 space-y-6">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-white mb-2">Issued Credentials</h1>
         <p className="text-gray-400">View and manage all credentials you've issued</p>
       </div>
 
-      {/* Filter and Search */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
-        <div className="flex space-x-4">
-          <Button className="px-4 py-2 bg-web3-purple bg-opacity-20 text-web3-purple rounded-lg font-medium">
-            All Credentials
+      {/* Filter Tabs */}
+      <div className="mb-6">
+        <div className="flex flex-wrap gap-2">
+          <Button 
+            onClick={() => setActiveFilter('all')}
+            className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+              activeFilter === 'all' 
+                ? 'bg-purple-600 bg-opacity-20 text-purple-400 border border-purple-500/30' 
+                : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
+            }`}
+          >
+            All Credentials ({issuedCredentials.length})
           </Button>
-          <Button variant="ghost" className="px-4 py-2 text-gray-400 hover:text-white">
-            Degrees
+          <Button 
+            onClick={() => setActiveFilter('degrees')}
+            variant="ghost" 
+            className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+              activeFilter === 'degrees' 
+                ? 'bg-blue-600 bg-opacity-20 text-blue-400 border border-blue-500/30' 
+                : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
+            }`}
+          >
+            Degrees ({issuedCredentials.filter(c => c.type.toLowerCase().includes('degree')).length})
           </Button>
-          <Button variant="ghost" className="px-4 py-2 text-gray-400 hover:text-white">
-            Certificates
+          <Button 
+            onClick={() => setActiveFilter('certificates')}
+            variant="ghost" 
+            className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+              activeFilter === 'certificates' 
+                ? 'bg-cyan-600 bg-opacity-20 text-cyan-400 border border-cyan-500/30' 
+                : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
+            }`}
+          >
+            Certificates ({issuedCredentials.filter(c => c.type.toLowerCase().includes('certificate')).length})
           </Button>
-          <Button variant="ghost" className="px-4 py-2 text-gray-400 hover:text-white">
-            Other
+          <Button 
+            onClick={() => setActiveFilter('active')}
+            variant="ghost" 
+            className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+              activeFilter === 'active' 
+                ? 'bg-green-600 bg-opacity-20 text-green-400 border border-green-500/30' 
+                : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
+            }`}
+          >
+            Active ({issuedCredentials.filter(c => c.status === 'active').length})
           </Button>
         </div>
-        <div className="relative flex-1 max-w-md">
+      </div>
+
+      {/* Search Section */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <h3 className="text-lg font-semibold text-white mb-2">Search by Recipient DID</h3>
+            <p className="text-gray-400 text-sm mb-4">Enter a recipient's DID to find all credentials issued to them</p>
+          </div>
+        </div>
+        
+        <div className="relative max-w-2xl">
           <div className="relative group">
             <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 via-blue-600/20 to-cyan-600/20 rounded-xl blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300"></div>
             <div className="relative flex items-center">
-              <div className="absolute left-4 z-10">
-                <div className="p-1 rounded-lg bg-purple-600/20 group-hover:bg-purple-600/30 transition-colors duration-200">
-                  <Eye className="h-4 w-4 text-purple-400 group-hover:text-purple-300" />
-                </div>
-              </div>
               <Input
-                placeholder="Search by credential ID, holder name, or type..."
-                className="bg-gray-800/80 backdrop-blur-sm border-purple-500/30 text-white pl-14 pr-12 py-3 rounded-xl focus:ring-2 focus:ring-purple-500/50 focus:border-purple-400 hover:border-purple-400/50 transition-all duration-200 placeholder:text-gray-500 group-hover:bg-gray-800/90"
-                data-testid="input-search-credentials"
+                value={didInput}
+                onChange={(e) => setDidInput(e.target.value)}
+                placeholder="Enter recipient DID (e.g., did:ethr:0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC)"
+                className="bg-gray-800/80 backdrop-blur-sm border-purple-500/30 text-white pl-4 pr-20 py-4 rounded-xl focus:ring-2 focus:ring-purple-500/50 focus:border-purple-400 hover:border-purple-400/50 transition-all duration-200 placeholder:text-gray-500 group-hover:bg-gray-800/90 text-sm"
+                data-testid="input-search-did"
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSearchByDID();
+                  }
+                }}
               />
-              <div className="absolute right-3 flex items-center space-x-2">
-                <div className="text-xs text-gray-500 hidden md:block">
-                  <kbd className="px-2 py-1 bg-gray-700/50 rounded text-xs border border-gray-600/50">⌘K</kbd>
-                </div>
+              <div className="absolute right-3">
                 <Button
                   size="sm"
-                  variant="ghost"
-                  className="h-6 w-6 p-0 text-gray-500 hover:text-purple-400 hover:bg-purple-500/10 transition-all duration-200"
+                  onClick={handleSearchByDID}
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-4 py-2 rounded-lg transition-all duration-200 shadow-lg hover:shadow-purple-500/25 flex items-center space-x-2"
+                  data-testid="button-search-did"
                 >
-                  <Zap className="h-3 w-3" />
+                  <Eye className="h-4 w-4" />
+                  <span className="text-sm font-medium">Search</span>
                 </Button>
               </div>
             </div>
           </div>
           
-          {/* Advanced Search Filters */}
-          <div className="absolute top-full left-0 right-0 mt-2 p-4 bg-gray-800/95 backdrop-blur-sm border border-purple-500/20 rounded-xl shadow-2xl opacity-0 invisible group-focus-within:opacity-100 group-focus-within:visible transition-all duration-300 z-50">
-            <div className="flex flex-wrap gap-2 mb-3">
-              <span className="text-xs text-gray-400 font-medium">Quick Filters:</span>
-              <button className="px-2 py-1 text-xs bg-purple-600/20 text-purple-300 rounded-md hover:bg-purple-600/30 transition-colors">
-                Active
-              </button>
-              <button className="px-2 py-1 text-xs bg-blue-600/20 text-blue-300 rounded-md hover:bg-blue-600/30 transition-colors">
-                This Month
-              </button>
-              <button className="px-2 py-1 text-xs bg-cyan-600/20 text-cyan-300 rounded-md hover:bg-cyan-600/30 transition-colors">
-                Degrees
-              </button>
-              <button className="px-2 py-1 text-xs bg-green-600/20 text-green-300 rounded-md hover:bg-green-600/30 transition-colors">
-                Certificates
-              </button>
+          {/* Clear Search Button */}
+          {searchTerm && (
+            <div className="mt-3">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setSearchTerm('');
+                  setDidInput('');
+                }}
+                className="border-gray-500/30 text-gray-400 hover:bg-gray-500/10 text-sm px-4 py-2 rounded-lg"
+              >
+                Clear Search
+              </Button>
             </div>
-            <div className="text-xs text-gray-500">
-              <span className="font-medium">Tips:</span> Use quotes for exact matches, type "status:active" for status filtering
-            </div>
-          </div>
+          )}
         </div>
       </div>
 
@@ -1101,6 +1322,34 @@ const IssuerDashboard = () => {
                 Issue First Credential
               </Button>
             </div>
+          ) : filteredCredentials.length === 0 ? (
+            <div className="text-center py-16">
+              <Eye className="h-16 w-16 text-gray-600 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-white mb-2">No Matching Credentials</h3>
+              <p className="text-gray-400 mb-6">
+                {searchTerm ? `No credentials found for "${searchTerm}"` : `No credentials match the selected filter`}
+              </p>
+              <div className="flex justify-center space-x-4">
+                {searchTerm && (
+                  <Button 
+                    onClick={() => setSearchTerm('')}
+                    variant="outline"
+                    className="border-purple-500/30 text-purple-400 hover:bg-purple-500/10"
+                  >
+                    Clear Search
+                  </Button>
+                )}
+                <Button 
+                  onClick={() => {
+                    setActiveFilter('all');
+                    setSearchTerm('');
+                  }}
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
+                >
+                  Show All Credentials
+                </Button>
+              </div>
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -1114,7 +1363,7 @@ const IssuerDashboard = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {issuedCredentials.map((credential, index) => {
+                  {filteredCredentials.map((credential, index) => {
                     const Icon = getCredentialIcon(credential.type);
                     return (
                       <tr key={credential.id} className="border-b border-gray-800 hover:bg-gray-800 hover:bg-opacity-50" data-testid={`credential-row-${index}`}>
@@ -1130,10 +1379,12 @@ const IssuerDashboard = () => {
                           </div>
                         </td>
                         <td className="py-4 px-6">
-                          <p className="text-white">{credential.metadata?.recipientName || 'Unknown'}</p>
-                          <p className="text-gray-400 text-sm font-mono">
-                            {credential.userId ? `User ID: ${credential.userId.slice(-6)}` : 'N/A'}
-                          </p>
+                          <div>
+                            <p className="text-white">{credential.metadata?.recipientName || 'Unknown'}</p>
+                            <p className="text-gray-400 text-sm font-mono">
+                              {credential.userId ? `did:ethr:${credential.userId}` : 'N/A'}
+                            </p>
+                          </div>
                         </td>
                         <td className="py-4 px-6 text-gray-400">
                           {new Date(credential.issueDate).toLocaleDateString()}

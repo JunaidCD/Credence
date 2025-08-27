@@ -101,9 +101,8 @@ The frontend Web3 service (`frontend/client/src/utils/web3.js`) connects directl
 ```bash
 # Compile contracts
 npm run compile
-
+       
 # Deploy to localhost
-npm run deploy:local
 
 # Start Hardhat node
 npm run node

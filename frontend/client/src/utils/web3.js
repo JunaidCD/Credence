@@ -134,8 +134,11 @@ class Web3Service {
 
   async registerAsIssuer(name, organization, email = '') {
     try {
-      if (!this.signer || !this.issuerRegistry) {
-        throw new Error('Wallet not connected or contracts not loaded');
+      if (!this.signer) {
+        throw new Error('Wallet not connected. Please connect your MetaMask wallet first.');
+      }
+      if (!this.issuerRegistry) {
+        throw new Error('Issuer Registry contract not loaded. Please ensure contracts are deployed.');
       }
 
       // Execute blockchain transaction directly
@@ -186,9 +189,15 @@ class Web3Service {
 
   async issueCredential(holderAddress, credentialType, data, expiresAt, ipfsHash = '') {
     try {
-      if (!this.signer || !this.credentialRegistry) {
-        throw new Error('Wallet not connected or contracts not loaded');
+      if (!this.signer) {
+        throw new Error('Wallet not connected. Please connect your MetaMask wallet first.');
       }
+      if (!this.credentialRegistry) {
+        throw new Error('Credential Registry contract not loaded. Please ensure contracts are deployed.');
+      }
+
+      // Validate recipient address restrictions
+      await this.validateCredentialRecipient(holderAddress);
 
       // Execute blockchain transaction directly
       const contract = this.credentialRegistry.connect(this.signer);
@@ -228,6 +237,43 @@ class Web3Service {
       console.error('Credential issuance failed:', error);
       throw error;
     }
+  }
+
+  async validateCredentialRecipient(recipientAddress) {
+    // Define allowed Hardhat accounts (accounts 2-7)
+    const allowedRecipients = [
+      '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC', // Account 2
+      '0x90F79bf6EB2c4f870365E785982E1f101E93b906', // Account 3
+      '0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65', // Account 4
+      '0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc', // Account 5
+      '0x976EA74026E726554dB657fA54763abd0C3a0aa9', // Account 6
+      '0x14dC79964da2C08b23698B3D3cc7Ca32193d9955'  // Account 7
+    ];
+
+    // Get current wallet address
+    const currentWallet = this.getAccount();
+    
+    // Check if current wallet is authorized issuer (accounts 0 or 1)
+    const authorizedIssuers = [
+      '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266', // Account 0
+      '0x70997970C51812dc3A010C7d01b50e0d17dc79C8'  // Account 1
+    ];
+
+    if (!authorizedIssuers.some(addr => addr.toLowerCase() === currentWallet.toLowerCase())) {
+      throw new Error('Only authorized issuer accounts (0 or 1) can issue credentials');
+    }
+
+    // Check if trying to send to self
+    if (currentWallet.toLowerCase() === recipientAddress.toLowerCase()) {
+      throw new Error('Cannot issue credentials to your own wallet address');
+    }
+
+    // Check if recipient is in allowed accounts (2-7)
+    if (!allowedRecipients.some(addr => addr.toLowerCase() === recipientAddress.toLowerCase())) {
+      throw new Error('Credentials can only be issued to accounts 2-7. Please use a valid recipient address.');
+    }
+
+    return true;
   }
 
   async getHolderCredentials(holderAddress = null) {
@@ -301,6 +347,33 @@ class Web3Service {
     } catch (error) {
       console.error('Failed to get issuer credentials:', error);
       return [];
+    }
+  }
+
+  async revokeCredential(credentialId) {
+    try {
+      if (!this.signer) {
+        throw new Error('Wallet not connected. Please connect your MetaMask wallet first.');
+      }
+      if (!this.credentialRegistry) {
+        throw new Error('Credential Registry contract not loaded. Please ensure contracts are deployed.');
+      }
+
+      // Execute blockchain transaction
+      const contract = this.credentialRegistry.connect(this.signer);
+      const tx = await contract.revokeCredential(credentialId);
+      
+      // Wait for transaction confirmation
+      const receipt = await tx.wait();
+      
+      return {
+        success: true,
+        transactionHash: receipt.hash,
+        blockNumber: receipt.blockNumber
+      };
+    } catch (error) {
+      console.error('Credential revocation failed:', error);
+      throw error;
     }
   }
 
