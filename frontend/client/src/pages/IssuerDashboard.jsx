@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import Web3Service from '@/utils/web3.js';
 import { 
   Award, 
   TrendingUp, 
@@ -30,7 +31,9 @@ import {
   Clock,
   CheckCircle,
   AlertCircle,
-  Star
+  Star,
+  Wallet,
+  Link
 } from 'lucide-react';
 
 const IssuerDashboard = () => {
@@ -39,6 +42,18 @@ const IssuerDashboard = () => {
   const [activeSection, setActiveSection] = useState('dashboard');
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Web3 states
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [walletConnected, setWalletConnected] = useState(false);
+  const [walletAddress, setWalletAddress] = useState('');
+  const [isBlockchainRegistered, setIsBlockchainRegistered] = useState(false);
+  const [registrationForm, setRegistrationForm] = useState({
+    name: user?.name || '',
+    organization: '',
+    email: user?.email || ''
+  });
 
   // Form states
   const [issueForm, setIssueForm] = useState({
@@ -57,6 +72,155 @@ const IssuerDashboard = () => {
       setLocation('/');
     }
   }, [isAuthenticated, user, setLocation]);
+
+  // Initialize Web3 and check connection status
+  useEffect(() => {
+    const initWeb3 = async () => {
+      try {
+        const initialized = await Web3Service.init();
+        if (initialized && Web3Service.isConnected()) {
+          setWalletConnected(true);
+          setWalletAddress(Web3Service.getAccount());
+          
+          // Check if user is registered as issuer on blockchain
+          const eligibility = await Web3Service.checkIssuerEligibility();
+          setIsBlockchainRegistered(eligibility.isRegistered);
+        }
+      } catch (error) {
+        console.error('Web3 initialization failed:', error);
+      }
+    };
+
+    if (user) {
+      initWeb3();
+    }
+  }, [user]);
+
+  // Listen for MetaMask account changes
+  useEffect(() => {
+    const handleAccountsChanged = async (accounts) => {
+      if (accounts.length > 0) {
+        const newAddress = accounts[0];
+        setWalletAddress(newAddress);
+        console.log('Account changed to:', newAddress);
+        
+        // Update Web3Service with new account
+        try {
+          const connection = await Web3Service.connectWallet();
+          setWalletAddress(connection.account);
+          
+          // Check eligibility with new account
+          const eligibility = await Web3Service.checkIssuerEligibility();
+          setIsBlockchainRegistered(eligibility.isRegistered);
+        } catch (error) {
+          console.error('Failed to update account:', error);
+        }
+      } else {
+        // No accounts connected
+        setWalletConnected(false);
+        setWalletAddress('');
+        setIsBlockchainRegistered(false);
+      }
+    };
+
+    if (typeof window.ethereum !== 'undefined') {
+      window.ethereum.on('accountsChanged', handleAccountsChanged);
+      
+      // Cleanup listener on unmount
+      return () => {
+        if (window.ethereum.removeListener) {
+          window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
+        }
+      };
+    }
+  }, []);
+
+  // Web3 Functions
+  const handleConnectWallet = async () => {
+    setIsConnecting(true);
+    try {
+      const connection = await Web3Service.connectWallet();
+      setWalletConnected(true);
+      setWalletAddress(connection.account);
+      
+      // Check eligibility after connection
+      const eligibility = await Web3Service.checkIssuerEligibility();
+      setIsBlockchainRegistered(eligibility.isRegistered);
+      
+      toast({
+        title: "Wallet Connected",
+        description: `Connected to ${connection.account.slice(0, 6)}...${connection.account.slice(-4)}`,
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Connection Failed",
+        description: error.message,
+      });
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
+  const handleRegisterIssuer = async () => {
+    if (!walletConnected) {
+      await handleConnectWallet();
+      return;
+    }
+
+    setIsRegistering(true);
+    try {
+      // Get current account directly from Web3Service
+      const currentAccount = Web3Service.getAccount();
+      
+      // Define allowed Hardhat accounts (accounts 0 and 1)
+      const ALLOWED_ACCOUNTS = [
+        '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266', // Account 0
+        '0x70997970C51812dc3A010C7d01b50e0d17dc79C8'  // Account 1
+      ];
+
+      console.log('Current wallet address from state:', walletAddress);
+      console.log('Current account from Web3Service:', currentAccount);
+      console.log('Allowed accounts:', ALLOWED_ACCOUNTS);
+
+      // Use the current account from Web3Service for comparison
+      const addressToCheck = currentAccount || walletAddress;
+      
+      // Check if current wallet address is allowed (case-insensitive comparison)
+      const isAllowed = ALLOWED_ACCOUNTS.some(addr => 
+        addr.toLowerCase() === addressToCheck.toLowerCase()
+      );
+
+      if (!isAllowed) {
+        throw new Error('Only Hardhat localhost accounts 0 and 1 are authorized to register as issuers. Please switch to an authorized account.');
+      }
+
+      console.log('Address is authorized, proceeding with registration...');
+
+      // Register on blockchain
+      const result = await Web3Service.registerAsIssuer(
+        registrationForm.name || user?.name || 'Default Issuer',
+        registrationForm.organization || 'Default Organization',
+        registrationForm.email || user?.email || ''
+      );
+      
+      setIsBlockchainRegistered(true);
+      
+      toast({
+        title: "Registration Successful",
+        description: "You have been successfully registered as an issuer on the blockchain!",
+      });
+    } catch (error) {
+      console.error('Registration error:', error);
+      toast({
+        variant: "destructive",
+        title: "Registration Failed",
+        description: error.message,
+      });
+    } finally {
+      setIsRegistering(false);
+    }
+  };
 
   // Queries
   const { data: issuedCredentials = [], isLoading: credentialsLoading } = useQuery({
@@ -270,14 +434,15 @@ const IssuerDashboard = () => {
                 <p className="text-gray-400 text-sm mb-3">Your unique decentralized identifier for credential issuance</p>
                 <div className="flex items-center space-x-3">
                   <code className="bg-gray-800/80 text-purple-300 px-4 py-2 rounded-lg font-mono text-sm border border-purple-500/20">
-                    {user?.did || 'did:ethr:0x' + (user?.id ? user.id.slice(-8) : '...')}
+                    {walletConnected && walletAddress ? `did:ethr:${walletAddress}` : 'did:ethr:0x...'}
                   </code>
                   <Button
                     size="sm"
                     variant="outline"
                     className="border-purple-500/30 text-purple-400 hover:bg-purple-500/10 hover:border-purple-400 transition-all duration-200"
                     onClick={() => {
-                      navigator.clipboard.writeText(user?.did || 'did:ethr:0x' + (user?.id ? user.id.slice(-8) : '...'));
+                      const didToCopy = walletConnected && walletAddress ? `did:ethr:${walletAddress}` : 'did:ethr:0x...';
+                      navigator.clipboard.writeText(didToCopy);
                       toast({
                         title: "DID Copied",
                         description: "Your DID has been copied to clipboard",
@@ -299,6 +464,40 @@ const IssuerDashboard = () => {
                   <Activity className="h-4 w-4" />
                   <span>Active Status</span>
                 </div>
+              </div>
+              
+              {/* Blockchain Registration Status */}
+              <div className="flex flex-col space-y-2">
+                {!walletConnected ? (
+                  <Button
+                    onClick={handleConnectWallet}
+                    disabled={isConnecting}
+                    className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-6 py-2 rounded-xl transition-all duration-300 flex items-center space-x-2"
+                  >
+                    <Wallet className="h-4 w-4" />
+                    <span>{isConnecting ? 'Connecting...' : 'Connect Wallet'}</span>
+                  </Button>
+                ) : !isBlockchainRegistered ? (
+                  <Button
+                    onClick={handleRegisterIssuer}
+                    disabled={isRegistering}
+                    className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-6 py-2 rounded-xl transition-all duration-300 flex items-center space-x-2"
+                  >
+                    <Link className="h-4 w-4" />
+                    <span>{isRegistering ? 'Registering...' : 'Register on Blockchain'}</span>
+                  </Button>
+                ) : (
+                  <div className="flex items-center space-x-2 text-green-400 text-sm">
+                    <CheckCircle className="h-4 w-4" />
+                    <span>Blockchain Registered</span>
+                  </div>
+                )}
+                
+                {walletConnected && (
+                  <div className="text-xs text-gray-400">
+                    Wallet: {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+                  </div>
+                )}
               </div>
             </div>
           </div>

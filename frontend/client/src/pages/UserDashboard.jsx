@@ -8,6 +8,9 @@ import CredentialCard from '@/components/CredentialCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import web3Service from '@/utils/web3.js';
 import { 
   Fingerprint, 
   Award, 
@@ -119,6 +122,18 @@ const UserDashboard = () => {
   const [selectedCredentials, setSelectedCredentials] = useState([]);
   const [filter, setFilter] = useState('all'); // all, expired, old
 
+  // Web3 and Issuer Registration state
+  const [walletConnected, setWalletConnected] = useState(false);
+  const [walletAddress, setWalletAddress] = useState('');
+  const [isEligibleIssuer, setIsEligibleIssuer] = useState(false);
+  const [isRegisteredIssuer, setIsRegisteredIssuer] = useState(false);
+  const [showRegistrationForm, setShowRegistrationForm] = useState(false);
+  const [registrationData, setRegistrationData] = useState({
+    name: '',
+    organization: '',
+    email: ''
+  });
+
   
   // Real-time clock
   useEffect(() => {
@@ -143,6 +158,98 @@ const UserDashboard = () => {
       setLocation('/');
     }
   }, [isAuthenticated, user, setLocation]);
+
+  // Initialize Web3 service
+  useEffect(() => {
+    const initWeb3 = async () => {
+      try {
+        await web3Service.init();
+        
+        // Check if wallet is already connected
+        if (typeof window.ethereum !== 'undefined') {
+          const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+          if (accounts.length > 0) {
+            setWalletAddress(accounts[0]);
+            setWalletConnected(true);
+            await checkIssuerStatus(accounts[0]);
+          }
+        }
+      } catch (error) {
+        console.error('Web3 initialization failed:', error);
+      }
+    };
+
+    initWeb3();
+  }, []);
+
+  // Check issuer eligibility and registration status
+  const checkIssuerStatus = async (address) => {
+    try {
+      const eligibility = await web3Service.checkIssuerEligibility(address);
+      setIsEligibleIssuer(eligibility.isAllowed);
+      setIsRegisteredIssuer(eligibility.isRegistered);
+    } catch (error) {
+      console.error('Failed to check issuer status:', error);
+    }
+  };
+
+  // Connect MetaMask wallet
+  const connectWallet = async () => {
+    try {
+      const connection = await web3Service.connectWallet();
+      setWalletAddress(connection.account);
+      setWalletConnected(true);
+      await checkIssuerStatus(connection.account);
+      
+      toast({
+        title: "Wallet Connected! 🎉",
+        description: `Connected to ${connection.account.slice(0, 6)}...${connection.account.slice(-4)}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Connection Failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Register as issuer
+  const registerAsIssuer = async () => {
+    try {
+      if (!registrationData.name || !registrationData.organization) {
+        toast({
+          title: "Validation Error",
+          description: "Please fill in all required fields",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const result = await web3Service.registerAsIssuer(
+        registrationData.name,
+        registrationData.organization,
+        registrationData.email
+      );
+
+      if (result.success) {
+        setIsRegisteredIssuer(true);
+        setShowRegistrationForm(false);
+        setRegistrationData({ name: '', organization: '', email: '' });
+        
+        toast({
+          title: "Registration Successful! 🎉",
+          description: "You are now registered as an issuer on the blockchain",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Registration Failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
 
   // Queries - User-specific data
   const { data: myCredentials = [], isLoading: credentialsLoading } = useQuery({
@@ -299,21 +406,132 @@ const UserDashboard = () => {
                 </div>
               </div>
             </div>
-            <div className="hidden md:flex items-center space-x-4">
-              <div className="text-right">
-                <div className="flex items-center space-x-2 text-green-400 text-sm mb-1">
-                  <CheckCircle className="h-4 w-4" />
-                  <span>Verified User</span>
-                </div>
-                <div className="flex items-center space-x-2 text-blue-400 text-sm">
-                  <Activity className="h-4 w-4" />
-                  <span>Active Status</span>
-                </div>
+            
+            {/* MetaMask Connection & Issuer Registration Section */}
+            <div className="flex items-center space-x-4">
+              <div className="p-4 rounded-xl bg-gradient-to-br from-blue-600/20 to-cyan-600/20 backdrop-blur-sm">
+                <Wallet className="h-8 w-8 text-blue-400" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-xl font-bold text-white mb-2">Blockchain Connection</h3>
+                <p className="text-gray-400 text-sm mb-3">Connect your MetaMask wallet to register as an issuer</p>
+                
+                {!walletConnected ? (
+                  <Button
+                    onClick={connectWallet}
+                    className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white px-6 py-2 rounded-lg font-semibold flex items-center space-x-2 transition-all duration-200"
+                  >
+                    <Wallet className="h-4 w-4" />
+                    <span>Connect MetaMask</span>
+                  </Button>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-3">
+                      <div className="flex items-center space-x-2 bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-sm">
+                        <CheckCircle className="h-4 w-4" />
+                        <span>Connected</span>
+                      </div>
+                      <code className="bg-gray-800/80 text-blue-300 px-3 py-1 rounded-lg font-mono text-sm">
+                        {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+                      </code>
+                    </div>
+                    
+                    {isEligibleIssuer && !isRegisteredIssuer && (
+                      <Button
+                        onClick={() => setShowRegistrationForm(true)}
+                        className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-6 py-2 rounded-lg font-semibold flex items-center space-x-2 transition-all duration-200"
+                      >
+                        <Plus className="h-4 w-4" />
+                        <span>Register as Issuer</span>
+                      </Button>
+                    )}
+                    
+                    {isRegisteredIssuer && (
+                      <div className="flex items-center space-x-2 bg-purple-500/20 text-purple-400 px-3 py-1 rounded-full text-sm">
+                        <Award className="h-4 w-4" />
+                        <span>Registered Issuer</span>
+                      </div>
+                    )}
+                    
+                    {!isEligibleIssuer && (
+                      <div className="flex items-center space-x-2 bg-yellow-500/20 text-yellow-400 px-3 py-1 rounded-full text-sm">
+                        <ShieldX className="h-4 w-4" />
+                        <span>Not eligible (Use Hardhat accounts 0 or 1)</span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* Issuer Registration Form Modal */}
+      {showRegistrationForm && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md credential-card">
+            <CardHeader>
+              <CardTitle className="text-xl font-bold text-white flex items-center">
+                <Award className="mr-2 h-5 w-5 text-purple-400" />
+                Register as Issuer
+              </CardTitle>
+              <p className="text-gray-400 text-sm">Register your account as a credential issuer on the blockchain</p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="issuer-name" className="text-gray-300">Name *</Label>
+                <Input
+                  id="issuer-name"
+                  value={registrationData.name}
+                  onChange={(e) => setRegistrationData(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="Your full name"
+                  className="bg-gray-800/50 border-gray-600 text-white"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="issuer-org" className="text-gray-300">Organization *</Label>
+                <Input
+                  id="issuer-org"
+                  value={registrationData.organization}
+                  onChange={(e) => setRegistrationData(prev => ({ ...prev, organization: e.target.value }))}
+                  placeholder="Your organization or institution"
+                  className="bg-gray-800/50 border-gray-600 text-white"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="issuer-email" className="text-gray-300">Email (Optional)</Label>
+                <Input
+                  id="issuer-email"
+                  type="email"
+                  value={registrationData.email}
+                  onChange={(e) => setRegistrationData(prev => ({ ...prev, email: e.target.value }))}
+                  placeholder="your.email@example.com"
+                  className="bg-gray-800/50 border-gray-600 text-white"
+                />
+              </div>
+              
+              <div className="flex space-x-3 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowRegistrationForm(false)}
+                  className="flex-1 border-gray-600 text-gray-300 hover:bg-gray-800"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={registerAsIssuer}
+                  className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
+                >
+                  Register
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Enhanced Quick Stats with Animations */}
       <div className="grid md:grid-cols-3 gap-6">
