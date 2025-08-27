@@ -696,20 +696,6 @@ const IssuerDashboard = () => {
                       </div>
                     </div>
 
-                    <div className="group">
-                      <label className="block text-sm font-medium text-gray-300 mb-3">Additional Metadata (JSON)</label>
-                      <div className="relative">
-                        <Textarea
-                          value={issueForm.metadata}
-                          onChange={(e) => setIssueForm(prev => ({ ...prev, metadata: e.target.value }))}
-                          rows={4}
-                          placeholder='{"field_of_study": "Computer Science", "university": "Stanford University", "honors": ["Summa Cum Laude"]}'
-                          className="bg-gray-800/50 border-gray-600 text-white focus:ring-purple-500 focus:border-purple-500 font-mono text-sm p-4 rounded-xl transition-all duration-200 group-hover:border-purple-400"
-                          data-testid="textarea-metadata"
-                        />
-                        <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-600/10 to-blue-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"></div>
-                      </div>
-                    </div>
                   </div>
                 </div>
 
