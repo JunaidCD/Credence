@@ -122,15 +122,14 @@ const UserDashboard = () => {
   const [selectedCredentials, setSelectedCredentials] = useState([]);
   const [filter, setFilter] = useState('all'); // all, expired, old
 
-  // Web3 and Issuer Registration state
+  // Web3 and User Registration state
   const [walletConnected, setWalletConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState('');
-  const [isEligibleIssuer, setIsEligibleIssuer] = useState(false);
-  const [isRegisteredIssuer, setIsRegisteredIssuer] = useState(false);
-  const [showRegistrationForm, setShowRegistrationForm] = useState(false);
-  const [registrationData, setRegistrationData] = useState({
+  const [isEligibleUser, setIsEligibleUser] = useState(false);
+  const [isRegisteredUser, setIsRegisteredUser] = useState(false);
+  const [showUserRegistrationForm, setShowUserRegistrationForm] = useState(false);
+  const [userRegistrationData, setUserRegistrationData] = useState({
     name: '',
-    organization: '',
     email: ''
   });
 
@@ -171,7 +170,7 @@ const UserDashboard = () => {
           if (accounts.length > 0) {
             setWalletAddress(accounts[0]);
             setWalletConnected(true);
-            await checkIssuerStatus(accounts[0]);
+            await checkUserStatus(accounts[0]);
           }
         }
       } catch (error) {
@@ -182,14 +181,19 @@ const UserDashboard = () => {
     initWeb3();
   }, []);
 
-  // Check issuer eligibility and registration status
-  const checkIssuerStatus = async (address) => {
+  // Check user eligibility and registration status
+  const checkUserStatus = async (address) => {
     try {
-      const eligibility = await web3Service.checkIssuerEligibility(address);
-      setIsEligibleIssuer(eligibility.isAllowed);
-      setIsRegisteredIssuer(eligibility.isRegistered);
+      // Check if user is eligible (accounts 2-7)
+      const isEligible = await web3Service.validateUserRegistration(address);
+      setIsEligibleUser(isEligible);
+      
+      // Check if user is already registered in the system
+      const existingUser = await fetch(`/api/users/address/${address}`);
+      setIsRegisteredUser(existingUser.ok);
     } catch (error) {
-      console.error('Failed to check issuer status:', error);
+      console.error('Failed to check user status:', error);
+      setIsEligibleUser(false);
     }
   };
 
@@ -199,7 +203,7 @@ const UserDashboard = () => {
       const connection = await web3Service.connectWallet();
       setWalletAddress(connection.account);
       setWalletConnected(true);
-      await checkIssuerStatus(connection.account);
+      await checkUserStatus(connection.account);
       
       toast({
         title: "Wallet Connected! 🎉",
@@ -214,33 +218,50 @@ const UserDashboard = () => {
     }
   };
 
-  // Register as issuer
-  const registerAsIssuer = async () => {
+  // Register as user
+  const registerAsUser = async () => {
     try {
-      if (!registrationData.name || !registrationData.organization) {
+      if (!userRegistrationData.name) {
         toast({
           title: "Validation Error",
-          description: "Please fill in all required fields",
+          description: "Please fill in your name",
           variant: "destructive"
         });
         return;
       }
 
-      const result = await web3Service.registerAsIssuer(
-        registrationData.name,
-        registrationData.organization,
-        registrationData.email
+      // Sign transaction with MetaMask
+      const result = await web3Service.registerUser(
+        userRegistrationData.name,
+        userRegistrationData.email
       );
 
       if (result.success) {
-        setIsRegisteredIssuer(true);
-        setShowRegistrationForm(false);
-        setRegistrationData({ name: '', organization: '', email: '' });
-        
-        toast({
-          title: "Registration Successful! 🎉",
-          description: "You are now registered as an issuer on the blockchain",
+        // Register user in the backend system
+        const response = await fetch('/api/auth/connect', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            address: result.address,
+            userType: 'user',
+            name: userRegistrationData.name,
+            email: userRegistrationData.email,
+            signature: result.signature
+          })
         });
+
+        if (response.ok) {
+          setIsRegisteredUser(true);
+          setShowUserRegistrationForm(false);
+          setUserRegistrationData({ name: '', email: '' });
+          
+          toast({
+            title: "Registration Successful! 🎉",
+            description: "You are now registered as a user. You can now view your credentials!",
+          });
+        } else {
+          throw new Error('Failed to register user in system');
+        }
       }
     } catch (error) {
       toast({
@@ -253,7 +274,13 @@ const UserDashboard = () => {
 
   // Queries - User-specific data
   const { data: myCredentials = [], isLoading: credentialsLoading } = useQuery({
-    queryKey: ['/api/credentials/user', user?.id],
+    queryKey: [`/api/credentials/user/${user?.id}`],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const response = await fetch(`/api/credentials/user/${user.id}`);
+      if (!response.ok) throw new Error('Failed to fetch credentials');
+      return response.json();
+    },
     enabled: !!user?.id,
   });
 
@@ -407,14 +434,14 @@ const UserDashboard = () => {
               </div>
             </div>
             
-            {/* MetaMask Connection & Issuer Registration Section */}
+            {/* MetaMask Connection & User Registration Section */}
             <div className="flex items-center space-x-4">
               <div className="p-4 rounded-xl bg-gradient-to-br from-blue-600/20 to-cyan-600/20 backdrop-blur-sm">
                 <Wallet className="h-8 w-8 text-blue-400" />
               </div>
               <div className="flex-1">
-                <h3 className="text-xl font-bold text-white mb-2">Blockchain Connection</h3>
-                <p className="text-gray-400 text-sm mb-3">Connect your MetaMask wallet to register as an issuer</p>
+                <h3 className="text-xl font-bold text-white mb-2">User Registration</h3>
+                <p className="text-gray-400 text-sm mb-3">Connect MetaMask wallet (accounts 2-7) and sign transaction to register</p>
                 
                 {!walletConnected ? (
                   <Button
@@ -436,27 +463,27 @@ const UserDashboard = () => {
                       </code>
                     </div>
                     
-                    {isEligibleIssuer && !isRegisteredIssuer && (
+                    {isEligibleUser && !isRegisteredUser && (
                       <Button
-                        onClick={() => setShowRegistrationForm(true)}
+                        onClick={() => setShowUserRegistrationForm(true)}
                         className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-6 py-2 rounded-lg font-semibold flex items-center space-x-2 transition-all duration-200"
                       >
-                        <Plus className="h-4 w-4" />
-                        <span>Register as Issuer</span>
+                        <User className="h-4 w-4" />
+                        <span>Register as User</span>
                       </Button>
                     )}
                     
-                    {isRegisteredIssuer && (
-                      <div className="flex items-center space-x-2 bg-purple-500/20 text-purple-400 px-3 py-1 rounded-full text-sm">
-                        <Award className="h-4 w-4" />
-                        <span>Registered Issuer</span>
+                    {isRegisteredUser && (
+                      <div className="flex items-center space-x-2 bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-sm">
+                        <CheckCircle className="h-4 w-4" />
+                        <span>Registered User</span>
                       </div>
                     )}
                     
-                    {!isEligibleIssuer && (
-                      <div className="flex items-center space-x-2 bg-yellow-500/20 text-yellow-400 px-3 py-1 rounded-full text-sm">
+                    {!isEligibleUser && (
+                      <div className="flex items-center space-x-2 bg-red-500/20 text-red-400 px-3 py-1 rounded-full text-sm">
                         <ShieldX className="h-4 w-4" />
-                        <span>Not eligible (Use Hardhat accounts 0 or 1)</span>
+                        <span>Not eligible (Use accounts 2-7 only)</span>
                       </div>
                     )}
                   </div>
@@ -467,65 +494,61 @@ const UserDashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Issuer Registration Form Modal */}
-      {showRegistrationForm && (
+      {/* User Registration Form Modal */}
+      {showUserRegistrationForm && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <Card className="w-full max-w-md credential-card">
             <CardHeader>
               <CardTitle className="text-xl font-bold text-white flex items-center">
-                <Award className="mr-2 h-5 w-5 text-purple-400" />
-                Register as Issuer
+                <User className="mr-2 h-5 w-5 text-blue-400" />
+                Register as User
               </CardTitle>
-              <p className="text-gray-400 text-sm">Register your account as a credential issuer on the blockchain</p>
+              <p className="text-gray-400 text-sm">Sign a transaction with MetaMask to register as a user</p>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="issuer-name" className="text-gray-300">Name *</Label>
+                <Label htmlFor="user-name" className="text-gray-300">Name *</Label>
                 <Input
-                  id="issuer-name"
-                  value={registrationData.name}
-                  onChange={(e) => setRegistrationData(prev => ({ ...prev, name: e.target.value }))}
+                  id="user-name"
+                  value={userRegistrationData.name}
+                  onChange={(e) => setUserRegistrationData(prev => ({ ...prev, name: e.target.value }))}
                   placeholder="Your full name"
                   className="bg-gray-800/50 border-gray-600 text-white"
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="issuer-org" className="text-gray-300">Organization *</Label>
+                <Label htmlFor="user-email" className="text-gray-300">Email (Optional)</Label>
                 <Input
-                  id="issuer-org"
-                  value={registrationData.organization}
-                  onChange={(e) => setRegistrationData(prev => ({ ...prev, organization: e.target.value }))}
-                  placeholder="Your organization or institution"
-                  className="bg-gray-800/50 border-gray-600 text-white"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="issuer-email" className="text-gray-300">Email (Optional)</Label>
-                <Input
-                  id="issuer-email"
+                  id="user-email"
                   type="email"
-                  value={registrationData.email}
-                  onChange={(e) => setRegistrationData(prev => ({ ...prev, email: e.target.value }))}
+                  value={userRegistrationData.email}
+                  onChange={(e) => setUserRegistrationData(prev => ({ ...prev, email: e.target.value }))}
                   placeholder="your.email@example.com"
                   className="bg-gray-800/50 border-gray-600 text-white"
                 />
               </div>
               
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
+                <p className="text-blue-400 text-sm flex items-center">
+                  <Wallet className="h-4 w-4 mr-2" />
+                  You will be asked to sign a transaction with MetaMask to complete registration
+                </p>
+              </div>
+              
               <div className="flex space-x-3 pt-4">
                 <Button
                   variant="outline"
-                  onClick={() => setShowRegistrationForm(false)}
+                  onClick={() => setShowUserRegistrationForm(false)}
                   className="flex-1 border-gray-600 text-gray-300 hover:bg-gray-800"
                 >
                   Cancel
                 </Button>
                 <Button
-                  onClick={registerAsIssuer}
-                  className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
+                  onClick={registerAsUser}
+                  className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
                 >
-                  Register
+                  Sign & Register
                 </Button>
               </div>
             </CardContent>
@@ -734,27 +757,199 @@ const UserDashboard = () => {
     </div>
   );
 
-  const renderCredentials = () => (
-    <div className="p-6 min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-blue-900/20">
-      {/* Enhanced Header */}
-      <div className="mb-10 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 via-blue-600/20 to-cyan-600/20 rounded-3xl blur-xl"></div>
-        <div className="relative bg-gradient-to-r from-gray-800/80 to-gray-900/80 backdrop-blur-sm rounded-3xl p-8 border border-purple-500/30">
-          <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 via-blue-400 to-cyan-400 bg-clip-text text-transparent mb-3">My Credentials ✨</h1>
-            <p className="text-gray-300 text-lg">View and manage your verifiable credentials</p>
-            <div className="flex items-center mt-4 space-x-4">
-              <div className="flex items-center text-blue-400">
-                <div className="w-2 h-2 bg-blue-400 rounded-full mr-2"></div>
-                <span className="text-sm">Credential Vault</span>
+  const renderCredentials = () => {
+    // Check if user is registered before showing credentials
+    if (!isRegisteredUser) {
+      return (
+        <div className="p-6 min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-blue-900/20">
+          <div className="max-w-4xl mx-auto">
+            {/* Welcome Header */}
+            <div className="text-center mb-12">
+              <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-purple-500 via-blue-500 to-cyan-500 rounded-full mb-6 shadow-2xl">
+                <Sparkles className="h-12 w-12 text-white" />
               </div>
-              <div className="text-gray-400 text-sm">
-                {myCredentials.length} {myCredentials.length === 1 ? 'Credential' : 'Credentials'} Stored
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 via-blue-400 to-cyan-400 bg-clip-text text-transparent mb-4">
+                Welcome to Your Digital Identity
+              </h1>
+              <p className="text-xl text-gray-300 max-w-2xl mx-auto leading-relaxed">
+                Get started with Credence to securely manage and share your verifiable credentials. 
+                Connect your wallet to unlock the full potential of decentralized identity.
+              </p>
+            </div>
+
+            {/* Onboarding Steps */}
+            <div className="grid md:grid-cols-3 gap-8 mb-12">
+              <Card className="glass-effect group relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 to-blue-800/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <CardContent className="p-8 relative z-10 text-center">
+                  <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+                    <Wallet className="h-8 w-8 text-white" />
+                  </div>
+                  <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold mx-auto mb-4">1</div>
+                  <h3 className="text-xl font-bold text-white mb-3">Connect Wallet</h3>
+                  <p className="text-gray-400 leading-relaxed">
+                    Connect your MetaMask wallet to get started. Make sure you're using accounts 2-7 for user registration.
+                  </p>
+                  {!walletConnected && (
+                    <Button
+                      onClick={connectWallet}
+                      className="mt-6 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-2 rounded-lg font-semibold transition-all duration-200"
+                    >
+                      <Wallet className="h-4 w-4 mr-2" />
+                      Connect MetaMask
+                    </Button>
+                  )}
+                  {walletConnected && (
+                    <div className="mt-6 flex items-center justify-center space-x-2 bg-green-500/20 text-green-400 px-4 py-2 rounded-full text-sm">
+                      <CheckCircle className="h-4 w-4" />
+                      <span>Connected</span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="glass-effect group relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-600/10 to-purple-800/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <CardContent className="p-8 relative z-10 text-center">
+                  <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+                    <User className="h-8 w-8 text-white" />
+                  </div>
+                  <div className="w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center text-sm font-bold mx-auto mb-4">2</div>
+                  <h3 className="text-xl font-bold text-white mb-3">Register Account</h3>
+                  <p className="text-gray-400 leading-relaxed">
+                    Sign a secure transaction to register your account and create your decentralized identity.
+                  </p>
+                  {walletConnected && isEligibleUser && !isRegisteredUser && (
+                    <Button
+                      onClick={() => setShowUserRegistrationForm(true)}
+                      className="mt-6 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-6 py-2 rounded-lg font-semibold transition-all duration-200"
+                    >
+                      <User className="h-4 w-4 mr-2" />
+                      Register Now
+                    </Button>
+                  )}
+                  {isRegisteredUser && (
+                    <div className="mt-6 flex items-center justify-center space-x-2 bg-green-500/20 text-green-400 px-4 py-2 rounded-full text-sm">
+                      <CheckCircle className="h-4 w-4" />
+                      <span>Registered</span>
+                    </div>
+                  )}
+                  {walletConnected && !isEligibleUser && (
+                    <div className="mt-6 flex items-center justify-center space-x-2 bg-orange-500/20 text-orange-400 px-4 py-2 rounded-full text-sm">
+                      <ShieldX className="h-4 w-4" />
+                      <span>Use accounts 2-7</span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="glass-effect group relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-cyan-600/10 to-cyan-800/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <CardContent className="p-8 relative z-10 text-center">
+                  <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+                    <Award className="h-8 w-8 text-white" />
+                  </div>
+                  <div className="w-8 h-8 bg-cyan-600 text-white rounded-full flex items-center justify-center text-sm font-bold mx-auto mb-4">3</div>
+                  <h3 className="text-xl font-bold text-white mb-3">Access Credentials</h3>
+                  <p className="text-gray-400 leading-relaxed">
+                    Once registered, you'll have full access to view, manage, and share your verifiable credentials.
+                  </p>
+                  <div className="mt-6 flex items-center justify-center space-x-2 bg-gray-500/20 text-gray-400 px-4 py-2 rounded-full text-sm">
+                    <Clock className="h-4 w-4" />
+                    <span>Complete steps 1 & 2</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Features Preview */}
+            <Card className="glass-effect mb-8">
+              <CardContent className="p-8">
+                <div className="text-center mb-8">
+                  <h2 className="text-2xl font-bold text-white mb-4">What You'll Get Access To</h2>
+                  <p className="text-gray-400">Powerful features to manage your digital identity</p>
+                </div>
+                <div className="grid md:grid-cols-3 gap-6">
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center mx-auto mb-4">
+                      <Shield className="h-6 w-6 text-white" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-white mb-2">Secure Storage</h3>
+                    <p className="text-gray-400 text-sm">Your credentials are stored securely on the blockchain</p>
+                  </div>
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mx-auto mb-4">
+                      <Globe className="h-6 w-6 text-white" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-white mb-2">Global Access</h3>
+                    <p className="text-gray-400 text-sm">Access your credentials from anywhere in the world</p>
+                  </div>
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center mx-auto mb-4">
+                      <Zap className="h-6 w-6 text-white" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-white mb-2">Instant Verification</h3>
+                    <p className="text-gray-400 text-sm">Share and verify credentials instantly with anyone</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Help Section */}
+            <div className="text-center">
+              <p className="text-gray-400 mb-4">Need help getting started?</p>
+              <div className="flex justify-center space-x-4">
+                <Button 
+                  variant="outline"
+                  onClick={() => setActiveSection('dashboard')}
+                  className="border-gray-600 text-gray-300 hover:bg-gray-800"
+                >
+                  Back to Dashboard
+                </Button>
+                <Button 
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
+                  onClick={() => {
+                    if (!walletConnected) {
+                      connectWallet();
+                    } else if (isEligibleUser && !isRegisteredUser) {
+                      setShowUserRegistrationForm(true);
+                    }
+                  }}
+                >
+                  {!walletConnected ? 'Get Started' : isEligibleUser && !isRegisteredUser ? 'Complete Registration' : 'Continue'}
+                </Button>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      );
+    }
+
+    return (
+      <div className="p-6 min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-blue-900/20">
+        {/* Enhanced Header */}
+        <div className="mb-10 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 via-blue-600/20 to-cyan-600/20 rounded-3xl blur-xl"></div>
+          <div className="relative bg-gradient-to-r from-gray-800/80 to-gray-900/80 backdrop-blur-sm rounded-3xl p-8 border border-purple-500/30">
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 via-blue-400 to-cyan-400 bg-clip-text text-transparent mb-3">My Credentials ✨</h1>
+              <p className="text-gray-300 text-lg">View and manage your verifiable credentials issued by authorized issuers</p>
+              <div className="flex items-center mt-4 space-x-4">
+                <div className="flex items-center text-blue-400">
+                  <div className="w-2 h-2 bg-blue-400 rounded-full mr-2"></div>
+                  <span className="text-sm">Credential Vault</span>
+                </div>
+                <div className="text-gray-400 text-sm">
+                  {myCredentials.length} {myCredentials.length === 1 ? 'Credential' : 'Credentials'} Stored
+                </div>
+                <div className="flex items-center text-green-400">
+                  <CheckCircle className="w-4 h-4 mr-1" />
+                  <span className="text-sm">Registered User</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
       {credentialsLoading ? (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -859,8 +1054,11 @@ const UserDashboard = () => {
                 
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-xl font-bold text-white mb-2">{credential.type || 'Digital Certificate'}</h3>
-                    <p className="text-gray-300 text-sm">Issued by: <span className="font-semibold">{credential.issuerName || 'Unknown Issuer'}</span></p>
+                    <h3 className="text-xl font-bold text-white mb-2">{credential.title || credential.type || 'Digital Certificate'}</h3>
+                    <p className="text-gray-300 text-sm">Issued by: <span className="font-semibold">{credential.metadata?.issuerName || 'Unknown Issuer'}</span></p>
+                    {credential.metadata?.collegeName && (
+                      <p className="text-gray-400 text-xs mt-1">Institution: {credential.metadata.collegeName}</p>
+                    )}
                   </div>
                   
                   <div className="space-y-2">
@@ -870,12 +1068,24 @@ const UserDashboard = () => {
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-400">Issue Date:</span>
-                      <span className="text-gray-300">{new Date(credential.issuedAt || Date.now()).toLocaleDateString()}</span>
+                      <span className="text-gray-300">{new Date(credential.issueDate || credential.createdAt || Date.now()).toLocaleDateString()}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-400">Expiry Date:</span>
                       <span className="text-gray-300">{credential.expiryDate ? new Date(credential.expiryDate).toLocaleDateString() : 'No Expiry'}</span>
                     </div>
+                    {credential.metadata?.gpa && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-400">GPA:</span>
+                        <span className="text-gray-300 font-semibold">{credential.metadata.gpa}/10</span>
+                      </div>
+                    )}
+                    {credential.metadata?.stream && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-400">Stream:</span>
+                        <span className="text-gray-300">{credential.metadata.stream}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
                 
@@ -905,7 +1115,8 @@ const UserDashboard = () => {
         </div>
       )}
     </div>
-  );
+    );
+  };
 
   const renderNotifications = () => {
     return (
@@ -1217,9 +1428,9 @@ const UserDashboard = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-blue-900/20">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-blue-900/20">
       <UserSidebar activeSection={activeSection} onSectionChange={setActiveSection} />
-      <div className="flex-1">
+      <div className="ml-64">
         {activeSection === 'dashboard' && renderDashboard()}
         {activeSection === 'credentials' && renderCredentials()}
         {activeSection === 'notifications' && renderNotifications()}

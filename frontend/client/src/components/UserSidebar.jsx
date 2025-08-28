@@ -26,7 +26,7 @@ const UserSidebar = ({ activeSection, onSectionChange }) => {
   ];
 
   return (
-    <div className="w-64 glass-effect border-r border-gray-800 flex-shrink-0 h-screen">
+    <div className="w-64 glass-effect border-r border-gray-800 flex-shrink-0 h-screen fixed left-0 top-0 overflow-y-auto">
       <div className="p-6">
         {/* User Profile */}
         <div className="flex items-center mb-8">

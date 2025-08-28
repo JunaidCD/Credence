@@ -65,11 +65,17 @@ const CredentialForm = ({ isOpen, onClose }) => {
       if (!response.ok) throw new Error('Failed to create credential');
       return response.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/credentials/user'] });
+    onSuccess: (data) => {
+      // Invalidate queries for both the issuer and the credential recipient
+      queryClient.invalidateQueries({ queryKey: [`/api/credentials/user/${user?.id}`] });
+      if (data.userId !== user?.id) {
+        queryClient.invalidateQueries({ queryKey: [`/api/credentials/user/${data.userId}`] });
+      }
+      queryClient.invalidateQueries({ queryKey: [`/api/credentials/issuer/${user?.id}`] });
+      
       toast({
         title: "Credential Created! 🎉",
-        description: "Your academic credential has been successfully added to your profile.",
+        description: "The academic credential has been successfully issued and will appear in the recipient's credentials.",
       });
       onClose();
       setFormData({
@@ -129,7 +135,7 @@ const CredentialForm = ({ isOpen, onClose }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!validateForm()) {
@@ -141,24 +147,45 @@ const CredentialForm = ({ isOpen, onClose }) => {
       return;
     }
 
-    const credentialData = {
-      type: 'Academic Credential',
-      data: {
-        collegeName: formData.collegeName,
-        studentName: formData.studentName,
-        rollNumber: formData.rollNo,
-        gpa: parseFloat(formData.gpa),
-        stream: formData.stream,
-        character: formData.character,
-        studentDid: formData.studentDid,
-        additionalNotes: formData.additionalNotes,
-        issuedAt: new Date().toISOString(),
-        issuer: 'Self-Attested'
-      },
-      userId: user?.id
-    };
+    try {
+      // Find the user by DID to get their userId
+      const targetUserResponse = await fetch(`/api/users/did/${formData.studentDid}`);
+      let targetUserId = user?.id; // Default to current user
+      
+      if (targetUserResponse.ok) {
+        const targetUser = await targetUserResponse.json();
+        targetUserId = targetUser.id;
+      }
 
-    createCredentialMutation.mutate(credentialData);
+      const credentialData = {
+        userId: targetUserId,
+        issuerId: user?.id,
+        type: 'Academic Credential',
+        title: `${formData.stream} Degree - ${formData.collegeName}`,
+        issueDate: new Date(),
+        expiryDate: null, // Academic credentials typically don't expire
+        status: 'active',
+        metadata: {
+          collegeName: formData.collegeName,
+          studentName: formData.studentName,
+          rollNumber: formData.rollNo,
+          gpa: parseFloat(formData.gpa),
+          stream: formData.stream,
+          character: formData.character,
+          studentDid: formData.studentDid,
+          additionalNotes: formData.additionalNotes,
+          issuerName: user?.name || 'Unknown Issuer'
+        }
+      };
+
+      createCredentialMutation.mutate(credentialData);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to process credential data. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleInputChange = (field, value) => {
