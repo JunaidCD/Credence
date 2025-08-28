@@ -127,8 +127,14 @@ const UserDashboard = () => {
   const [walletAddress, setWalletAddress] = useState('');
   const [isEligibleUser, setIsEligibleUser] = useState(false);
   const [isRegisteredUser, setIsRegisteredUser] = useState(false);
+  const [isBlockchainRegistered, setIsBlockchainRegistered] = useState(false);
   const [showUserRegistrationForm, setShowUserRegistrationForm] = useState(false);
+  const [showBlockchainRegistrationForm, setShowBlockchainRegistrationForm] = useState(false);
   const [userRegistrationData, setUserRegistrationData] = useState({
+    name: '',
+    email: ''
+  });
+  const [blockchainRegistrationData, setBlockchainRegistrationData] = useState({
     name: '',
     email: ''
   });
@@ -184,13 +190,17 @@ const UserDashboard = () => {
   // Check user eligibility and registration status
   const checkUserStatus = async (address) => {
     try {
-      // Check if user is eligible (accounts 2-7)
+      // Check if user is eligible (accounts 2-9)
       const isEligible = await web3Service.validateUserRegistration(address);
       setIsEligibleUser(isEligible);
       
       // Check if user is already registered in the system
       const existingUser = await fetch(`/api/users/address/${address}`);
       setIsRegisteredUser(existingUser.ok);
+
+      // Check blockchain registration status
+      const blockchainStatus = await web3Service.checkUserRegistrationStatus(address);
+      setIsBlockchainRegistered(blockchainStatus.isRegistered);
     } catch (error) {
       console.error('Failed to check user status:', error);
       setIsEligibleUser(false);
@@ -267,6 +277,55 @@ const UserDashboard = () => {
       toast({
         title: "Registration Failed",
         description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Register on blockchain
+  const registerOnBlockchain = async () => {
+    try {
+      // Ensure wallet is connected and web3 service is initialized
+      if (!walletConnected || !walletAddress) {
+        toast({
+          title: "Wallet Not Connected",
+          description: "Please connect your MetaMask wallet first",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Show loading state
+      toast({
+        title: "Processing...",
+        description: "Please confirm the transaction in MetaMask",
+      });
+
+      // Initialize web3 service if needed
+      await web3Service.init();
+      
+      // Ensure wallet connection is established
+      const connection = await web3Service.connectWallet();
+      console.log('Web3 connection established:', connection);
+
+      // Direct MetaMask transaction with default user data
+      const result = await web3Service.registerUserOnBlockchain(
+        user?.name || 'User',
+        user?.email || ''
+      );
+      
+      if (result.success) {
+        setIsBlockchainRegistered(true);
+        toast({
+          title: "Blockchain Registration Successful! 🎉",
+          description: `Transaction confirmed! Hash: ${result.transactionHash.slice(0, 10)}...`,
+        });
+      }
+    } catch (error) {
+      console.error('Blockchain registration error:', error);
+      toast({
+        title: "Blockchain Registration Failed",
+        description: error.message || "Please ensure Hardhat node is running and try again",
         variant: "destructive"
       });
     }
@@ -441,7 +500,7 @@ const UserDashboard = () => {
               </div>
               <div className="flex-1">
                 <h3 className="text-xl font-bold text-white mb-2">User Registration</h3>
-                <p className="text-gray-400 text-sm mb-3">Connect MetaMask wallet (accounts 2-7) and sign transaction to register</p>
+                <p className="text-gray-400 text-sm mb-3">Connect MetaMask wallet (accounts 2-9) and register on blockchain</p>
                 
                 {!walletConnected ? (
                   <Button
@@ -463,22 +522,43 @@ const UserDashboard = () => {
                       </code>
                     </div>
                     
-                    {isEligibleUser && !isRegisteredUser && (
-                      <Button
-                        onClick={() => setShowUserRegistrationForm(true)}
-                        className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-6 py-2 rounded-lg font-semibold flex items-center space-x-2 transition-all duration-200"
-                      >
-                        <User className="h-4 w-4" />
-                        <span>Register as User</span>
-                      </Button>
-                    )}
+                    <div className="flex flex-wrap gap-2">
+                      {isEligibleUser && !isRegisteredUser && (
+                        <Button
+                          onClick={() => setShowUserRegistrationForm(true)}
+                          className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-4 py-2 rounded-lg font-semibold flex items-center space-x-2 transition-all duration-200"
+                        >
+                          <User className="h-4 w-4" />
+                          <span>Register as User</span>
+                        </Button>
+                      )}
+                      
+                      {isEligibleUser && !isBlockchainRegistered && (
+                        <Button
+                          onClick={registerOnBlockchain}
+                          className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-4 py-2 rounded-lg font-semibold flex items-center space-x-2 transition-all duration-200"
+                        >
+                          <Shield className="h-4 w-4" />
+                          <span>Register On Blockchain</span>
+                        </Button>
+                      )}
+                    </div>
                     
-                    {isRegisteredUser && (
-                      <div className="flex items-center space-x-2 bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-sm">
-                        <CheckCircle className="h-4 w-4" />
-                        <span>Registered User</span>
-                      </div>
-                    )}
+                    <div className="flex flex-wrap gap-2">
+                      {isRegisteredUser && (
+                        <div className="flex items-center space-x-2 bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-sm">
+                          <CheckCircle className="h-4 w-4" />
+                          <span>System Registered</span>
+                        </div>
+                      )}
+                      
+                      {isBlockchainRegistered && (
+                        <div className="flex items-center space-x-2 bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full text-sm">
+                          <Shield className="h-4 w-4" />
+                          <span>Blockchain Registered</span>
+                        </div>
+                      )}
+                    </div>
                     
                     {!isEligibleUser && (
                       <div className="flex items-center space-x-2 bg-red-500/20 text-red-400 px-3 py-1 rounded-full text-sm">
@@ -493,7 +573,6 @@ const UserDashboard = () => {
           </div>
         </CardContent>
       </Card>
-
       {/* User Registration Form Modal */}
       {showUserRegistrationForm && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -555,6 +634,7 @@ const UserDashboard = () => {
           </Card>
         </div>
       )}
+
 
       {/* Enhanced Quick Stats with Animations */}
       <div className="grid md:grid-cols-3 gap-6">

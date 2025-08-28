@@ -53,6 +53,7 @@ const IssuerDashboard = () => {
   const [walletConnected, setWalletConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState('');
   const [isBlockchainRegistered, setIsBlockchainRegistered] = useState(false);
+  const [isEligibleIssuer, setIsEligibleIssuer] = useState(false);
   const [registrationForm, setRegistrationForm] = useState({
     name: user?.name || '',
     organization: '',
@@ -100,6 +101,7 @@ const IssuerDashboard = () => {
               // Check if user is registered as issuer on blockchain
               const eligibility = await Web3Service.checkIssuerEligibility();
               setIsBlockchainRegistered(eligibility.isRegistered);
+              setIsEligibleIssuer(eligibility.isAllowed);
             }
           } catch (error) {
             console.log('No existing wallet connection found');
@@ -131,6 +133,7 @@ const IssuerDashboard = () => {
           // Check eligibility with new account
           const eligibility = await Web3Service.checkIssuerEligibility();
           setIsBlockchainRegistered(eligibility.isRegistered);
+          setIsEligibleIssuer(eligibility.isAllowed);
         } catch (error) {
           console.error('Failed to update account:', error);
         }
@@ -165,6 +168,7 @@ const IssuerDashboard = () => {
       // Check eligibility after connection
       const eligibility = await Web3Service.checkIssuerEligibility();
       setIsBlockchainRegistered(eligibility.isRegistered);
+      setIsEligibleIssuer(eligibility.isAllowed);
       
       toast({
         title: "Wallet Connected",
@@ -192,26 +196,15 @@ const IssuerDashboard = () => {
       // Get current account directly from Web3Service
       const currentAccount = Web3Service.getAccount();
       
-      // Define allowed Hardhat accounts (accounts 0 and 1)
-      const ALLOWED_ACCOUNTS = [
-        '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266', // Account 0
-        '0x70997970C51812dc3A010C7d01b50e0d17dc79C8'  // Account 1
-      ];
+      // Check eligibility using Web3Service (accounts 2-9)
+      const eligibility = await Web3Service.checkIssuerEligibility();
 
-      console.log('Current wallet address from state:', walletAddress);
-      console.log('Current account from Web3Service:', currentAccount);
-      console.log('Allowed accounts:', ALLOWED_ACCOUNTS);
+      if (!eligibility.isAllowed) {
+        throw new Error('Only Hardhat accounts 2-7 are allowed to register as issuers');
+      }
 
-      // Use the current account from Web3Service for comparison
-      const addressToCheck = currentAccount || walletAddress;
-      
-      // Check if current wallet address is allowed (case-insensitive comparison)
-      const isAllowed = ALLOWED_ACCOUNTS.some(addr => 
-        addr.toLowerCase() === addressToCheck.toLowerCase()
-      );
-
-      if (!isAllowed) {
-        throw new Error('Only Hardhat localhost accounts 0 and 1 are authorized to register as issuers. Please switch to an authorized account.');
+      if (eligibility.isRegistered) {
+        throw new Error('This account is already registered as an issuer');
       }
 
       console.log('Address is authorized, proceeding with registration...');
@@ -579,25 +572,33 @@ const IssuerDashboard = () => {
                     <Wallet className="h-4 w-4" />
                     <span>{isConnecting ? 'Connecting...' : 'Connect Wallet'}</span>
                   </Button>
-                ) : !isBlockchainRegistered ? (
-                  <Button
-                    onClick={handleRegisterIssuer}
-                    disabled={isRegistering}
-                    className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-6 py-2 rounded-xl transition-all duration-300 flex items-center space-x-2"
-                  >
-                    <Link className="h-4 w-4" />
-                    <span>{isRegistering ? 'Registering...' : 'Register on Blockchain'}</span>
-                  </Button>
                 ) : (
-                  <div className="flex items-center space-x-2 text-green-400 text-sm">
-                    <CheckCircle className="h-4 w-4" />
-                    <span>Blockchain Registered</span>
-                  </div>
-                )}
-                
-                {walletConnected && (
-                  <div className="text-xs text-gray-400">
-                    Wallet: {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+                  <div className="space-y-2">
+                    {/* Account Eligibility Check */}
+                    {!isEligibleIssuer ? (
+                      <div className="flex items-center space-x-2 bg-red-500/20 text-red-400 px-3 py-1 rounded-full text-sm">
+                        <AlertTriangle className="h-4 w-4" />
+                        <span>Not eligible (Use accounts 2-7 only)</span>
+                      </div>
+                    ) : !isBlockchainRegistered ? (
+                      <Button
+                        onClick={handleRegisterIssuer}
+                        disabled={isRegistering}
+                        className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-6 py-2 rounded-xl transition-all duration-300 flex items-center space-x-2"
+                      >
+                        <Link className="h-4 w-4" />
+                        <span>{isRegistering ? 'Registering...' : 'Register on Blockchain'}</span>
+                      </Button>
+                    ) : (
+                      <div className="flex items-center space-x-2 text-green-400 text-sm">
+                        <CheckCircle className="h-4 w-4" />
+                        <span>Blockchain Registered</span>
+                      </div>
+                    )}
+                    
+                    <div className="text-xs text-gray-400">
+                      Wallet: {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+                    </div>
                   </div>
                 )}
               </div>

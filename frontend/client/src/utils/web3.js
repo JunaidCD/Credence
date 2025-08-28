@@ -3,7 +3,8 @@ import { ethers } from 'ethers';
 // Contract addresses - these will be populated after deployment
 const CONTRACT_ADDRESSES = {
   ISSUER_REGISTRY: '',
-  CREDENTIAL_REGISTRY: ''
+  CREDENTIAL_REGISTRY: '',
+  USER_REGISTRY: ''
 };
 
 // Contract ABIs - simplified for frontend use
@@ -28,6 +29,16 @@ const CREDENTIAL_REGISTRY_ABI = [
   "event CredentialRevoked(uint256 indexed credentialId, address indexed issuer)"
 ];
 
+const USER_REGISTRY_ABI = [
+  "function registerUser(string memory _name, string memory _email) external",
+  "function isRegisteredUser(address) external view returns (bool)",
+  "function isAllowedAccount(address) external view returns (bool)",
+  "function getUser(address) external view returns (tuple(address userAddress, string name, string email, bool isActive, uint256 registeredAt, uint256 credentialsReceived))",
+  "function getAllUsers() external view returns (tuple(address userAddress, string name, string email, bool isActive, uint256 registeredAt, uint256 credentialsReceived)[])",
+  "function getTotalUsers() external view returns (uint256)",
+  "event UserRegistered(address indexed userAddress, string name, string email)"
+];
+
 class Web3Service {
   constructor() {
     this.provider = null;
@@ -35,6 +46,7 @@ class Web3Service {
     this.account = null;
     this.issuerRegistry = null;
     this.credentialRegistry = null;
+    this.userRegistry = null;
     this.isInitialized = false;
   }
 
@@ -62,6 +74,7 @@ class Web3Service {
       
       CONTRACT_ADDRESSES.ISSUER_REGISTRY = deploymentInfo.contracts.IssuerRegistry;
       CONTRACT_ADDRESSES.CREDENTIAL_REGISTRY = deploymentInfo.contracts.CredentialRegistry;
+      CONTRACT_ADDRESSES.USER_REGISTRY = deploymentInfo.contracts.UserRegistry;
       
       this.issuerRegistry = new ethers.Contract(
         CONTRACT_ADDRESSES.ISSUER_REGISTRY,
@@ -72,6 +85,12 @@ class Web3Service {
       this.credentialRegistry = new ethers.Contract(
         CONTRACT_ADDRESSES.CREDENTIAL_REGISTRY,
         CREDENTIAL_REGISTRY_ABI,
+        this.provider
+      );
+      
+      this.userRegistry = new ethers.Contract(
+        CONTRACT_ADDRESSES.USER_REGISTRY,
+        USER_REGISTRY_ABI,
         this.provider
       );
     } catch (error) {
@@ -116,15 +135,27 @@ class Web3Service {
         throw new Error('No address provided or contracts not loaded');
       }
 
-      const isAllowed = await this.issuerRegistry.isAllowedAccount(targetAddress);
-      const isRegistered = await this.issuerRegistry.isRegisteredIssuer(targetAddress);
+      // Define allowed Hardhat accounts (accounts 2-7 for issuers)
+      const ALLOWED_ISSUER_ACCOUNTS = [
+        '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC', // Account 2
+        '0x90F79bf6EB2c4f870365E785982E1f101E93b906', // Account 3
+        '0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65', // Account 4
+        '0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc', // Account 5
+        '0x976EA74026E726554dB657fA54763abd0C3a0aa9', // Account 6
+        '0x14dC79964da2C08b23698B3D3cc7Ca32193d9955'  // Account 7
+      ];
+
+      const isAllowed = ALLOWED_ISSUER_ACCOUNTS.includes(targetAddress.toLowerCase()) || 
+                       ALLOWED_ISSUER_ACCOUNTS.includes(targetAddress);
+      const isRegistered = isAllowed ? await this.issuerRegistry.isRegisteredIssuer(targetAddress) : false;
       
       return {
         success: true,
         address: targetAddress,
         isAllowed,
         isRegistered,
-        canRegister: isAllowed && !isRegistered
+        canRegister: isAllowed && !isRegistered,
+        did: `did:ethr:${targetAddress}`
       };
     } catch (error) {
       console.error('Failed to check issuer eligibility:', error);
@@ -320,6 +351,95 @@ class Web3Service {
     } catch (error) {
       console.error('User registration failed:', error);
       throw error;
+    }
+  }
+
+  async registerUserOnBlockchain(name, email = '') {
+    try {
+      if (!this.signer) {
+        throw new Error('Wallet not connected. Please connect your MetaMask wallet first.');
+      }
+      if (!this.userRegistry) {
+        throw new Error('User Registry contract not loaded. Please ensure contracts are deployed.');
+      }
+
+      // Validate user account eligibility
+      await this.validateUserRegistration();
+
+      // Execute blockchain transaction directly
+      const contract = this.userRegistry.connect(this.signer);
+      const tx = await contract.registerUser(name, email);
+      
+      // Wait for transaction confirmation
+      const receipt = await tx.wait();
+      
+      return {
+        success: true,
+        transactionHash: receipt.hash,
+        blockNumber: receipt.blockNumber,
+        address: this.account
+      };
+    } catch (error) {
+      console.error('Blockchain user registration failed:', error);
+      throw error;
+    }
+  }
+
+  async checkUserRegistrationStatus(address = null) {
+    try {
+      const targetAddress = address || this.account;
+      if (!targetAddress || !this.userRegistry) {
+        return {
+          isEligible: false,
+          isRegistered: false,
+          canRegister: false
+        };
+      }
+
+      const isAllowed = await this.userRegistry.isAllowedAccount(targetAddress);
+      const isRegistered = await this.userRegistry.isRegisteredUser(targetAddress);
+      
+      return {
+        success: true,
+        address: targetAddress,
+        isEligible: isAllowed,
+        isRegistered,
+        canRegister: isAllowed && !isRegistered
+      };
+    } catch (error) {
+      console.error('Failed to check user registration status:', error);
+      return {
+        isEligible: false,
+        isRegistered: false,
+        canRegister: false
+      };
+    }
+  }
+
+  async getUserInfo(address = null) {
+    try {
+      const targetAddress = address || this.account;
+      if (!targetAddress || !this.userRegistry) {
+        return null;
+      }
+
+      const isRegistered = await this.userRegistry.isRegisteredUser(targetAddress);
+      if (!isRegistered) {
+        return null;
+      }
+
+      const user = await this.userRegistry.getUser(targetAddress);
+      return {
+        address: user.userAddress,
+        name: user.name,
+        email: user.email,
+        isActive: user.isActive,
+        registeredAt: Number(user.registeredAt),
+        credentialsReceived: Number(user.credentialsReceived)
+      };
+    } catch (error) {
+      console.error('Failed to get user info:', error);
+      return null;
     }
   }
 
