@@ -66,6 +66,7 @@ class Web3Service {
     }
   }
 
+
   async loadContractAddresses() {
     try {
       // Load contract addresses from public folder (deployed by backend script)
@@ -118,6 +119,7 @@ class Web3Service {
         throw new Error('Please connect to Hardhat localhost network (Chain ID: 31337)');
       }
 
+
       return {
         account: this.account,
         chainId: Number(network.chainId)
@@ -135,18 +137,15 @@ class Web3Service {
         throw new Error('No address provided or contracts not loaded');
       }
 
-      // Define allowed Hardhat accounts (accounts 2-7 for issuers)
+      // Define allowed Hardhat accounts (accounts 0-1 for issuers)
       const ALLOWED_ISSUER_ACCOUNTS = [
-        '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC', // Account 2
-        '0x90F79bf6EB2c4f870365E785982E1f101E93b906', // Account 3
-        '0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65', // Account 4
-        '0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc', // Account 5
-        '0x976EA74026E726554dB657fA54763abd0C3a0aa9', // Account 6
-        '0x14dC79964da2C08b23698B3D3cc7Ca32193d9955'  // Account 7
+        '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266', // Account 0
+        '0x70997970C51812dc3A010C7d01b50e0d17dc79C8'  // Account 1
       ];
 
-      const isAllowed = ALLOWED_ISSUER_ACCOUNTS.includes(targetAddress.toLowerCase()) || 
-                       ALLOWED_ISSUER_ACCOUNTS.includes(targetAddress);
+      const isAllowed = ALLOWED_ISSUER_ACCOUNTS.some(addr => 
+        addr.toLowerCase() === targetAddress.toLowerCase()
+      );
       const isRegistered = isAllowed ? await this.issuerRegistry.isRegisteredIssuer(targetAddress) : false;
       
       return {
@@ -291,7 +290,7 @@ class Web3Service {
     ];
 
     if (!authorizedIssuers.some(addr => addr.toLowerCase() === currentWallet.toLowerCase())) {
-      throw new Error('Only authorized issuer accounts (0 or 1) can issue credentials');
+      throw new Error('Only authorized issuer accounts (0-1) can issue credentials');
     }
 
     // Check if trying to send to self
@@ -320,11 +319,8 @@ class Web3Service {
 
     const targetAddress = address || this.account;
     
-    if (!allowedUserAccounts.some(addr => addr.toLowerCase() === targetAddress.toLowerCase())) {
-      throw new Error('Only accounts 2-7 can register as users. Please use a valid user account.');
-    }
-
-    return true;
+    // Return boolean instead of throwing error for UI validation
+    return allowedUserAccounts.some(addr => addr.toLowerCase() === targetAddress.toLowerCase());
   }
 
   async registerUser(name, email = '') {
@@ -334,7 +330,10 @@ class Web3Service {
       }
 
       // Validate user account eligibility
-      await this.validateUserRegistration();
+      const isEligible = await this.validateUserRegistration();
+      if (!isEligible) {
+        throw new Error('Only Hardhat accounts 2-7 can register as users. Please use a valid user account.');
+      }
 
       // Create a message to sign for user registration
       const message = `Register as user on Credence platform\nName: ${name}\nEmail: ${email}\nTimestamp: ${Date.now()}`;
@@ -364,7 +363,10 @@ class Web3Service {
       }
 
       // Validate user account eligibility
-      await this.validateUserRegistration();
+      const isEligible = await this.validateUserRegistration();
+      if (!isEligible) {
+        throw new Error('Only Hardhat accounts 2-7 can register as users. Please use a valid user account.');
+      }
 
       // Execute blockchain transaction directly
       const contract = this.userRegistry.connect(this.signer);
@@ -554,6 +556,35 @@ class Web3Service {
 
   getContractAddresses() {
     return CONTRACT_ADDRESSES;
+  }
+
+  // Debug function to identify current account
+  debugAccountInfo() {
+    const currentAccount = this.getAccount();
+    const hardhatAccounts = {
+      '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266': 'Account 0 (Issuer)',
+      '0x70997970C51812dc3A010C7d01b50e0d17dc79C8': 'Account 1 (Issuer)',
+      '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC': 'Account 2 (User)',
+      '0x90F79bf6EB2c4f870365E785982E1f101E93b906': 'Account 3 (User)',
+      '0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65': 'Account 4 (User)',
+      '0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc': 'Account 5 (User)',
+      '0x976EA74026E726554dB657fA54763abd0C3a0aa9': 'Account 6 (User)',
+      '0x14dC79964da2C08b23698B3D3cc7Ca32193d9955': 'Account 7 (User)'
+    };
+
+    const accountInfo = hardhatAccounts[currentAccount] || 'Unknown Account';
+    
+    console.log('=== ACCOUNT DEBUG INFO ===');
+    console.log('Current Account:', currentAccount);
+    console.log('Account Type:', accountInfo);
+    console.log('Is Issuer Account:', ['0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266', '0x70997970C51812dc3A010C7d01b50e0d17dc79C8'].includes(currentAccount));
+    console.log('========================');
+    
+    return {
+      address: currentAccount,
+      type: accountInfo,
+      isIssuerAccount: ['0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266', '0x70997970C51812dc3A010C7d01b50e0d17dc79C8'].includes(currentAccount)
+    };
   }
 }
 

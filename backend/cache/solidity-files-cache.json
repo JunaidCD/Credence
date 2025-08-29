@@ -2,8 +2,8 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "C:\\Users\\ASUS\\OneDrive\\Desktop\\Credence\\backend\\contracts\\CredentialRegistry.sol": {
-      "lastModificationDate": 1756270787268,
-      "contentHash": "d70de4bbb57eef16000cb9c389cf672e",
+      "lastModificationDate": 1756430016922,
+      "contentHash": "7b5dfab275ccdd8b04d7776cfe89ec36",
       "sourceName": "contracts/CredentialRegistry.sol",
       "solcConfig": {
         "version": "0.8.19",
@@ -39,8 +39,8 @@
       ]
     },
     "C:\\Users\\ASUS\\OneDrive\\Desktop\\Credence\\backend\\contracts\\IssuerRegistry.sol": {
-      "lastModificationDate": 1756267631009,
-      "contentHash": "f2825e59e781abcd88897825dabfce89",
+      "lastModificationDate": 1756430016925,
+      "contentHash": "e7ee378b197b6423a78cc7c9885184bd",
       "sourceName": "contracts/IssuerRegistry.sol",
       "solcConfig": {
         "version": "0.8.19",
@@ -74,8 +74,8 @@
       ]
     },
     "C:\\Users\\ASUS\\OneDrive\\Desktop\\Credence\\backend\\contracts\\UserRegistry.sol": {
-      "lastModificationDate": 1756399339320,
-      "contentHash": "b7654d0cd38ea3ff961f414e90d742ac",
+      "lastModificationDate": 1756430016925,
+      "contentHash": "667d6fbe590845ffa9ef89785c3a64c3",
       "sourceName": "contracts/UserRegistry.sol",
       "solcConfig": {
         "version": "0.8.19",

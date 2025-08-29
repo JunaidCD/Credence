@@ -190,7 +190,7 @@ const UserDashboard = () => {
   // Check user eligibility and registration status
   const checkUserStatus = async (address) => {
     try {
-      // Check if user is eligible (accounts 2-9)
+      // Check if user is eligible (accounts 2-7)
       const isEligible = await web3Service.validateUserRegistration(address);
       setIsEligibleUser(isEligible);
       
@@ -266,11 +266,11 @@ const UserDashboard = () => {
           setUserRegistrationData({ name: '', email: '' });
           
           toast({
-            title: "Registration Successful! 🎉",
+            title: "Registration Successful! ",
             description: "You are now registered as a user. You can now view your credentials!",
           });
         } else {
-          throw new Error('Failed to register user in system');
+          throw new Error('Only Hardhat accounts 2-7 can register as users. Please use a valid user account.');
         }
       }
     } catch (error) {
@@ -500,7 +500,7 @@ const UserDashboard = () => {
               </div>
               <div className="flex-1">
                 <h3 className="text-xl font-bold text-white mb-2">User Registration</h3>
-                <p className="text-gray-400 text-sm mb-3">Connect MetaMask wallet (accounts 2-9) and register on blockchain</p>
+                <p className="text-gray-400 text-sm mb-3">Connect MetaMask wallet (accounts 2-7) and register on blockchain</p>
                 
                 {!walletConnected ? (
                   <Button
@@ -522,50 +522,13 @@ const UserDashboard = () => {
                       </code>
                     </div>
                     
-                    <div className="flex flex-wrap gap-2">
-                      {isEligibleUser && !isRegisteredUser && (
-                        <Button
-                          onClick={() => setShowUserRegistrationForm(true)}
-                          className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-4 py-2 rounded-lg font-semibold flex items-center space-x-2 transition-all duration-200"
-                        >
-                          <User className="h-4 w-4" />
-                          <span>Register as User</span>
-                        </Button>
-                      )}
-                      
-                      {isEligibleUser && !isBlockchainRegistered && (
-                        <Button
-                          onClick={registerOnBlockchain}
-                          className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-4 py-2 rounded-lg font-semibold flex items-center space-x-2 transition-all duration-200"
-                        >
-                          <Shield className="h-4 w-4" />
-                          <span>Register On Blockchain</span>
-                        </Button>
-                      )}
-                    </div>
-                    
-                    <div className="flex flex-wrap gap-2">
-                      {isRegisteredUser && (
-                        <div className="flex items-center space-x-2 bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-sm">
-                          <CheckCircle className="h-4 w-4" />
-                          <span>System Registered</span>
-                        </div>
-                      )}
-                      
-                      {isBlockchainRegistered && (
-                        <div className="flex items-center space-x-2 bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full text-sm">
-                          <Shield className="h-4 w-4" />
-                          <span>Blockchain Registered</span>
-                        </div>
-                      )}
-                    </div>
-                    
-                    {!isEligibleUser && (
-                      <div className="flex items-center space-x-2 bg-red-500/20 text-red-400 px-3 py-1 rounded-full text-sm">
-                        <ShieldX className="h-4 w-4" />
-                        <span>Not eligible (Use accounts 2-7 only)</span>
-                      </div>
-                    )}
+                    <Button
+                      onClick={() => setShowUserRegistrationForm(true)}
+                      className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-6 py-3 rounded-lg font-semibold flex items-center space-x-2 transition-all duration-200"
+                    >
+                      <User className="h-5 w-5" />
+                      <span>Register as User</span>
+                    </Button>
                   </div>
                 )}
               </div>
