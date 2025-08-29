@@ -319,8 +319,15 @@ class Web3Service {
 
     const targetAddress = address || this.account;
     
+    // Debug logging to help troubleshoot
+    console.log('Validating user registration for address:', targetAddress);
+    console.log('Allowed accounts:', allowedUserAccounts);
+    
     // Return boolean instead of throwing error for UI validation
-    return allowedUserAccounts.some(addr => addr.toLowerCase() === targetAddress.toLowerCase());
+    const isValid = allowedUserAccounts.some(addr => addr.toLowerCase() === targetAddress.toLowerCase());
+    console.log('Is address valid for user registration:', isValid);
+    
+    return isValid;
   }
 
   async registerUser(name, email = '') {
