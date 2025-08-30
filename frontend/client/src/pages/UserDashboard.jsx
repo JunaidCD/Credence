@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import web3Service from '@/utils/web3.js';
 import { 
   Fingerprint, 
@@ -35,7 +36,8 @@ import {
   Star,
   Globe,
   Layers,
-  Calendar
+  Calendar,
+  AlertCircle
 } from 'lucide-react';
 
 const UserDashboard = () => {
@@ -626,14 +628,288 @@ const UserDashboard = () => {
     </div>
   );
 
+  const renderNotifications = () => (
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold text-white mb-2">Notifications</h2>
+          <p className="text-gray-400">Stay updated with your credential activities</p>
+        </div>
+        <Button
+          size="sm"
+          variant="outline"
+          className="border-purple-500/30 text-purple-400 hover:bg-purple-500/10"
+        >
+          Mark All Read
+        </Button>
+      </div>
+
+      <div className="space-y-4">
+        {/* Sample notifications - replace with real data */}
+        {[
+          {
+            id: 1,
+            type: 'credential_issued',
+            title: 'New Credential Received',
+            message: 'You have received a University Degree credential from ABC University',
+            timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
+            read: false,
+            icon: Award,
+            color: 'green'
+          },
+          {
+            id: 2,
+            type: 'verification_request',
+            title: 'Verification Request',
+            message: 'XYZ Company has requested to verify your Professional Certificate',
+            timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000),
+            read: false,
+            icon: Shield,
+            color: 'blue'
+          },
+          {
+            id: 3,
+            type: 'credential_expired',
+            title: 'Credential Expiring Soon',
+            message: 'Your Training Certificate will expire in 7 days',
+            timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000),
+            read: true,
+            icon: Clock,
+            color: 'yellow'
+          }
+        ].map((notification) => {
+          const IconComponent = notification.icon;
+          return (
+            <Card key={notification.id} className={`bg-gray-800/50 border-gray-700/50 ${!notification.read ? 'border-l-4 border-l-purple-500' : ''} hover:bg-gray-800/70 transition-all duration-200`}>
+              <CardContent className="p-6">
+                <div className="flex items-start space-x-4">
+                  <div className={`p-3 rounded-xl ${
+                    notification.color === 'green' ? 'bg-green-600/20' :
+                    notification.color === 'blue' ? 'bg-blue-600/20' :
+                    notification.color === 'yellow' ? 'bg-yellow-600/20' : 'bg-purple-600/20'
+                  }`}>
+                    <IconComponent className={`h-6 w-6 ${
+                      notification.color === 'green' ? 'text-green-400' :
+                      notification.color === 'blue' ? 'text-blue-400' :
+                      notification.color === 'yellow' ? 'text-yellow-400' : 'text-purple-400'
+                    }`} />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-lg font-semibold text-white">{notification.title}</h3>
+                      {!notification.read && (
+                        <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                      )}
+                    </div>
+                    <p className="text-gray-400 mb-3">{notification.message}</p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-gray-500 text-sm">
+                        {notification.timestamp.toLocaleString()}
+                      </p>
+                      <div className="flex items-center space-x-2">
+                        <Button size="sm" variant="ghost" className="text-purple-400 hover:text-purple-300">
+                          <Eye className="h-4 w-4 mr-1" />
+                          View
+                        </Button>
+                        {!notification.read && (
+                          <Button size="sm" variant="ghost" className="text-gray-400 hover:text-gray-300">
+                            Mark Read
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* Empty state for when no notifications */}
+      {false && (
+        <Card className="bg-gray-800/50 border-gray-700/50">
+          <CardContent className="p-12 text-center">
+            <div className="w-16 h-16 bg-gray-700/50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Bell className="h-8 w-8 text-gray-400" />
+            </div>
+            <h3 className="text-xl font-semibold text-white mb-2">No Notifications</h3>
+            <p className="text-gray-400">You're all caught up! New notifications will appear here.</p>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+
+  const renderRevokeCredentials = () => (
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold text-white mb-2">Revoke Credentials</h2>
+          <p className="text-gray-400">Manage and revoke credentials you have shared</p>
+        </div>
+        <div className="flex items-center space-x-2 text-sm text-red-400 bg-red-500/10 px-3 py-2 rounded-lg border border-red-500/20">
+          <ShieldX className="h-4 w-4" />
+          <span>Revocation Control</span>
+        </div>
+      </div>
+
+      {/* Search and Filter */}
+      <Card className="bg-gray-800/50 border-gray-700/50">
+        <CardContent className="p-6">
+          <div className="flex items-center space-x-4 mb-4">
+            <div className="flex-1">
+              <Label className="text-gray-300 mb-2 block">Search Credentials</Label>
+              <Input
+                placeholder="Search by credential type, title, or issuer..."
+                className="bg-gray-900/50 border-gray-600 text-white"
+              />
+            </div>
+            <div className="w-48">
+              <Label className="text-gray-300 mb-2 block">Filter by Status</Label>
+              <Select defaultValue="all">
+                <SelectTrigger className="bg-gray-900/50 border-gray-600 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-800 border-gray-600">
+                  <SelectItem value="all">All Credentials</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="shared">Shared</SelectItem>
+                  <SelectItem value="revoked">Revoked</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Credentials List for Revocation */}
+      {credentialsLoading ? (
+        <div className="space-y-4">
+          {[1, 2, 3].map(i => (
+            <Card key={i} className="bg-gray-800/50">
+              <CardContent className="p-6">
+                <Skeleton className="h-4 w-3/4 mb-4" />
+                <Skeleton className="h-3 w-1/2 mb-2" />
+                <Skeleton className="h-3 w-2/3" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : myCredentials.length === 0 ? (
+        <Card className="bg-gray-800/50 border-gray-700/50">
+          <CardContent className="p-12 text-center">
+            <div className="w-16 h-16 bg-gray-700/50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <ShieldX className="h-8 w-8 text-gray-400" />
+            </div>
+            <h3 className="text-xl font-semibold text-white mb-2">No Credentials to Revoke</h3>
+            <p className="text-gray-400 mb-6">You don't have any credentials that can be revoked</p>
+            <Button
+              onClick={() => setActiveSection('credentials')}
+              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+            >
+              View My Credentials
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {myCredentials.filter(credential => credential.status === 'active').map((credential) => (
+            <Card key={credential.id} className="bg-gray-800/50 border-gray-700/50 hover:border-red-500/30 transition-all duration-200 group">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="p-3 rounded-xl bg-red-600/20 group-hover:bg-red-600/30 transition-colors duration-200">
+                      <Award className="h-6 w-6 text-red-400" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-white mb-1">
+                        {credential.metadata?.title || credential.type}
+                      </h3>
+                      <div className="flex items-center space-x-4 text-sm text-gray-400">
+                        <span>Type: {credential.type}</span>
+                        <span>•</span>
+                        <span>Issued: {new Date(credential.issueDate).toLocaleDateString()}</span>
+                        <span>•</span>
+                        <span>Issuer: {credential.metadata?.issuerName || 'Unknown'}</span>
+                      </div>
+                      <div className="flex items-center space-x-2 mt-2">
+                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-500/20 text-green-400">
+                          Active
+                        </span>
+                        {credential.metadata?.collegeName && (
+                          <span className="text-gray-500 text-xs">
+                            {credential.metadata.collegeName}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-3">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="border-gray-600 text-gray-400 hover:bg-gray-700"
+                      onClick={() => setActiveSection('credentials')}
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      View Details
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      className="bg-red-600/20 border-red-500/30 text-red-400 hover:bg-red-600/30 hover:border-red-400"
+                      onClick={() => {
+                        if (window.confirm('Are you sure you want to revoke access to this credential? This action cannot be undone.')) {
+                          toast({
+                            title: "Credential Access Revoked",
+                            description: "You have revoked access to this credential.",
+                          });
+                        }
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Revoke Access
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Revocation Information */}
+      <Card className="bg-yellow-500/10 border-yellow-500/30">
+        <CardContent className="p-6">
+          <div className="flex items-start space-x-3">
+            <AlertCircle className="h-6 w-6 text-yellow-400 mt-1" />
+            <div>
+              <h3 className="text-lg font-semibold text-yellow-400 mb-2">Important Information</h3>
+              <ul className="text-gray-300 text-sm space-y-1">
+                <li>• Revoking a credential removes access for verifiers who have already received it</li>
+                <li>• This action is permanent and cannot be undone</li>
+                <li>• The credential will remain in your wallet but marked as revoked</li>
+                <li>• Future verification requests will show this credential as inactive</li>
+              </ul>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-gray-900">
       <div className="flex">
-        <UserSidebar activeSection={activeSection} setActiveSection={setActiveSection} />
+        <UserSidebar activeSection={activeSection} onSectionChange={setActiveSection} />
         
         <main className="flex-1 ml-64">
           {activeSection === 'dashboard' && renderDashboard()}
           {activeSection === 'credentials' && renderCredentials()}
+          {activeSection === 'notifications' && renderNotifications()}
+          {activeSection === 'revoke-credentials' && renderRevokeCredentials()}
           {activeSection === 'verification-requests' && renderVerificationRequests()}
         </main>
       </div>
