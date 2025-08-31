@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext.jsx';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
@@ -95,22 +95,66 @@ const UserDashboard = () => {
   // Listen for MetaMask account changes
   useEffect(() => {
     const handleAccountsChanged = async (accounts) => {
+      console.log('Account changed detected:', accounts);
+      
       if (accounts.length > 0) {
         const newAccount = accounts[0];
+        const previousAccount = walletAddress;
+        
+        // Update wallet state
         setWalletAddress(newAccount);
         setWalletConnected(true);
+        
+        // Reset user registration status for new account
+        setIsRegisteredUser(false);
+        setUserDID('');
+        
+        // Check eligibility for new account
         await checkUserStatus(newAccount);
         
-        toast({
-          title: "Account Changed",
-          description: `Switched to ${newAccount.slice(0, 6)}...${newAccount.slice(-4)}`,
-        });
+        // Clear old credential queries and refetch for new account
+        if (previousAccount !== newAccount) {
+          console.log(`Switching from ${previousAccount} to ${newAccount}`);
+          
+          // Invalidate all credential queries for the old account
+          queryClient.removeQueries({ queryKey: [`/api/credentials/wallet/${previousAccount}`] });
+          queryClient.removeQueries({ queryKey: ['blockchain-credentials', previousAccount] });
+          
+          // Immediately refetch for new account
+          queryClient.invalidateQueries({ queryKey: [`/api/credentials/wallet/${newAccount}`] });
+          queryClient.invalidateQueries({ queryKey: ['blockchain-credentials', newAccount] });
+          
+          // Update web3Service account
+          web3Service.account = newAccount;
+          
+          // Force reconnection with new account
+          try {
+            await web3Service.connectWallet();
+          } catch (connectError) {
+            console.log('Could not reconnect web3Service with new account:', connectError.message);
+          }
+          
+          toast({
+            title: "Account Changed",
+            description: `Switched to ${newAccount.slice(0, 6)}...${newAccount.slice(-4)}. Refreshing credentials...`,
+          });
+        }
       } else {
+        // No accounts connected
         setWalletConnected(false);
         setWalletAddress('');
         setIsEligibleUser(false);
         setIsRegisteredUser(false);
         setUserDID('');
+        
+        // Clear all credential queries
+        queryClient.clear();
+        
+        toast({
+          title: "Wallet Disconnected",
+          description: "Please reconnect your wallet to view credentials",
+          variant: "destructive"
+        });
       }
     };
 
@@ -122,13 +166,24 @@ const UserDashboard = () => {
         window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
       };
     }
-  }, [toast]);
+  }, [toast, walletAddress, queryClient]);
 
   const checkUserStatus = async (address) => {
     try {
+      console.log('Checking user status for address:', address);
       const isEligible = await web3Service.validateUserRegistration(address);
+      console.log('User eligibility result:', isEligible);
       setIsEligibleUser(isEligible);
-      setIsRegisteredUser(false);
+      
+      // Check if user is already registered
+      try {
+        const registrationStatus = await web3Service.checkUserRegistrationStatus(address);
+        console.log('Registration status:', registrationStatus);
+        setIsRegisteredUser(registrationStatus.isRegistered);
+      } catch (regError) {
+        console.log('Could not check registration status, assuming not registered');
+        setIsRegisteredUser(false);
+      }
     } catch (error) {
       console.error('Failed to check user status:', error);
       setIsEligibleUser(false);
@@ -143,9 +198,13 @@ const UserDashboard = () => {
       setWalletConnected(true);
       await checkUserStatus(connection.account);
       
+      // Immediately fetch credentials for the connected account
+      queryClient.invalidateQueries({ queryKey: [`/api/credentials/wallet/${connection.account}`] });
+      queryClient.invalidateQueries({ queryKey: ['blockchain-credentials', connection.account] });
+      
       toast({
-        title: "Wallet Connected! 🎉",
-        description: `Connected to ${connection.account.slice(0, 6)}...${connection.account.slice(-4)}`,
+        title: "Wallet Connected! ",
+        description: `Connected to ${connection.account.slice(0, 6)}...${connection.account.slice(-4)}. Fetching credentials...`,
       });
     } catch (error) {
       toast({
@@ -170,31 +229,62 @@ const UserDashboard = () => {
       await web3Service.init();
       await web3Service.connectWallet();
 
-      const result = await web3Service.registerUser(userName, '');
-
-      if (result.success) {
+      // First register on blockchain and fetch existing credentials
+      let blockchainResult;
+      try {
+        blockchainResult = await web3Service.registerUserOnBlockchain(userName, '');
+      } catch (blockchainError) {
+        console.error('Blockchain registration failed:', blockchainError);
+        // Try alternative registration method
+        blockchainResult = await web3Service.registerUser(userName, '');
+        blockchainResult.credentials = [];
+      }
+      
+      if (blockchainResult.success) {
+        // Register with backend
         const response = await fetch('/api/auth/connect', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            address: result.address,
+            address: blockchainResult.address,
             userType: 'user',
             name: userName,
             email: '',
-            signature: result.signature
+            transactionHash: blockchainResult.transactionHash
           })
         });
 
         if (response.ok) {
           setIsRegisteredUser(true);
-          setUserDID(`did:ethr:${result.address}`);
+          setUserDID(`did:ethr:${blockchainResult.address}`);
+          
+          // Store blockchain credentials in backend if any exist
+          if (blockchainResult.credentials && blockchainResult.credentials.length > 0) {
+            await fetch('/api/credentials/sync-blockchain', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                walletAddress: blockchainResult.address,
+                credentials: blockchainResult.credentials
+              })
+            });
+          }
+          
+          // Force immediate refresh of credentials for current account
+          queryClient.removeQueries({ queryKey: [`/api/credentials/wallet/${walletAddress}`] });
+          queryClient.removeQueries({ queryKey: ['blockchain-credentials', walletAddress] });
+          
+          // Refetch credentials immediately
+          queryClient.refetchQueries({ queryKey: [`/api/credentials/wallet/${walletAddress}`] });
+          queryClient.refetchQueries({ queryKey: ['blockchain-credentials', walletAddress] });
           
           toast({
             title: "Registration Successful! 🎉",
-            description: "You are now registered as a user. You can now view your credentials!",
+            description: `You are now registered as a user. Found ${blockchainResult.credentials?.length || 0} existing credentials on blockchain.`,
           });
+          
         } else {
-          throw new Error('Only Hardhat accounts 2-7 can register as users. Please use a valid user account.');
+          throw new Error('Backend registration failed. Please try again.');
         }
       }
     } catch (error) {
@@ -206,22 +296,84 @@ const UserDashboard = () => {
     }
   };
 
-  // Queries - User-specific data
-  const { data: myCredentials = [], isLoading: credentialsLoading } = useQuery({
+  // Query for backend credentials - only fetch if user is registered
+  const { data: backendCredentials = [], isLoading: backendLoading } = useQuery({
     queryKey: [`/api/credentials/wallet/${walletAddress}`],
     queryFn: async () => {
-      if (!walletAddress) return [];
+      if (!walletAddress || !isRegisteredUser) return [];
+      const response = await fetch(`/api/credentials/wallet/${walletAddress}`);
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !!walletAddress && isRegisteredUser,
+    staleTime: 30000,
+    refetchOnWindowFocus: false
+  });
+
+  // Query for blockchain credentials - only fetch if user is registered
+  const { data: blockchainCredentials = [], isLoading: blockchainLoading } = useQuery({
+    queryKey: ['blockchain-credentials', walletAddress],
+    queryFn: async () => {
+      if (!walletAddress || !isRegisteredUser) {
+        console.log('No wallet address or user not registered, skipping blockchain credential fetch');
+        return [];
+      }
+      
       try {
-        const response = await fetch(`/api/credentials/wallet/${walletAddress}`);
-        if (!response.ok) return [];
-        return response.json();
+        console.log(`Fetching blockchain credentials for registered user: ${walletAddress}`);
+        await web3Service.init();
+        
+        // Ensure web3Service has the current account
+        const currentAccount = await web3Service.getCurrentAccount();
+        if (currentAccount && currentAccount.toLowerCase() === walletAddress.toLowerCase()) {
+          web3Service.account = currentAccount;
+          // Only connect if not already connected to avoid errors
+          if (!web3Service.isConnected()) {
+            try {
+              await web3Service.connectWallet();
+            } catch (connectError) {
+              console.log('Web3 connection error, continuing with direct credential fetch:', connectError.message);
+            }
+          }
+        }
+        
+        const credentials = await web3Service.getHolderCredentials(walletAddress);
+        console.log(`Fetched ${credentials.length} blockchain credentials for ${walletAddress}:`, credentials);
+        return credentials;
       } catch (error) {
-        console.error('Failed to fetch credentials:', error);
+        console.error('Failed to fetch blockchain credentials:', error);
         return [];
       }
     },
-    enabled: !!walletAddress,
+    enabled: !!walletAddress && isRegisteredUser,
+    staleTime: 30000,
+    refetchOnWindowFocus: false,
   });
+
+  // Combine and deduplicate credentials from both sources - only if user is registered
+  const myCredentials = React.useMemo(() => {
+    if (!isRegisteredUser) {
+      return []; // Return empty array if user is not registered
+    }
+    
+    const combined = [...backendCredentials, ...blockchainCredentials];
+    // Deduplicate by credential ID, preferring blockchain data
+    const credentialMap = new Map();
+    
+    // First add backend credentials
+    backendCredentials.forEach(cred => {
+      credentialMap.set(cred.id, { ...cred, source: 'backend' });
+    });
+    
+    // Then add blockchain credentials (will override backend if same ID)
+    blockchainCredentials.forEach(cred => {
+      credentialMap.set(cred.id, { ...cred, source: 'blockchain' });
+    });
+    
+    return Array.from(credentialMap.values());
+  }, [backendCredentials, blockchainCredentials, isRegisteredUser]);
+
+  const credentialsLoading = backendLoading || blockchainLoading;
 
   const { data: verificationRequests = [], isLoading: requestsLoading } = useQuery({
     queryKey: ['/api/verification-requests/wallet', walletAddress],
@@ -284,12 +436,17 @@ const UserDashboard = () => {
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-900/20 via-blue-900/20 to-cyan-900/20 p-8 border border-purple-500/20">
         <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 via-blue-600/10 to-cyan-600/10"></div>
         <div className="relative z-10">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 via-blue-400 to-cyan-400 bg-clip-text text-transparent mb-2" data-testid="dashboard-welcome">
                 Welcome back, {userName}!
               </h1>
               <p className="text-gray-300 text-lg">Manage your digital identity and verifiable credentials</p>
+              {walletAddress && (
+                <p className="text-sm text-gray-400 mt-2">
+                  Connected Account: <code className="bg-gray-800/80 text-cyan-300 px-2 py-1 rounded">{walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}</code>
+                </p>
+              )}
             </div>
             <div className="hidden md:flex items-center space-x-2">
               <Sparkles className="h-8 w-8 text-yellow-400" />
@@ -404,6 +561,16 @@ const UserDashboard = () => {
                   <p className="text-3xl font-bold text-white" data-testid="stat-total-credentials">
                     {myCredentials.length}
                   </p>
+                  <div className="flex items-center space-x-2 mt-2">
+                    <div className="flex items-center space-x-1">
+                      <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                      <span className="text-xs text-blue-400">{blockchainCredentials.length}</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
+                      <span className="text-xs text-purple-400">{backendCredentials.length}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -450,36 +617,37 @@ const UserDashboard = () => {
   );
 
   const renderCredentials = () => {
-    if (!isRegisteredUser) {
+    // Show credentials if wallet is connected, regardless of registration status
+    if (!walletConnected || !walletAddress) {
       return (
         <div className="p-6">
           <Card className="bg-gradient-to-br from-purple-900/20 to-blue-900/20 border-purple-500/30">
             <CardContent className="p-12 text-center">
               <div className="w-24 h-24 bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Shield className="h-12 w-12 text-purple-400" />
+                <Wallet className="h-12 w-12 text-purple-400" />
               </div>
-              <h2 className="text-2xl font-bold text-white mb-4">Registration Required</h2>
+              <h2 className="text-2xl font-bold text-white mb-4">Connect Wallet Required</h2>
               <p className="text-gray-400 mb-8 max-w-md mx-auto">
-                To access your credentials, please register as a user by connecting your MetaMask wallet and signing a transaction.
+                To view your credentials, please connect your MetaMask wallet first.
               </p>
               <div className="space-y-4 max-w-sm mx-auto">
                 <div className="flex items-center text-sm text-gray-300">
                   <div className="w-6 h-6 bg-purple-600/20 rounded-full flex items-center justify-center mr-3">
                     <span className="text-purple-400 font-semibold">1</span>
                   </div>
-                  Connect MetaMask wallet (accounts 2-7 only)
+                  Connect MetaMask wallet
                 </div>
                 <div className="flex items-center text-sm text-gray-300">
                   <div className="w-6 h-6 bg-purple-600/20 rounded-full flex items-center justify-center mr-3">
                     <span className="text-purple-400 font-semibold">2</span>
                   </div>
-                  Click "Register as User" button
+                  Register as user to access credentials
                 </div>
                 <div className="flex items-center text-sm text-gray-300">
                   <div className="w-6 h-6 bg-purple-600/20 rounded-full flex items-center justify-center mr-3">
                     <span className="text-purple-400 font-semibold">3</span>
                   </div>
-                  Sign MetaMask transaction to complete registration
+                  View your issued credentials
                 </div>
               </div>
               <Button
@@ -501,9 +669,15 @@ const UserDashboard = () => {
             <h2 className="text-3xl font-bold text-white mb-2">My Credentials</h2>
             <p className="text-gray-400">Manage and view your verifiable credentials</p>
           </div>
-          <div className="flex items-center space-x-2 text-sm text-green-400 bg-green-500/10 px-3 py-2 rounded-lg border border-green-500/20">
-            <CheckCircle className="h-4 w-4" />
-            <span>Registered User</span>
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 text-sm text-blue-400 bg-blue-500/10 px-3 py-2 rounded-lg border border-blue-500/20">
+              <Wallet className="h-4 w-4" />
+              <span>Connected: {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}</span>
+            </div>
+            <div className="flex items-center space-x-2 text-sm text-green-400 bg-green-500/10 px-3 py-2 rounded-lg border border-green-500/20">
+              <Activity className="h-4 w-4" />
+              <span>Auto-Sync: ON</span>
+            </div>
           </div>
         </div>
 
@@ -526,14 +700,46 @@ const UserDashboard = () => {
                 <Award className="h-8 w-8 text-gray-400" />
               </div>
               <h3 className="text-xl font-semibold text-white mb-2">No Credentials Yet</h3>
-              <p className="text-gray-400">Your issued credentials will appear here</p>
+              <p className="text-gray-400 mb-4">
+                {!isRegisteredUser 
+                  ? "Register as a user to check for existing credentials issued to your wallet address on the blockchain"
+                  : "No credentials have been issued to your wallet address yet. Credentials issued on the blockchain will appear here automatically."
+                }
+              </p>
+              {!isRegisteredUser && (
+                <Button
+                  onClick={() => setActiveSection('dashboard')}
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                >
+                  Register Now
+                </Button>
+              )}
             </CardContent>
           </Card>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {myCredentials.map((credential) => (
-              <CredentialCard key={credential.id} credential={credential} />
-            ))}
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2 bg-blue-500/10 px-3 py-2 rounded-lg border border-blue-500/20">
+                  <Globe className="h-4 w-4 text-blue-400" />
+                  <span className="text-blue-400 text-sm font-medium">Blockchain: {blockchainCredentials.length}</span>
+                </div>
+                <div className="flex items-center space-x-2 bg-purple-500/10 px-3 py-2 rounded-lg border border-purple-500/20">
+                  <Layers className="h-4 w-4 text-purple-400" />
+                  <span className="text-purple-400 text-sm font-medium">Backend: {backendCredentials.length}</span>
+                </div>
+                <div className="flex items-center space-x-2 bg-green-500/10 px-3 py-2 rounded-lg border border-green-500/20">
+                  <CheckCircle className="h-4 w-4 text-green-400" />
+                  <span className="text-green-400 text-sm font-medium">Total: {myCredentials.length}</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {myCredentials.map((credential) => (
+                <CredentialCard key={`${credential.source}-${credential.id}`} credential={credential} />
+              ))}
+            </div>
           </div>
         )}
       </div>

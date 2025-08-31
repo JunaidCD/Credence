@@ -73,6 +73,10 @@ const CredentialForm = ({ isOpen, onClose }) => {
       }
       queryClient.invalidateQueries({ queryKey: [`/api/credentials/issuer/${user?.id}`] });
       
+      // Also invalidate wallet-based queries
+      queryClient.invalidateQueries({ queryKey: ['/api/credentials/wallet'] });
+      console.log('Credential created successfully, invalidated cache for userId:', data.userId);
+      
       toast({
         title: "Credential Created! 🎉",
         description: "The academic credential has been successfully issued and will appear in the recipient's credentials.",
@@ -135,6 +139,42 @@ const CredentialForm = ({ isOpen, onClose }) => {
     return Object.keys(newErrors).length === 0;
   };
 
+  // Generate unique credential ID
+  const generateUniqueCredentialId = (type, stream) => {
+    let prefix = 'CRD';
+    
+    switch (type.toLowerCase()) {
+      case 'academic credential':
+      case 'degree':
+      case 'university degree':
+        prefix = 'DEG';
+        break;
+      case 'certificate':
+      case 'professional certificate':
+        prefix = 'CERT';
+        break;
+      case 'license':
+      case 'driving license':
+        prefix = 'LIC';
+        break;
+      case 'pan':
+      case 'pan card':
+        prefix = 'PAN';
+        break;
+      default:
+        prefix = 'CRD';
+    }
+    
+    // Generate random alphanumeric string
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let randomStr = '';
+    for (let i = 0; i < 6; i++) {
+      randomStr += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    
+    return `${prefix}-${randomStr}`;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -148,14 +188,30 @@ const CredentialForm = ({ isOpen, onClose }) => {
     }
 
     try {
-      // Find the user by DID to get their userId
-      const targetUserResponse = await fetch(`/api/users/did/${formData.studentDid}`);
-      let targetUserId = user?.id; // Default to current user
+      // Normalize the student DID to lowercase for consistent lookup
+      const normalizedStudentDid = formData.studentDid.toLowerCase();
       
+      // Try to find the user by DID or wallet address
+      let targetUserId = ""; // Empty string means no user registered yet
+      
+      // First try by DID
+      const targetUserResponse = await fetch(`/api/users/did/${normalizedStudentDid}`);
       if (targetUserResponse.ok) {
         const targetUser = await targetUserResponse.json();
         targetUserId = targetUser.id;
+      } else {
+        // If user doesn't exist by DID, try to find by wallet address
+        const walletResponse = await fetch(`/api/users/wallet/${normalizedStudentDid}`);
+        if (walletResponse.ok) {
+          const walletUser = await walletResponse.json();
+          targetUserId = walletUser.id;
+        }
+        // If no user found, leave targetUserId as empty string
+        // The credential will be linked when the user registers
       }
+
+      // Generate unique credential ID
+      const uniqueCredentialId = generateUniqueCredentialId('Academic Credential', formData.stream);
 
       const credentialData = {
         userId: targetUserId,
@@ -165,6 +221,7 @@ const CredentialForm = ({ isOpen, onClose }) => {
         issueDate: new Date(),
         expiryDate: null, // Academic credentials typically don't expire
         status: 'active',
+        uniqueId: uniqueCredentialId, // Add unique credential ID
         metadata: {
           collegeName: formData.collegeName,
           studentName: formData.studentName,
@@ -172,7 +229,7 @@ const CredentialForm = ({ isOpen, onClose }) => {
           gpa: parseFloat(formData.gpa),
           stream: formData.stream,
           character: formData.character,
-          studentDid: formData.studentDid,
+          studentDid: normalizedStudentDid, // Store normalized address
           additionalNotes: formData.additionalNotes,
           issuerName: user?.name || 'Unknown Issuer'
         }

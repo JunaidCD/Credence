@@ -15,6 +15,7 @@ export interface IStorage {
   getCredentialsByIssuerId(issuerId: string): Promise<Credential[]>;
   createCredential(credential: InsertCredential): Promise<Credential>;
   updateCredential(id: string, updates: Partial<Credential>): Promise<Credential | undefined>;
+  linkCredentialsToUser(userId: string, walletAddress: string): Promise<void>;
 
   // Verification Requests
   getVerificationRequest(id: string): Promise<VerificationRequest | undefined>;
@@ -33,6 +34,32 @@ export class MemStorage implements IStorage {
     this.users = new Map();
     this.credentials = new Map();
     this.verificationRequests = new Map();
+    
+    // Initialize with some test data for debugging
+    this.initializeTestData();
+  }
+
+  private initializeTestData() {
+    // Create test issuer (account 0)
+    const testIssuer: User = {
+      id: "test-issuer-1",
+      address: "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+      did: "did:ethr:0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+      name: "Test Issuer",
+      email: "issuer@example.com",
+      userType: "issuer", 
+      createdAt: new Date()
+    } as User;
+
+    this.users.set(testIssuer.id, testIssuer);
+
+    // No test credentials - only real credentials issued by users will be stored
+
+    console.log('=== TEST DATA INITIALIZED ===');
+    console.log('Users created:', this.users.size);
+    console.log('Credentials created:', this.credentials.size);
+    console.log('Test users:', Array.from(this.users.values()).map(u => ({ id: u.id, address: u.address, name: u.name })));
+    console.log('Test credentials:', Array.from(this.credentials.values()).map(c => ({ id: c.id, userId: c.userId, title: c.title })));
   }
 
   // Users
@@ -54,8 +81,9 @@ export class MemStorage implements IStorage {
       ...insertUser, 
       id, 
       createdAt: new Date()
-    };
+    } as User;
     this.users.set(id, user);
+    console.log('Created user:', { id: user.id, address: user.address, name: user.name });
     return user;
   }
 
@@ -87,8 +115,9 @@ export class MemStorage implements IStorage {
       ...insertCredential, 
       id, 
       createdAt: new Date()
-    };
+    } as Credential;
     this.credentials.set(id, credential);
+    console.log('Created credential:', { id: credential.id, userId: credential.userId, title: credential.title });
     return credential;
   }
 
@@ -121,7 +150,7 @@ export class MemStorage implements IStorage {
       id, 
       requestedAt: new Date(),
       respondedAt: null
-    };
+    } as VerificationRequest;
     this.verificationRequests.set(id, request);
     return request;
   }
@@ -136,6 +165,37 @@ export class MemStorage implements IStorage {
     }
     this.verificationRequests.set(id, updatedRequest);
     return updatedRequest;
+  }
+
+  // Link existing credentials to a newly registered user
+  async linkCredentialsToUser(userId: string, walletAddress: string): Promise<void> {
+    console.log(`=== LINKING CREDENTIALS ===`);
+    console.log(`User ID: ${userId}`);
+    console.log(`Wallet Address: ${walletAddress}`);
+    
+    const allCredentials = Array.from(this.credentials.values());
+    console.log(`Total credentials in storage: ${allCredentials.length}`);
+    
+    // Find credentials that were issued to this wallet address but don't have a userId yet
+    const credentialsToLink = allCredentials.filter(credential => {
+      const studentDid = (credential.metadata as any)?.studentDid?.toLowerCase();
+      const hasNoUser = !credential.userId || credential.userId === "";
+      const matchesWallet = studentDid === walletAddress.toLowerCase();
+      
+      console.log(`Credential ${credential.id}: studentDid=${studentDid}, hasNoUser=${hasNoUser}, matchesWallet=${matchesWallet}`);
+      
+      return hasNoUser && matchesWallet;
+    });
+    
+    console.log(`Found ${credentialsToLink.length} credentials to link`);
+    
+    // Update each credential to link it to the user
+    for (const credential of credentialsToLink) {
+      console.log(`Linking credential ${credential.id} to user ${userId}`);
+      await this.updateCredential(credential.id, { userId });
+    }
+    
+    console.log(`=== LINKING COMPLETE ===`);
   }
 }
 

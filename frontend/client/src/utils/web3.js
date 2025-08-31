@@ -115,7 +115,7 @@ class Web3Service {
       
       // Check network
       const network = await this.provider.getNetwork();
-      if (network.chainId !== 31337n) {
+      if (Number(network.chainId) !== 31337) {
         throw new Error('Please connect to Hardhat localhost network (Chain ID: 31337)');
       }
 
@@ -319,12 +319,19 @@ class Web3Service {
 
     const targetAddress = address || this.account;
     
+    if (!targetAddress) {
+      console.log('No target address provided for validation');
+      return false;
+    }
+    
     // Debug logging to help troubleshoot
     console.log('Validating user registration for address:', targetAddress);
     console.log('Allowed accounts:', allowedUserAccounts);
     
     // Return boolean instead of throwing error for UI validation
-    const isValid = allowedUserAccounts.some(addr => addr.toLowerCase() === targetAddress.toLowerCase());
+    const isValid = allowedUserAccounts.some(addr => 
+      addr.toLowerCase() === targetAddress.toLowerCase()
+    );
     console.log('Is address valid for user registration:', isValid);
     
     return isValid;
@@ -382,11 +389,15 @@ class Web3Service {
       // Wait for transaction confirmation
       const receipt = await tx.wait();
       
+      // Fetch existing credentials from blockchain after successful registration
+      const blockchainCredentials = await this.getHolderCredentials(this.account);
+      
       return {
         success: true,
         transactionHash: receipt.hash,
         blockNumber: receipt.blockNumber,
-        address: this.account
+        address: this.account,
+        credentials: blockchainCredentials
       };
     } catch (error) {
       console.error('Blockchain user registration failed:', error);
@@ -405,22 +416,25 @@ class Web3Service {
         };
       }
 
-      const isAllowed = await this.userRegistry.isAllowedAccount(targetAddress);
+      // Use local validation instead of contract call for better reliability
+      const isEligible = await this.validateUserRegistration(targetAddress);
       const isRegistered = await this.userRegistry.isRegisteredUser(targetAddress);
       
       return {
         success: true,
         address: targetAddress,
-        isEligible: isAllowed,
+        isEligible,
         isRegistered,
-        canRegister: isAllowed && !isRegistered
+        canRegister: isEligible && !isRegistered
       };
     } catch (error) {
       console.error('Failed to check user registration status:', error);
+      // Fallback to local validation
+      const isEligible = await this.validateUserRegistration(targetAddress);
       return {
-        isEligible: false,
+        isEligible,
         isRegistered: false,
-        canRegister: false
+        canRegister: isEligible
       };
     }
   }
@@ -455,34 +469,105 @@ class Web3Service {
   async getHolderCredentials(holderAddress = null) {
     try {
       const targetAddress = holderAddress || this.account;
-      if (!targetAddress || !this.credentialRegistry) {
+      if (!targetAddress) {
+        console.log('No target address provided for credential fetch');
         return [];
       }
-
-      const credentialIds = await this.credentialRegistry.getHolderCredentials(targetAddress);
-      const credentials = [];
       
-      for (const id of credentialIds) {
-        try {
-          const credential = await this.credentialRegistry.getCredential(Number(id));
-          credentials.push({
-            id: Number(credential.id),
-            issuer: credential.issuer,
-            holder: credential.holder,
-            credentialType: credential.credentialType,
-            data: credential.data,
-            issuedAt: Number(credential.issuedAt),
-            expiresAt: Number(credential.expiresAt),
-            isActive: credential.isActive,
-            isRevoked: credential.isRevoked,
-            ipfsHash: credential.ipfsHash
-          });
-        } catch (error) {
-          console.error(`Failed to get credential ${id}:`, error);
+      if (!this.credentialRegistry) {
+        console.log('Credential registry not loaded, attempting to initialize...');
+        await this.init();
+        if (!this.credentialRegistry) {
+          console.log('Failed to initialize credential registry');
+          return [];
         }
       }
+
+      console.log(`Fetching credentials for address: ${targetAddress}`);
       
-      return credentials;
+      try {
+        const credentialIds = await this.credentialRegistry.getHolderCredentials(targetAddress);
+        console.log(`Found ${credentialIds.length} credential IDs for ${targetAddress}:`, credentialIds.map(id => Number(id)));
+        
+        const credentials = [];
+        
+        for (const id of credentialIds) {
+          try {
+            const credential = await this.credentialRegistry.getCredential(Number(id));
+            
+            // Parse credential data if it's JSON
+            let parsedData = {};
+            try {
+              parsedData = JSON.parse(credential.data);
+            } catch {
+              parsedData = { raw: credential.data };
+            }
+            
+            // Generate unique credential ID for blockchain credentials
+            const generateBlockchainCredentialId = (credentialType, blockchainId) => {
+              let prefix = 'CRD';
+              
+              switch (credentialType.toLowerCase()) {
+                case 'degree':
+                case 'university degree':
+                case 'academic credential':
+                  prefix = 'DEG';
+                  break;
+                case 'certificate':
+                case 'professional certificate':
+                  prefix = 'CERT';
+                  break;
+                case 'license':
+                case 'driving license':
+                  prefix = 'LIC';
+                  break;
+                case 'pan':
+                case 'pan card':
+                  prefix = 'PAN';
+                  break;
+                default:
+                  prefix = 'CRD';
+              }
+              
+              // Use blockchain ID as part of unique identifier to ensure consistency
+              const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+              let randomStr = '';
+              for (let i = 0; i < 4; i++) {
+                randomStr += chars.charAt(Math.floor(Math.random() * chars.length));
+              }
+              
+              return `${prefix}-${blockchainId}${randomStr}`;
+            };
+
+            const uniqueId = generateBlockchainCredentialId(credential.credentialType, Number(credential.id));
+
+            credentials.push({
+              id: Number(credential.id),
+              uniqueId: uniqueId,
+              issuer: credential.issuer,
+              holder: credential.holder,
+              credentialType: credential.credentialType,
+              data: parsedData,
+              issuedAt: Number(credential.issuedAt),
+              expiresAt: Number(credential.expiresAt),
+              isActive: credential.isActive,
+              isRevoked: credential.isRevoked,
+              ipfsHash: credential.ipfsHash,
+              status: credential.isRevoked ? 'Revoked' : (Number(credential.expiresAt) * 1000 < Date.now()) ? 'Expired' : 'Active',
+              issueDate: new Date(Number(credential.issuedAt) * 1000).toISOString().split('T')[0],
+              expiryDate: new Date(Number(credential.expiresAt) * 1000).toISOString().split('T')[0]
+            });
+          } catch (credError) {
+            console.error(`Failed to get credential ${id}:`, credError);
+          }
+        }
+        
+        console.log(`Successfully fetched ${credentials.length} credentials for ${targetAddress}`);
+        return credentials;
+      } catch (contractError) {
+        console.error('Contract call failed:', contractError);
+        return [];
+      }
     } catch (error) {
       console.error('Failed to get holder credentials:', error);
       return [];
@@ -559,6 +644,20 @@ class Web3Service {
 
   getAccount() {
     return this.account;
+  }
+
+  // Get current connected account from MetaMask directly
+  async getCurrentAccount() {
+    try {
+      if (typeof window.ethereum !== 'undefined') {
+        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+        return accounts.length > 0 ? accounts[0] : null;
+      }
+      return null;
+    } catch (error) {
+      console.error('Failed to get current account:', error);
+      return null;
+    }
   }
 
   getContractAddresses() {
