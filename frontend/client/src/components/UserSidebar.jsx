@@ -1,7 +1,7 @@
 import { 
   LayoutDashboard, 
   Award, 
-  Bell, 
+  Share2, 
   ShieldX, 
   LogOut,
   User
@@ -21,7 +21,7 @@ const UserSidebar = ({ activeSection, onSectionChange }) => {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'credentials', label: 'My Credentials', icon: Award },
-    { id: 'notifications', label: 'Notifications', icon: Bell },
+    { id: 'share-credential', label: 'Share Credential', icon: Share2 },
     { id: 'revoke-credentials', label: 'Revoke Credentials', icon: ShieldX },
   ];
 

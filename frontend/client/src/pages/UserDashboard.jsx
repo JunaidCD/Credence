@@ -32,6 +32,9 @@ import {
   Archive,
   Sparkles,
   TrendingUp,
+  Search,
+  Loader2,
+  Share2,
   Zap,
   Star,
   Globe,
@@ -56,6 +59,13 @@ const UserDashboard = () => {
   const [userDID, setUserDID] = useState('');
   const [userName, setUserName] = useState('User');
   
+  // Share Credential state
+  const [selectedCredentialId, setSelectedCredentialId] = useState('');
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [selectedCredential, setSelectedCredential] = useState(null);
+  const [verifierDid, setVerifierDid] = useState('');
+  const [isSharing, setIsSharing] = useState(false);
+
   // Real-time clock
   useEffect(() => {
     const timer = setInterval(() => {
@@ -834,118 +844,270 @@ const UserDashboard = () => {
     </div>
   );
 
-  const renderNotifications = () => (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold text-white mb-2">Notifications</h2>
-          <p className="text-gray-400">Stay updated with your credential activities</p>
-        </div>
-        <Button
-          size="sm"
-          variant="outline"
-          className="border-purple-500/30 text-purple-400 hover:bg-purple-500/10"
-        >
-          Mark All Read
-        </Button>
-      </div>
+  // Generate credential ID consistently
+  const generateCredentialId = (credential) => {
+    if (credential.uniqueId) return credential.uniqueId;
+    
+    const type = credential.credentialType || credential.type || 'CRED';
+    let prefix = 'CRD';
+    
+    switch (type.toLowerCase()) {
+      case 'degree':
+      case 'university degree':
+        prefix = 'DEG';
+        break;
+      case 'certificate':
+      case 'professional certificate':
+      case 'training certificate':
+        prefix = 'CERT';
+        break;
+      case 'license':
+      case 'driving license':
+        prefix = 'LIC';
+        break;
+      case 'pan':
+      case 'pan card':
+        prefix = 'PAN';
+        break;
+      default:
+        prefix = 'CRD';
+    }
+    
+    // Use a deterministic ID based on credential data
+    const hash = Math.abs(JSON.stringify(credential).split('').reduce((a, b) => {
+      a = ((a << 5) - a) + b.charCodeAt(0);
+      return a & a;
+    }, 0));
+    
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let randomStr = '';
+    let tempHash = hash;
+    for (let i = 0; i < 5; i++) {
+      randomStr += chars.charAt(tempHash % chars.length);
+      tempHash = Math.floor(tempHash / chars.length);
+    }
+    
+    return `${prefix}-${randomStr}`;
+  };
 
-      <div className="space-y-4">
-        {/* Sample notifications - replace with real data */}
-        {[
-          {
-            id: 1,
-            type: 'credential_issued',
-            title: 'New Credential Received',
-            message: 'You have received a University Degree credential from ABC University',
-            timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-            read: false,
-            icon: Award,
-            color: 'green'
-          },
-          {
-            id: 2,
-            type: 'verification_request',
-            title: 'Verification Request',
-            message: 'XYZ Company has requested to verify your Professional Certificate',
-            timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000),
-            read: false,
-            icon: Shield,
-            color: 'blue'
-          },
-          {
-            id: 3,
-            type: 'credential_expired',
-            title: 'Credential Expiring Soon',
-            message: 'Your Training Certificate will expire in 7 days',
-            timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000),
-            read: true,
-            icon: Clock,
-            color: 'yellow'
-          }
-        ].map((notification) => {
-          const IconComponent = notification.icon;
-          return (
-            <Card key={notification.id} className={`bg-gray-800/50 border-gray-700/50 ${!notification.read ? 'border-l-4 border-l-purple-500' : ''} hover:bg-gray-800/70 transition-all duration-200`}>
-              <CardContent className="p-6">
-                <div className="flex items-start space-x-4">
-                  <div className={`p-3 rounded-xl ${
-                    notification.color === 'green' ? 'bg-green-600/20' :
-                    notification.color === 'blue' ? 'bg-blue-600/20' :
-                    notification.color === 'yellow' ? 'bg-yellow-600/20' : 'bg-purple-600/20'
-                  }`}>
-                    <IconComponent className={`h-6 w-6 ${
-                      notification.color === 'green' ? 'text-green-400' :
-                      notification.color === 'blue' ? 'text-blue-400' :
-                      notification.color === 'yellow' ? 'text-yellow-400' : 'text-purple-400'
-                    }`} />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-lg font-semibold text-white">{notification.title}</h3>
-                      {!notification.read && (
-                        <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                      )}
-                    </div>
-                    <p className="text-gray-400 mb-3">{notification.message}</p>
-                    <div className="flex items-center justify-between">
-                      <p className="text-gray-500 text-sm">
-                        {notification.timestamp.toLocaleString()}
-                      </p>
-                      <div className="flex items-center space-x-2">
-                        <Button size="sm" variant="ghost" className="text-purple-400 hover:text-purple-300">
-                          <Eye className="h-4 w-4 mr-1" />
-                          View
-                        </Button>
-                        {!notification.read && (
-                          <Button size="sm" variant="ghost" className="text-gray-400 hover:text-gray-300">
-                            Mark Read
-                          </Button>
-                        )}
+  // Handle credential search
+  const handleCredentialSearch = () => {
+    if (!selectedCredentialId || selectedCredentialId.trim() === '') return;
+    
+    const credential = myCredentials.find(cred => generateCredentialId(cred) === selectedCredentialId);
+    setSelectedCredential(credential || null);
+    setShowDropdown(false);
+  };
+
+  const handleCredentialSelect = (credentialId) => {
+    setSelectedCredentialId(credentialId);
+    setShowDropdown(false);
+  };
+
+  // Close dropdown when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showDropdown && !event.target.closest('.dropdown-container')) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showDropdown]);
+
+  const renderShareCredential = () => {
+
+    const handleShare = async (credential) => {
+      if (!verifierDid || verifierDid.trim() === '') {
+        toast({
+          title: "Verifier DID Required",
+          description: "Please enter the Verifier DID before sharing the credential.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      setIsSharing(true);
+      try {
+        // Simulate sharing process
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        toast({
+          title: "Credential Shared Successfully! 🎉",
+          description: `Credential ${credential.id} has been shared with ${verifierDid}`,
+        });
+        
+        setSelectedCredential(null);
+        setVerifierDid('');
+      } catch (error) {
+        toast({
+          title: "Sharing Failed",
+          description: error.message,
+          variant: "destructive"
+        });
+      } finally {
+        setIsSharing(false);
+      }
+    };
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/5 to-gray-900 p-8">
+        <div className="max-w-4xl mx-auto space-y-8">
+          {/* Header Section */}
+          <div className="text-center space-y-4">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <div className="p-3 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg shadow-lg">
+                <Share2 className="h-6 w-6 text-white" />
+              </div>
+              <h1 className="text-3xl font-bold text-white">
+                Share Credentials
+              </h1>
+            </div>
+            <p className="text-gray-400 max-w-xl mx-auto">
+              Search for your credentials by ID and share them securely
+            </p>
+          </div>
+
+          {/* Search Section */}
+          <Card className="bg-gray-800/40 backdrop-blur-sm border border-gray-700/30 shadow-lg">
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                <label className="block text-sm font-medium text-gray-300">
+                  Search by Credential ID
+                </label>
+                
+                <div className="flex gap-3">
+                  <div className="relative dropdown-container">
+                    <input
+                      type="text"
+                      value={selectedCredentialId}
+                      onChange={(e) => setSelectedCredentialId(e.target.value)}
+                      onFocus={() => setShowDropdown(true)}
+                      placeholder="Select or enter Credential ID"
+                      className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600/30 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400/50 transition-all duration-200"
+                    />
+                    
+                    {/* Dropdown */}
+                    {showDropdown && myCredentials.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 mt-2 bg-gray-800/95 backdrop-blur-sm border border-gray-600/40 rounded-xl shadow-2xl z-50 max-h-64 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
+                        {myCredentials.map((credential) => {
+                          const credentialId = generateCredentialId(credential);
+                          
+                          return (
+                            <button
+                              key={credentialId}
+                              onClick={() => handleCredentialSelect(credentialId)}
+                              className="w-full px-5 py-4 text-left hover:bg-gray-700/60 transition-all duration-200 border-b border-gray-700/20 last:border-b-0 group focus:outline-none focus:bg-gray-700/60"
+                            >
+                              <div className="flex flex-col space-y-1.5">
+                                <div className="text-white font-mono text-base font-semibold tracking-wide group-hover:text-purple-300 transition-colors">
+                                  {credentialId}
+                                </div>
+                                <div className="text-gray-400 text-sm leading-relaxed truncate max-w-full">
+                                  {credential.title || 'No title available'}
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
                       </div>
-                    </div>
+                    )}
                   </div>
+                  
+                  <Button
+                    onClick={handleCredentialSearch}
+                    disabled={!selectedCredentialId || selectedCredentialId.trim() === ''}
+                    className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-all duration-200 disabled:bg-gray-600 disabled:cursor-not-allowed"
+                  >
+                    <Search className="h-4 w-4 mr-2" />
+                    Search
+                  </Button>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Selected Credential Display */}
+          {selectedCredential && (
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold text-white">Selected Credential</h2>
+              
+              {/* Use the same CredentialCard component from My Credentials */}
+              <CredentialCard 
+                credential={selectedCredential}
+                onRevoke={() => {}}
+                showActions={false}
+              />
+              
+              {/* Verifier DID and Share Section */}
+              <Card className="bg-gray-800/40 backdrop-blur-sm border border-gray-700/30 shadow-lg">
+                <CardContent className="p-6">
+                  <div className="space-y-4">
+                    <label className="block text-sm font-medium text-gray-300">
+                      Verifier DID (Required for Sharing)
+                    </label>
+                    
+                    <div className="flex gap-3">
+                      <input
+                        type="text"
+                        value={verifierDid}
+                        onChange={(e) => setVerifierDid(e.target.value)}
+                        placeholder="Enter the Verifier DID to share with"
+                        className="flex-1 px-4 py-3 bg-gray-700/50 border border-gray-600/30 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400/50 transition-all duration-200"
+                      />
+                      
+                      <Button
+                        onClick={() => handleShare(selectedCredential)}
+                        disabled={isSharing || !verifierDid || verifierDid.trim() === ''}
+                        className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-all duration-200 disabled:bg-gray-600 disabled:cursor-not-allowed"
+                      >
+                        {isSharing ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Sharing...
+                          </>
+                        ) : (
+                          <>
+                            <Share2 className="h-4 w-4 mr-2" />
+                            Share
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                    
+                    {(!verifierDid || verifierDid.trim() === '') && (
+                      <p className="text-amber-400 text-sm flex items-center gap-1">
+                        <AlertCircle className="h-4 w-4" />
+                        Please enter a Verifier DID to enable credential sharing
+                      </p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+          
+          {/* No credential selected state */}
+          {!selectedCredential && selectedCredentialId && (
+            <Card className="bg-gray-800/40 backdrop-blur-sm border border-gray-700/30 shadow-lg">
+              <CardContent className="p-12 text-center">
+                <div className="w-16 h-16 bg-gray-700/50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Search className="h-8 w-8 text-gray-400" />
+                </div>
+                <h3 className="text-xl font-semibold text-white mb-2">Credential Not Found</h3>
+                <p className="text-gray-400">
+                  No credential found with ID: <span className="font-mono">{selectedCredentialId}</span>
+                </p>
               </CardContent>
             </Card>
-          );
-        })}
+          )}
+        </div>
       </div>
-
-      {/* Empty state for when no notifications */}
-      {false && (
-        <Card className="bg-gray-800/50 border-gray-700/50">
-          <CardContent className="p-12 text-center">
-            <div className="w-16 h-16 bg-gray-700/50 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Bell className="h-8 w-8 text-gray-400" />
-            </div>
-            <h3 className="text-xl font-semibold text-white mb-2">No Notifications</h3>
-            <p className="text-gray-400">You're all caught up! New notifications will appear here.</p>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
+    );
+  };
 
   const renderRevokeCredentials = () => (
     <div className="p-6 space-y-6">
@@ -1114,7 +1276,7 @@ const UserDashboard = () => {
         <main className="flex-1 ml-64">
           {activeSection === 'dashboard' && renderDashboard()}
           {activeSection === 'credentials' && renderCredentials()}
-          {activeSection === 'notifications' && renderNotifications()}
+          {activeSection === 'share-credential' && renderShareCredential()}
           {activeSection === 'revoke-credentials' && renderRevokeCredentials()}
           {activeSection === 'verification-requests' && renderVerificationRequests()}
         </main>
