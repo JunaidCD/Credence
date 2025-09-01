@@ -65,6 +65,7 @@ const UserDashboard = () => {
   const [selectedCredential, setSelectedCredential] = useState(null);
   const [verifierDid, setVerifierDid] = useState('');
   const [isSharing, setIsSharing] = useState(false);
+  const dropdownRef = useRef(null);
 
   // Real-time clock
   useEffect(() => {
@@ -177,6 +178,20 @@ const UserDashboard = () => {
       };
     }
   }, [toast, walletAddress, queryClient]);
+
+  // Handle click outside dropdown to close it
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const checkUserStatus = async (address) => {
     try {
@@ -971,69 +986,97 @@ const UserDashboard = () => {
             </p>
           </div>
 
-          {/* Search Section */}
-          <Card className="bg-gray-800/40 backdrop-blur-sm border border-gray-700/30 shadow-lg">
-            <CardContent className="p-6">
-              <div className="space-y-4">
-                <label className="block text-sm font-medium text-gray-300">
-                  Search by Credential ID
-                </label>
-                
-                <div className="flex gap-3">
-                  <div className="relative dropdown-container">
-                    <input
-                      type="text"
-                      value={selectedCredentialId}
-                      onChange={(e) => setSelectedCredentialId(e.target.value)}
-                      onFocus={() => setShowDropdown(true)}
-                      placeholder="Select or enter Credential ID"
-                      className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600/30 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400/50 transition-all duration-200"
-                    />
-                    
-                    {/* Dropdown */}
-                    {showDropdown && myCredentials.length > 0 && (
-                      <div className="absolute top-full left-0 right-0 mt-2 bg-gray-800/95 backdrop-blur-sm border border-gray-600/40 rounded-xl shadow-2xl z-50 max-h-64 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
-                        {myCredentials.map((credential) => {
-                          const credentialId = generateCredentialId(credential);
-                          
-                          return (
-                            <button
-                              key={credentialId}
-                              onClick={() => handleCredentialSelect(credentialId)}
-                              className="w-full px-5 py-4 text-left hover:bg-gray-700/60 transition-all duration-200 border-b border-gray-700/20 last:border-b-0 group focus:outline-none focus:bg-gray-700/60"
-                            >
-                              <div className="flex flex-col space-y-1.5">
-                                <div className="text-white font-mono text-base font-semibold tracking-wide group-hover:text-purple-300 transition-colors">
-                                  {credentialId}
-                                </div>
-                                <div className="text-gray-400 text-sm leading-relaxed truncate max-w-full">
-                                  {credential.title || 'No title available'}
-                                </div>
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
+          {/* Compact Search Section */}
+          <div className="max-w-2xl mx-auto">
+            <Card className="bg-gradient-to-br from-gray-800/70 via-gray-800/50 to-gray-900/70 backdrop-blur-lg border border-purple-500/30 shadow-xl rounded-xl overflow-hidden">
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-center space-x-2 mb-4">
+                    <Search className="h-4 w-4 text-purple-400" />
+                    <label className="text-base font-medium bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+                      Search by Credential ID
+                    </label>
                   </div>
                   
-                  <Button
-                    onClick={handleCredentialSearch}
-                    disabled={!selectedCredentialId || selectedCredentialId.trim() === ''}
-                    className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-all duration-200 disabled:bg-gray-600 disabled:cursor-not-allowed"
-                  >
-                    <Search className="h-4 w-4 mr-2" />
-                    Search
-                  </Button>
+                  <div className="flex gap-3">
+                    <div className="relative dropdown-container flex-1" ref={dropdownRef}>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={selectedCredentialId}
+                          onChange={(e) => setSelectedCredentialId(e.target.value)}
+                          onFocus={() => setShowDropdown(true)}
+                          onClick={() => setShowDropdown(true)}
+                          placeholder="Enter or select credential ID..."
+                          className="w-full px-4 py-3 bg-gradient-to-r from-gray-700/60 to-gray-800/60 border border-gray-600/40 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500/50 focus:border-purple-400/70 focus:shadow-lg focus:shadow-purple-500/25 transition-all duration-200 text-sm font-medium backdrop-blur-sm hover:border-purple-500/50"
+                        />
+                      </div>
+                      
+                      {/* Enhanced Dropdown with Maximum Visibility */}
+                      {showDropdown && myCredentials.length > 0 && (
+                        <div 
+                          className="fixed left-0 right-0 mx-auto max-w-2xl bg-gray-800/98 backdrop-blur-xl border-2 border-purple-500/50 rounded-xl shadow-2xl shadow-black/80 z-[99999] max-h-80 overflow-hidden"
+                          style={{
+                            top: dropdownRef.current ? dropdownRef.current.getBoundingClientRect().bottom + window.scrollY + 8 : 'auto',
+                            left: dropdownRef.current ? dropdownRef.current.getBoundingClientRect().left + window.scrollX : 'auto',
+                            width: dropdownRef.current ? dropdownRef.current.getBoundingClientRect().width : 'auto'
+                          }}
+                        >
+                          <div className="p-2">
+                            <div className="max-h-72 overflow-y-auto scrollbar-thin scrollbar-thumb-purple-500/70 scrollbar-track-gray-700/40 scrollbar-thumb-rounded-full">
+                              {myCredentials.map((credential, index) => {
+                                const credentialId = generateCredentialId(credential);
+                                
+                                return (
+                                  <button
+                                    key={credentialId}
+                                    onClick={() => handleCredentialSelect(credentialId)}
+                                    className="w-full p-3 text-left hover:bg-gradient-to-r hover:from-purple-600/25 hover:to-blue-600/25 transition-all duration-200 rounded-lg group focus:outline-none focus:bg-gradient-to-r focus:from-purple-600/25 focus:to-blue-600/25 border border-transparent hover:border-purple-500/40 focus:border-purple-400/50 mb-1 last:mb-0"
+                                  >
+                                    <div className="flex flex-col space-y-1">
+                                      <div className="text-white font-mono text-sm font-semibold group-hover:text-purple-300 transition-colors">
+                                        {credentialId}
+                                      </div>
+                                      <div className="text-gray-400 text-xs group-hover:text-gray-300 transition-colors">
+                                        {credential.title || 'No title available'}
+                                      </div>
+                                    </div>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                          {/* Visual separator at bottom */}
+                          <div className="h-0.5 bg-gradient-to-r from-purple-600/40 via-blue-600/40 to-purple-600/40"></div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <Button
+                      onClick={handleCredentialSearch}
+                      disabled={!selectedCredentialId || selectedCredentialId.trim() === ''}
+                      className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-xl transition-all duration-200 disabled:bg-gray-600 disabled:cursor-not-allowed font-medium text-sm shadow-lg shadow-purple-500/30 hover:shadow-purple-500/40 hover:scale-[1.02] active:scale-[0.98]"
+                    >
+                      <Search className="h-4 w-4 mr-1.5" />
+                      Search
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
 
           {/* Selected Credential Display */}
           {selectedCredential && (
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold text-white">Selected Credential</h2>
+            <div className="space-y-6 mt-12">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 rounded-xl bg-gradient-to-br from-green-600/20 to-emerald-600/20 backdrop-blur-sm">
+                  <CheckCircle className="h-5 w-5 text-green-400" />
+                </div>
+                <h2 className="text-2xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
+                  ✅ Selected Credential
+                </h2>
+              </div>
               
               {/* Use the same CredentialCard component from My Credentials */}
               <CredentialCard 

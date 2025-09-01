@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
-import { Calendar, User, Building, FileText, Award, GraduationCap, Car, Hash } from 'lucide-react';
+import { Calendar, User, Building, FileText, Award, GraduationCap, Car, Hash, Copy, Check } from 'lucide-react';
 
 const getCredentialIcon = (type) => {
   if (!type || typeof type !== 'string') {
@@ -86,11 +86,23 @@ const generateCredentialId = (credential) => {
 };
 
 const CredentialCard = ({ credential }) => {
+  const [copied, setCopied] = useState(false);
   const IconComponent = getCredentialIcon(credential.credentialType || credential.type);
   const gradientClass = getCredentialGradient(credential.credentialType || credential.type);
   
   // Generate unique credential ID
   const credentialId = generateCredentialId(credential);
+
+  // Copy credential ID to clipboard
+  const copyCredentialId = async () => {
+    try {
+      await navigator.clipboard.writeText(credentialId);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy credential ID:', err);
+    }
+  };
   
   // Get credential title from various possible sources
   const credentialTitle = credential.data?.title || 
@@ -133,11 +145,22 @@ const CredentialCard = ({ credential }) => {
       </div>
 
       <CardContent className="p-5 relative z-10">
-        {/* Credential ID Badge */}
+        {/* Credential ID Badge with Copy Button */}
         <div className="mb-3">
-          <div className="inline-flex items-center space-x-1.5 bg-slate-800/70 border border-slate-600/50 rounded-lg px-2.5 py-1.5">
+          <div className="inline-flex items-center space-x-1.5 bg-slate-800/70 border border-slate-600/50 rounded-lg px-2.5 py-1.5 group/id">
             <Hash className="h-3 w-3 text-slate-400" />
             <span className="text-xs font-mono text-slate-300 font-medium">{credentialId}</span>
+            <button
+              onClick={copyCredentialId}
+              className="ml-2 p-1 rounded hover:bg-slate-700/50 transition-all duration-200 opacity-0 group-hover/id:opacity-100 focus:opacity-100"
+              title={copied ? "Copied!" : "Copy Credential ID"}
+            >
+              {copied ? (
+                <Check className="h-3 w-3 text-green-400" />
+              ) : (
+                <Copy className="h-3 w-3 text-slate-400 hover:text-slate-300" />
+              )}
+            </button>
           </div>
         </div>
         
