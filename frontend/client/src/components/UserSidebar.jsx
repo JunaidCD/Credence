@@ -2,7 +2,7 @@ import {
   LayoutDashboard, 
   Award, 
   Share2, 
-  ShieldX, 
+  Bell, 
   LogOut,
   User
 } from 'lucide-react';
@@ -22,7 +22,7 @@ const UserSidebar = ({ activeSection, onSectionChange }) => {
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'credentials', label: 'My Credentials', icon: Award },
     { id: 'share-credential', label: 'Share Credential', icon: Share2 },
-    { id: 'revoke-credentials', label: 'Revoke Credentials', icon: ShieldX },
+    { id: 'notifications', label: 'Notifications', icon: Bell },
   ];
 
   return (

@@ -1109,164 +1109,228 @@ const UserDashboard = () => {
     );
   };
 
-  const renderRevokeCredentials = () => (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold text-white mb-2">Revoke Credentials</h2>
-          <p className="text-gray-400">Manage and revoke credentials you have shared</p>
-        </div>
-        <div className="flex items-center space-x-2 text-sm text-red-400 bg-red-500/10 px-3 py-2 rounded-lg border border-red-500/20">
-          <ShieldX className="h-4 w-4" />
-          <span>Revocation Control</span>
-        </div>
-      </div>
+  const renderNotifications = () => {
+    // Empty notifications array - will be populated from API in real implementation
+    const notifications = [];
+    const unreadCount = notifications.filter(n => !n.read).length;
 
-      {/* Search and Filter */}
-      <Card className="bg-gray-800/50 border-gray-700/50">
-        <CardContent className="p-6">
-          <div className="flex items-center space-x-4 mb-4">
-            <div className="flex-1">
-              <Label className="text-gray-300 mb-2 block">Search Credentials</Label>
-              <Input
-                placeholder="Search by credential type, title, or issuer..."
-                className="bg-gray-900/50 border-gray-600 text-white"
-              />
-            </div>
-            <div className="w-48">
-              <Label className="text-gray-300 mb-2 block">Filter by Status</Label>
-              <Select defaultValue="all">
-                <SelectTrigger className="bg-gray-900/50 border-gray-600 text-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-gray-800 border-gray-600">
-                  <SelectItem value="all">All Credentials</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="shared">Shared</SelectItem>
-                  <SelectItem value="revoked">Revoked</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+    const getNotificationIcon = (type) => {
+      switch (type) {
+        case 'credential_issued':
+          return Award;
+        case 'verification_request':
+          return Shield;
+        case 'credential_shared':
+          return Share2;
+        case 'system':
+          return Activity;
+        default:
+          return Bell;
+      }
+    };
+
+    const getNotificationColor = (priority) => {
+      switch (priority) {
+        case 'high':
+          return 'from-red-500/20 to-orange-500/20 border-red-500/30';
+        case 'medium':
+          return 'from-yellow-500/20 to-amber-500/20 border-yellow-500/30';
+        case 'low':
+          return 'from-blue-500/20 to-cyan-500/20 border-blue-500/30';
+        default:
+          return 'from-gray-500/20 to-gray-600/20 border-gray-500/30';
+      }
+    };
+
+    return (
+      <div className="p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent mb-2">
+              🔔 Notifications
+            </h2>
+            <p className="text-gray-400">Stay updated with your credential activities</p>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Credentials List for Revocation */}
-      {credentialsLoading ? (
-        <div className="space-y-4">
-          {[1, 2, 3].map(i => (
-            <Card key={i} className="bg-gray-800/50">
-              <CardContent className="p-6">
-                <Skeleton className="h-4 w-3/4 mb-4" />
-                <Skeleton className="h-3 w-1/2 mb-2" />
-                <Skeleton className="h-3 w-2/3" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : myCredentials.length === 0 ? (
-        <Card className="bg-gray-800/50 border-gray-700/50">
-          <CardContent className="p-12 text-center">
-            <div className="w-16 h-16 bg-gray-700/50 rounded-full flex items-center justify-center mx-auto mb-4">
-              <ShieldX className="h-8 w-8 text-gray-400" />
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 text-sm text-blue-400 bg-blue-500/10 px-3 py-2 rounded-lg border border-blue-500/20">
+              <Bell className="h-4 w-4" />
+              <span>Total: {notifications.length}</span>
             </div>
-            <h3 className="text-xl font-semibold text-white mb-2">No Credentials to Revoke</h3>
-            <p className="text-gray-400 mb-6">You don't have any credentials that can be revoked</p>
-            <Button
-              onClick={() => setActiveSection('credentials')}
-              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-            >
-              View My Credentials
-            </Button>
+            {unreadCount > 0 && (
+              <div className="flex items-center space-x-2 text-sm text-orange-400 bg-orange-500/10 px-3 py-2 rounded-lg border border-orange-500/20">
+                <Activity className="h-4 w-4" />
+                <span>Unread: {unreadCount}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Notification Filters */}
+        <Card className="bg-gray-800/50 border-gray-700/50">
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-4">
+              <Button
+                size="sm"
+                className="bg-purple-600/20 border-purple-500/30 text-purple-400 hover:bg-purple-600/30"
+              >
+                All Notifications
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-gray-600 text-gray-400 hover:bg-gray-700"
+              >
+                Unread Only
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-gray-600 text-gray-400 hover:bg-gray-700"
+              >
+                Mark All Read
+              </Button>
+            </div>
           </CardContent>
         </Card>
-      ) : (
-        <div className="space-y-4">
-          {myCredentials.filter(credential => credential.status === 'active').map((credential) => (
-            <Card key={credential.id} className="bg-gray-800/50 border-gray-700/50 hover:border-red-500/30 transition-all duration-200 group">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="p-3 rounded-xl bg-red-600/20 group-hover:bg-red-600/30 transition-colors duration-200">
-                      <Award className="h-6 w-6 text-red-400" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-white mb-1">
-                        {credential.metadata?.title || credential.type}
-                      </h3>
-                      <div className="flex items-center space-x-4 text-sm text-gray-400">
-                        <span>Type: {credential.type}</span>
-                        <span>•</span>
-                        <span>Issued: {new Date(credential.issueDate).toLocaleDateString()}</span>
-                        <span>•</span>
-                        <span>Issuer: {credential.metadata?.issuerName || 'Unknown'}</span>
-                      </div>
-                      <div className="flex items-center space-x-2 mt-2">
-                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-500/20 text-green-400">
-                          Active
-                        </span>
-                        {credential.metadata?.collegeName && (
-                          <span className="text-gray-500 text-xs">
-                            {credential.metadata.collegeName}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center space-x-3">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="border-gray-600 text-gray-400 hover:bg-gray-700"
-                      onClick={() => setActiveSection('credentials')}
-                    >
-                      <Eye className="h-4 w-4 mr-1" />
-                      View Details
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      className="bg-red-600/20 border-red-500/30 text-red-400 hover:bg-red-600/30 hover:border-red-400"
-                      onClick={() => {
-                        if (window.confirm('Are you sure you want to revoke access to this credential? This action cannot be undone.')) {
-                          toast({
-                            title: "Credential Access Revoked",
-                            description: "You have revoked access to this credential.",
-                          });
-                        }
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4 mr-1" />
-                      Revoke Access
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
 
-      {/* Revocation Information */}
-      <Card className="bg-yellow-500/10 border-yellow-500/30">
-        <CardContent className="p-6">
-          <div className="flex items-start space-x-3">
-            <AlertCircle className="h-6 w-6 text-yellow-400 mt-1" />
-            <div>
-              <h3 className="text-lg font-semibold text-yellow-400 mb-2">Important Information</h3>
-              <ul className="text-gray-300 text-sm space-y-1">
-                <li>• Revoking a credential removes access for verifiers who have already received it</li>
-                <li>• This action is permanent and cannot be undone</li>
-                <li>• The credential will remain in your wallet but marked as revoked</li>
-                <li>• Future verification requests will show this credential as inactive</li>
-              </ul>
-            </div>
+        {/* Notifications List */}
+        {notifications.length === 0 ? (
+          <Card className="bg-gray-800/50 border-gray-700/50">
+            <CardContent className="p-12 text-center">
+              <div className="w-20 h-20 bg-gradient-to-br from-purple-600/20 to-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Bell className="h-10 w-10 text-purple-400" />
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-3">No Notifications Yet</h3>
+              <p className="text-gray-400 mb-6 max-w-md mx-auto">
+                You'll receive notifications here when there are updates about your credentials, verification requests, or system activities.
+              </p>
+              <div className="space-y-3 max-w-sm mx-auto">
+                <div className="flex items-center text-sm text-gray-300">
+                  <div className="w-6 h-6 bg-purple-600/20 rounded-full flex items-center justify-center mr-3">
+                    <Award className="h-3 w-3 text-purple-400" />
+                  </div>
+                  Credential issuance notifications
+                </div>
+                <div className="flex items-center text-sm text-gray-300">
+                  <div className="w-6 h-6 bg-blue-600/20 rounded-full flex items-center justify-center mr-3">
+                    <Shield className="h-3 w-3 text-blue-400" />
+                  </div>
+                  Verification request alerts
+                </div>
+                <div className="flex items-center text-sm text-gray-300">
+                  <div className="w-6 h-6 bg-green-600/20 rounded-full flex items-center justify-center mr-3">
+                    <Share2 className="h-3 w-3 text-green-400" />
+                  </div>
+                  Credential sharing confirmations
+                </div>
+                <div className="flex items-center text-sm text-gray-300">
+                  <div className="w-6 h-6 bg-cyan-600/20 rounded-full flex items-center justify-center mr-3">
+                    <Activity className="h-3 w-3 text-cyan-400" />
+                  </div>
+                  System and security updates
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {notifications.map((notification) => {
+              const IconComponent = getNotificationIcon(notification.type);
+              const colorClass = getNotificationColor(notification.priority);
+              
+              return (
+                <Card 
+                  key={notification.id} 
+                  className={`bg-gradient-to-r ${colorClass} backdrop-blur-sm hover:shadow-lg transition-all duration-200 ${!notification.read ? 'ring-2 ring-purple-500/30' : ''}`}
+                >
+                  <CardContent className="p-6">
+                    <div className="flex items-start space-x-4">
+                      <div className={`p-3 rounded-xl bg-gradient-to-br ${notification.priority === 'high' ? 'from-red-600/30 to-orange-600/30' : notification.priority === 'medium' ? 'from-yellow-600/30 to-amber-600/30' : 'from-blue-600/30 to-cyan-600/30'} flex-shrink-0`}>
+                        <IconComponent className={`h-6 w-6 ${notification.priority === 'high' ? 'text-red-400' : notification.priority === 'medium' ? 'text-yellow-400' : 'text-blue-400'}`} />
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="text-lg font-semibold text-white">
+                            {notification.title}
+                          </h3>
+                          <div className="flex items-center space-x-2">
+                            {!notification.read && (
+                              <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
+                            )}
+                            <span className="text-xs text-gray-400">
+                              {notification.timestamp.toLocaleString()}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <p className="text-gray-300 mb-3">
+                          {notification.message}
+                        </p>
+                        
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              notification.priority === 'high' ? 'bg-red-500/20 text-red-400' :
+                              notification.priority === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                              'bg-blue-500/20 text-blue-400'
+                            }`}>
+                              {notification.priority.toUpperCase()}
+                            </span>
+                            <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-500/20 text-gray-400">
+                              {notification.type.replace('_', ' ').toUpperCase()}
+                            </span>
+                          </div>
+                          
+                          <div className="flex items-center space-x-2">
+                            {!notification.read && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="border-purple-500/30 text-purple-400 hover:bg-purple-500/10"
+                              >
+                                Mark as Read
+                              </Button>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-gray-600 text-gray-400 hover:bg-gray-700"
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              View Details
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
+        )}
+
+        {/* Notification Settings */}
+        <Card className="bg-blue-500/10 border-blue-500/30">
+          <CardContent className="p-6">
+            <div className="flex items-start space-x-3">
+              <Bell className="h-6 w-6 text-blue-400 mt-1" />
+              <div>
+                <h3 className="text-lg font-semibold text-blue-400 mb-2">Notification Settings</h3>
+                <ul className="text-gray-300 text-sm space-y-1">
+                  <li>• Get notified when new credentials are issued to you</li>
+                  <li>• Receive alerts for verification requests from organizations</li>
+                  <li>• Stay informed about credential sharing confirmations</li>
+                  <li>• Get system updates and security notifications</li>
+                </ul>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-gray-900">
@@ -1277,7 +1341,7 @@ const UserDashboard = () => {
           {activeSection === 'dashboard' && renderDashboard()}
           {activeSection === 'credentials' && renderCredentials()}
           {activeSection === 'share-credential' && renderShareCredential()}
-          {activeSection === 'revoke-credentials' && renderRevokeCredentials()}
+          {activeSection === 'notifications' && renderNotifications()}
           {activeSection === 'verification-requests' && renderVerificationRequests()}
         </main>
       </div>
