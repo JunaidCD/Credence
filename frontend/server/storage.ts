@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Credential, type InsertCredential, type VerificationRequest, type InsertVerificationRequest } from "@shared/schema";
+import { type User, type InsertUser, type Credential, type InsertCredential, type VerificationRequest, type InsertVerificationRequest, type Notification, type InsertNotification } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -23,17 +23,27 @@ export interface IStorage {
   getVerificationRequestsByVerifierId(verifierId: string): Promise<VerificationRequest[]>;
   createVerificationRequest(request: InsertVerificationRequest): Promise<VerificationRequest>;
   updateVerificationRequest(id: string, updates: Partial<VerificationRequest>): Promise<VerificationRequest | undefined>;
+
+  // Notifications
+  getNotification(id: string): Promise<Notification | undefined>;
+  getNotificationsByUserId(userId: string): Promise<Notification[]>;
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  updateNotification(id: string, updates: Partial<Notification>): Promise<Notification | undefined>;
+  markNotificationAsRead(id: string): Promise<Notification | undefined>;
+  markAllNotificationsAsRead(userId: string): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
   private users: Map<string, User>;
   private credentials: Map<string, Credential>;
   private verificationRequests: Map<string, VerificationRequest>;
+  private notifications: Map<string, Notification>;
 
   constructor() {
     this.users = new Map();
     this.credentials = new Map();
     this.verificationRequests = new Map();
+    this.notifications = new Map();
     
     // Initialize with some test data for debugging
     this.initializeTestData();
@@ -110,6 +120,9 @@ export class MemStorage implements IStorage {
   }
 
   async createCredential(insertCredential: InsertCredential): Promise<Credential> {
+    console.log('=== CREATE CREDENTIAL DEBUG ===');
+    console.log('Input credential data:', insertCredential);
+    
     const id = randomUUID();
     const credential: Credential = { 
       ...insertCredential, 
@@ -117,7 +130,20 @@ export class MemStorage implements IStorage {
       createdAt: new Date()
     } as Credential;
     this.credentials.set(id, credential);
-    console.log('Created credential:', { id: credential.id, userId: credential.userId, title: credential.title });
+    console.log('✅ Created credential in storage:', { 
+      id: credential.id, 
+      userId: credential.userId, 
+      issuerId: credential.issuerId,
+      title: credential.title,
+      type: credential.type
+    });
+    
+    // Create notification for the user who received the credential
+    console.log('🔔 About to create notification for credential...');
+    await this.createCredentialNotification(credential);
+    console.log('✅ Notification creation completed');
+    
+    console.log('=== END CREATE CREDENTIAL DEBUG ===');
     return credential;
   }
 
@@ -190,12 +216,183 @@ export class MemStorage implements IStorage {
     console.log(`Found ${credentialsToLink.length} credentials to link`);
     
     // Update each credential to link it to the user
+    const linkedCredentials = [];
     for (const credential of credentialsToLink) {
       console.log(`Linking credential ${credential.id} to user ${userId}`);
-      await this.updateCredential(credential.id, { userId });
+      const updatedCredential = await this.updateCredential(credential.id, { userId });
+      if (updatedCredential) {
+        linkedCredentials.push(updatedCredential);
+      }
+    }
+    
+    // Create notifications for all newly linked credentials
+    if (linkedCredentials.length > 0) {
+      console.log(`Creating notifications for ${linkedCredentials.length} linked credentials`);
+      await this.createNotificationsForLinkedCredentials(userId, linkedCredentials);
     }
     
     console.log(`=== LINKING COMPLETE ===`);
+  }
+
+  // Notifications
+  async getNotification(id: string): Promise<Notification | undefined> {
+    return this.notifications.get(id);
+  }
+
+  async getNotificationsByUserId(userId: string): Promise<Notification[]> {
+    return Array.from(this.notifications.values())
+      .filter(notification => notification.userId === userId)
+      .sort((a, b) => {
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateB - dateA;
+      });
+  }
+
+  async createNotification(insertNotification: InsertNotification): Promise<Notification> {
+    const id = randomUUID();
+    const notification: Notification = { 
+      ...insertNotification, 
+      id, 
+      createdAt: new Date()
+    } as Notification;
+    this.notifications.set(id, notification);
+    console.log('Created notification:', { id: notification.id, userId: notification.userId, type: notification.type });
+    return notification;
+  }
+
+  async updateNotification(id: string, updates: Partial<Notification>): Promise<Notification | undefined> {
+    const notification = this.notifications.get(id);
+    if (!notification) return undefined;
+    
+    const updatedNotification = { ...notification, ...updates };
+    this.notifications.set(id, updatedNotification);
+    return updatedNotification;
+  }
+
+  async markNotificationAsRead(id: string): Promise<Notification | undefined> {
+    return this.updateNotification(id, { read: true });
+  }
+
+  async markAllNotificationsAsRead(userId: string): Promise<void> {
+    const userNotifications = await this.getNotificationsByUserId(userId);
+    for (const notification of userNotifications) {
+      if (!notification.read) {
+        await this.markNotificationAsRead(notification.id);
+      }
+    }
+  }
+
+  // Helper method to create credential notification
+  private async createCredentialNotification(credential: Credential): Promise<void> {
+    console.log('=== CREATE CREDENTIAL NOTIFICATION DEBUG ===');
+    console.log('Credential received:', {
+      id: credential.id,
+      userId: credential.userId,
+      issuerId: credential.issuerId,
+      type: credential.type,
+      title: credential.title
+    });
+    
+    try {
+      // Get issuer information
+      const issuer = await this.getUser(credential.issuerId);
+      console.log('Found issuer:', {
+        id: issuer?.id,
+        name: issuer?.name,
+        did: issuer?.did,
+        address: issuer?.address
+      });
+      
+      const issuerName = issuer?.name || 'Unknown Issuer';
+      const issuerDID = issuer?.did || 'Unknown DID';
+      
+      // Only create notification if user exists (has userId)
+      if (credential.userId) {
+        console.log('Creating notification for userId:', credential.userId);
+        
+        const notificationData = {
+          userId: credential.userId,
+          type: 'credential_issued',
+          title: 'New Credential Received',
+          message: `You have received a new ${credential.type} credential: "${credential.title}" from ${issuerName}`,
+          data: {
+            credentialId: credential.id,
+            credentialType: credential.type,
+            credentialTitle: credential.title,
+            issuerName,
+            issuerDID,
+            issuerAddress: issuer?.address,
+            issueDate: credential.issueDate,
+            expiryDate: credential.expiryDate,
+            status: credential.status,
+            metadata: credential.metadata
+          },
+          read: false,
+          priority: 'high'
+        };
+        
+        console.log('Notification data to create:', notificationData);
+        
+        const createdNotification = await this.createNotification(notificationData);
+        console.log('Successfully created notification:', {
+          id: createdNotification.id,
+          userId: createdNotification.userId,
+          type: createdNotification.type,
+          title: createdNotification.title
+        });
+        
+        // Verify notification was stored
+        const allNotifications = Array.from(this.notifications.values());
+        const userNotifications = allNotifications.filter(n => n.userId === credential.userId);
+        console.log(`Total notifications in storage: ${allNotifications.length}`);
+        console.log(`Notifications for user ${credential.userId}: ${userNotifications.length}`);
+        
+      } else {
+        console.log('❌ Notification not created - credential has no userId (user not registered yet)');
+        console.log('Credential userId:', credential.userId);
+      }
+    } catch (error) {
+      console.error('❌ Failed to create credential notification:', error);
+    }
+    console.log('=== END CREATE CREDENTIAL NOTIFICATION DEBUG ===');
+  }
+
+  // Helper method to create notifications for newly linked credentials
+  private async createNotificationsForLinkedCredentials(userId: string, credentials: Credential[]): Promise<void> {
+    for (const credential of credentials) {
+      try {
+        // Get issuer information
+        const issuer = await this.getUser(credential.issuerId);
+        const issuerName = issuer?.name || 'Unknown Issuer';
+        const issuerDID = issuer?.did || 'Unknown DID';
+        
+        // Create notification for the newly linked credential
+        await this.createNotification({
+          userId: userId,
+          type: 'credential_issued',
+          title: 'New Credential Received',
+          message: `You have received a new ${credential.type} credential: "${credential.title}" from ${issuerName}`,
+          data: {
+            credentialId: credential.id,
+            credentialType: credential.type,
+            credentialTitle: credential.title,
+            issuerName,
+            issuerDID,
+            issuerAddress: issuer?.address,
+            issueDate: credential.issueDate,
+            expiryDate: credential.expiryDate,
+            status: credential.status,
+            metadata: credential.metadata
+          },
+          read: false,
+          priority: 'high'
+        });
+        console.log(`Created notification for linked credential ${credential.id} to user ${userId}`);
+      } catch (error) {
+        console.error(`Failed to create notification for linked credential ${credential.id}:`, error);
+      }
+    }
   }
 }
 

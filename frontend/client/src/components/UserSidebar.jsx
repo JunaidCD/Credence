@@ -2,16 +2,43 @@ import {
   LayoutDashboard, 
   Award, 
   Share2, 
-  ShieldX, 
+  Bell, 
   LogOut,
   User
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext.jsx';
 import { useLocation } from 'wouter';
+import { useQuery } from '@tanstack/react-query';
 
-const UserSidebar = ({ activeSection, onSectionChange }) => {
+const UserSidebar = ({ activeSection, onSectionChange, userDID }) => {
   const { user, disconnect } = useAuth();
   const [, setLocation] = useLocation();
+
+  // Fetch notifications to get unread count
+  const { data: notifications = [] } = useQuery({
+    queryKey: ['notifications', 'user', userDID],
+    queryFn: async () => {
+      if (!userDID) return [];
+      try {
+        // First get user by DID to get user ID
+        const userResponse = await fetch(`/api/users/did/${encodeURIComponent(userDID)}`);
+        if (!userResponse.ok) return [];
+        const userData = await userResponse.json();
+        
+        // Then fetch notifications for this user
+        const notificationsResponse = await fetch(`/api/notifications/user/${userData.id}`);
+        if (!notificationsResponse.ok) return [];
+        return notificationsResponse.json();
+      } catch (error) {
+        console.error('Failed to fetch notifications for sidebar:', error);
+        return [];
+      }
+    },
+    enabled: !!userDID,
+    refetchInterval: 30000, // Refetch every 30 seconds for real-time updates
+  });
+
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   const handleLogout = () => {
     disconnect();
@@ -22,7 +49,7 @@ const UserSidebar = ({ activeSection, onSectionChange }) => {
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'credentials', label: 'My Credentials', icon: Award },
     { id: 'share-credential', label: 'Share Credential', icon: Share2 },
-    { id: 'revoke-credentials', label: 'Revoke Credentials', icon: ShieldX },
+    { id: 'notifications', label: 'Notifications', icon: Bell, badge: unreadCount > 0 ? unreadCount : null },
   ];
 
   return (
@@ -57,7 +84,7 @@ const UserSidebar = ({ activeSection, onSectionChange }) => {
               <item.icon className="mr-3 h-5 w-5" />
               {item.label}
               {item.badge && (
-                <span className="ml-auto bg-web3-purple text-white text-xs px-2 py-1 rounded-full">
+                <span className="ml-auto bg-red-500 text-white text-xs px-2 py-1 rounded-full animate-pulse">
                   {item.badge}
                 </span>
               )}

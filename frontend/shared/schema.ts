@@ -37,6 +37,18 @@ export const verificationRequests = pgTable("verification_requests", {
   respondedAt: timestamp("responded_at"),
 });
 
+export const notifications = pgTable("notifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  type: text("type").notNull(), // credential_issued, verification_request, credential_shared, system_update
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  data: jsonb("data"), // Additional notification data (credential details, issuer info, etc.)
+  read: boolean("read").notNull().default(false),
+  priority: text("priority").notNull().default("medium"), // low, medium, high, urgent
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
@@ -53,9 +65,16 @@ export const insertVerificationRequestSchema = createInsertSchema(verificationRe
   respondedAt: true,
 });
 
+export const insertNotificationSchema = createInsertSchema(notifications).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertCredential = z.infer<typeof insertCredentialSchema>;
 export type Credential = typeof credentials.$inferSelect;
 export type InsertVerificationRequest = z.infer<typeof insertVerificationRequestSchema>;
 export type VerificationRequest = typeof verificationRequests.$inferSelect;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+export type Notification = typeof notifications.$inferSelect;

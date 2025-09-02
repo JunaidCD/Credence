@@ -322,17 +322,84 @@ const UserDashboard = () => {
   };
 
   // Query for backend credentials - only fetch if user is registered
-  const { data: backendCredentials = [], isLoading: backendLoading } = useQuery({
-    queryKey: [`/api/credentials/wallet/${walletAddress}`],
+  const { data: backendCredentials = [], isLoading: isLoadingBackend } = useQuery({
+    queryKey: ['credentials', 'user', walletAddress],
     queryFn: async () => {
-      if (!walletAddress || !isRegisteredUser) return [];
+      if (!walletAddress) return [];
       const response = await fetch(`/api/credentials/wallet/${walletAddress}`);
-      if (!response.ok) return [];
+      if (!response.ok) throw new Error('Failed to fetch credentials');
       return response.json();
     },
-    enabled: !!walletAddress && isRegisteredUser,
-    staleTime: 30000,
-    refetchOnWindowFocus: false
+    enabled: walletConnected && !!walletAddress
+  });
+
+  // Fetch user notifications
+  const { data: notifications = [], isLoading: isLoadingNotifications, refetch: refetchNotifications } = useQuery({
+    queryKey: ['notifications', 'user', walletAddress],
+    queryFn: async () => {
+      console.log('=== FRONTEND NOTIFICATION FETCH DEBUG ===');
+      
+      if (!walletAddress) {
+        console.log('❌ No wallet address for notifications');
+        return [];
+      }
+      console.log('🔍 Fetching notifications for wallet:', walletAddress);
+      console.log('🔍 User registration status:', isRegisteredUser);
+      
+      // First get user by wallet address to get user ID
+      const userLookupUrl = `/api/users/wallet/${walletAddress.toLowerCase()}`;
+      console.log('🔍 User lookup URL:', userLookupUrl);
+      
+      const userResponse = await fetch(userLookupUrl);
+      console.log('📡 User lookup response status:', userResponse.status);
+      
+      if (!userResponse.ok) {
+        console.log('❌ User lookup failed - user may not be registered yet');
+        console.log('❌ Response status:', userResponse.status);
+        const errorText = await userResponse.text();
+        console.log('❌ Error response:', errorText);
+        return [];
+      }
+      
+      const user = await userResponse.json();
+      console.log('✅ Found user:', {
+        id: user.id,
+        address: user.address,
+        name: user.name,
+        userType: user.userType
+      });
+      
+      // Then fetch notifications for this user
+      const notificationsUrl = `/api/notifications/user/${user.id}`;
+      console.log('🔍 Notifications fetch URL:', notificationsUrl);
+      
+      const notificationsResponse = await fetch(notificationsUrl);
+      console.log('📡 Notifications response status:', notificationsResponse.status);
+      
+      if (!notificationsResponse.ok) {
+        console.log('❌ Notifications fetch failed');
+        const errorText = await notificationsResponse.text();
+        console.log('❌ Error response:', errorText);
+        return [];
+      }
+      
+      const notificationData = await notificationsResponse.json();
+      console.log('✅ Successfully fetched notifications:', {
+        count: notificationData.length,
+        notifications: notificationData.map(n => ({
+          id: n.id,
+          type: n.type,
+          title: n.title,
+          read: n.read,
+          createdAt: n.createdAt
+        }))
+      });
+      
+      console.log('=== END FRONTEND NOTIFICATION FETCH DEBUG ===');
+      return notificationData;
+    },
+    enabled: !!walletAddress, // Remove isRegisteredUser dependency to always try fetching
+    refetchInterval: 5000 // Refetch every 5 seconds to catch new notifications
   });
 
   // Query for blockchain credentials - only fetch if user is registered
@@ -398,7 +465,7 @@ const UserDashboard = () => {
     return Array.from(credentialMap.values());
   }, [backendCredentials, blockchainCredentials, isRegisteredUser]);
 
-  const credentialsLoading = backendLoading || blockchainLoading;
+  const credentialsLoading = isLoadingBackend || blockchainLoading;
 
   const { data: verificationRequests = [], isLoading: requestsLoading } = useQuery({
     queryKey: ['/api/verification-requests/wallet', walletAddress],
@@ -448,11 +515,11 @@ const UserDashboard = () => {
   };
 
   const copyDID = () => {
-    const didToCopy = userDID || `did:ethr:${walletAddress || '0x...'}`;
+    const didToCopy = isEligibleUser ? (userDID || `did:ethr:${walletAddress || '0x...'}`) : 'did:ethr:0x000';
     navigator.clipboard.writeText(didToCopy);
     toast({
       title: "DID Copied",
-      description: "Your DID has been copied to clipboard!",
+      description: isEligibleUser ? "Your DID has been copied to clipboard!" : "Placeholder DID copied. Connect with accounts 2-7 for actual DID.",
     });
   };
 
@@ -496,7 +563,7 @@ const UserDashboard = () => {
                 <p className="text-gray-400 text-sm mb-3">Your unique decentralized identifier</p>
                 <div className="flex items-center space-x-3">
                   <code className="bg-gray-800/80 text-purple-300 px-4 py-2 rounded-lg font-mono text-sm border border-purple-500/20">
-                    {userDID || `did:ethr:${walletAddress || '0x...'}`}
+                    {isEligibleUser ? (userDID || `did:ethr:${walletAddress || '0x...'}`) : 'did:ethr:0x000'}
                   </code>
                   <Button
                     size="sm"
@@ -1152,175 +1219,303 @@ const UserDashboard = () => {
     );
   };
 
-  const renderRevokeCredentials = () => (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold text-white mb-2">Revoke Credentials</h2>
-          <p className="text-gray-400">Manage and revoke credentials you have shared</p>
-        </div>
-        <div className="flex items-center space-x-2 text-sm text-red-400 bg-red-500/10 px-3 py-2 rounded-lg border border-red-500/20">
-          <ShieldX className="h-4 w-4" />
-          <span>Revocation Control</span>
-        </div>
-      </div>
+  // Mark notification as read
+  const markNotificationAsRead = useMutation({
+    mutationFn: async (notificationId) => {
+      const response = await fetch(`/api/notifications/${notificationId}/read`, {
+        method: 'PATCH'
+      });
+      if (!response.ok) throw new Error('Failed to mark notification as read');
+      return response.json();
+    },
+    onSuccess: () => {
+      refetchNotifications();
+    }
+  });
 
-      {/* Search and Filter */}
-      <Card className="bg-gray-800/50 border-gray-700/50">
-        <CardContent className="p-6">
-          <div className="flex items-center space-x-4 mb-4">
-            <div className="flex-1">
-              <Label className="text-gray-300 mb-2 block">Search Credentials</Label>
-              <Input
-                placeholder="Search by credential type, title, or issuer..."
-                className="bg-gray-900/50 border-gray-600 text-white"
-              />
-            </div>
-            <div className="w-48">
-              <Label className="text-gray-300 mb-2 block">Filter by Status</Label>
-              <Select defaultValue="all">
-                <SelectTrigger className="bg-gray-900/50 border-gray-600 text-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-gray-800 border-gray-600">
-                  <SelectItem value="all">All Credentials</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="shared">Shared</SelectItem>
-                  <SelectItem value="revoked">Revoked</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+  // Mark all notifications as read
+  const markAllNotificationsAsRead = useMutation({
+    mutationFn: async () => {
+      if (!walletAddress) return;
+      // Get user ID first
+      const userResponse = await fetch(`/api/users/wallet/${walletAddress.toLowerCase()}`);
+      if (!userResponse.ok) throw new Error('Failed to get user');
+      const user = await userResponse.json();
+      
+      const response = await fetch(`/api/notifications/user/${user.id}/read-all`, {
+        method: 'PATCH'
+      });
+      if (!response.ok) throw new Error('Failed to mark all notifications as read');
+      return response.json();
+    },
+    onSuccess: () => {
+      refetchNotifications();
+      toast({
+        title: "Success",
+        description: "All notifications marked as read"
+      });
+    }
+  });
+
+  const renderNotifications = () => {
+    const unreadCount = notifications.filter(n => !n.read).length;
+
+    const getNotificationIcon = (type) => {
+      switch (type) {
+        case 'credential_issued':
+          return Award;
+        case 'verification_request':
+          return Shield;
+        case 'credential_shared':
+          return Share2;
+        case 'system':
+          return Activity;
+        default:
+          return Bell;
+      }
+    };
+
+    const getNotificationColor = (priority) => {
+      switch (priority) {
+        case 'high':
+          return 'from-red-500/20 to-orange-500/20 border-red-500/30';
+        case 'medium':
+          return 'from-yellow-500/20 to-amber-500/20 border-yellow-500/30';
+        case 'low':
+          return 'from-blue-500/20 to-cyan-500/20 border-blue-500/30';
+        default:
+          return 'from-gray-500/20 to-gray-600/20 border-gray-500/30';
+      }
+    };
+
+    return (
+      <div className="p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent mb-2">
+              🔔 Notifications
+            </h2>
+            <p className="text-gray-400">Stay updated with your credential activities</p>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Credentials List for Revocation */}
-      {credentialsLoading ? (
-        <div className="space-y-4">
-          {[1, 2, 3].map(i => (
-            <Card key={i} className="bg-gray-800/50">
-              <CardContent className="p-6">
-                <Skeleton className="h-4 w-3/4 mb-4" />
-                <Skeleton className="h-3 w-1/2 mb-2" />
-                <Skeleton className="h-3 w-2/3" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : myCredentials.length === 0 ? (
-        <Card className="bg-gray-800/50 border-gray-700/50">
-          <CardContent className="p-12 text-center">
-            <div className="w-16 h-16 bg-gray-700/50 rounded-full flex items-center justify-center mx-auto mb-4">
-              <ShieldX className="h-8 w-8 text-gray-400" />
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 text-sm text-blue-400 bg-blue-500/10 px-3 py-2 rounded-lg border border-blue-500/20">
+              <Bell className="h-4 w-4" />
+              <span>Total: {notifications.length}</span>
             </div>
-            <h3 className="text-xl font-semibold text-white mb-2">No Credentials to Revoke</h3>
-            <p className="text-gray-400 mb-6">You don't have any credentials that can be revoked</p>
-            <Button
-              onClick={() => setActiveSection('credentials')}
-              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-            >
-              View My Credentials
-            </Button>
+            {unreadCount > 0 && (
+              <div className="flex items-center space-x-2 text-sm text-orange-400 bg-orange-500/10 px-3 py-2 rounded-lg border border-orange-500/20">
+                <Activity className="h-4 w-4" />
+                <span>Unread: {unreadCount}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Notification Filters */}
+        <Card className="bg-gray-800/50 border-gray-700/50">
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-4">
+              <Button
+                size="sm"
+                className="bg-purple-600/20 border-purple-500/30 text-purple-400 hover:bg-purple-600/30"
+              >
+                All Notifications
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-gray-600 text-gray-400 hover:bg-gray-700"
+              >
+                Unread Only
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-gray-600 text-gray-400 hover:bg-gray-700"
+                onClick={() => markAllNotificationsAsRead.mutate()}
+                disabled={markAllNotificationsAsRead.isPending || unreadCount === 0}
+              >
+                {markAllNotificationsAsRead.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : null}
+                Mark All Read
+              </Button>
+            </div>
           </CardContent>
         </Card>
-      ) : (
-        <div className="space-y-4">
-          {myCredentials.filter(credential => credential.status === 'active').map((credential) => (
-            <Card key={credential.id} className="bg-gray-800/50 border-gray-700/50 hover:border-red-500/30 transition-all duration-200 group">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="p-3 rounded-xl bg-red-600/20 group-hover:bg-red-600/30 transition-colors duration-200">
-                      <Award className="h-6 w-6 text-red-400" />
+
+        {/* Notifications List */}
+        {isLoadingNotifications ? (
+          <div className="space-y-4">
+            {[...Array(3)].map((_, i) => (
+              <Card key={i} className="bg-gray-800/50 border-gray-700/50">
+                <CardContent className="p-6">
+                  <div className="flex items-start space-x-4">
+                    <Skeleton className="h-12 w-12 rounded-xl" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-3 w-1/2" />
+                      <Skeleton className="h-3 w-full" />
                     </div>
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-white mb-1">
-                        {credential.metadata?.title || credential.type}
-                      </h3>
-                      <div className="flex items-center space-x-4 text-sm text-gray-400">
-                        <span>Type: {credential.type}</span>
-                        <span>•</span>
-                        <span>Issued: {new Date(credential.issueDate).toLocaleDateString()}</span>
-                        <span>•</span>
-                        <span>Issuer: {credential.metadata?.issuerName || 'Unknown'}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : notifications.length === 0 ? (
+          <Card className="bg-gray-800/50 border-gray-700/50">
+            <CardContent className="p-12 text-center">
+              <div className="w-20 h-20 bg-gradient-to-br from-purple-600/20 to-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Bell className="h-10 w-10 text-purple-400" />
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-3">No Notifications Yet</h3>
+              <p className="text-gray-400 mb-6 max-w-md mx-auto">
+                You'll receive notifications here when there are updates about your credentials, verification requests, or system activities.
+              </p>
+              <div className="space-y-3 max-w-sm mx-auto">
+                <div className="flex items-center text-sm text-gray-300">
+                  <div className="w-6 h-6 bg-purple-600/20 rounded-full flex items-center justify-center mr-3">
+                    <Award className="h-3 w-3 text-purple-400" />
+                  </div>
+                  Credential issuance notifications
+                </div>
+                <div className="flex items-center text-sm text-gray-300">
+                  <div className="w-6 h-6 bg-blue-600/20 rounded-full flex items-center justify-center mr-3">
+                    <Shield className="h-3 w-3 text-blue-400" />
+                  </div>
+                  Verification request alerts
+                </div>
+                <div className="flex items-center text-sm text-gray-300">
+                  <div className="w-6 h-6 bg-green-600/20 rounded-full flex items-center justify-center mr-3">
+                    <Share2 className="h-3 w-3 text-green-400" />
+                  </div>
+                  Credential sharing confirmations
+                </div>
+                <div className="flex items-center text-sm text-gray-300">
+                  <div className="w-6 h-6 bg-cyan-600/20 rounded-full flex items-center justify-center mr-3">
+                    <Activity className="h-3 w-3 text-cyan-400" />
+                  </div>
+                  System and security updates
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {notifications.map((notification) => {
+              const IconComponent = getNotificationIcon(notification.type);
+              const colorClass = getNotificationColor(notification.priority);
+              
+              return (
+                <Card 
+                  key={notification.id} 
+                  className={`bg-gradient-to-r ${colorClass} backdrop-blur-sm hover:shadow-lg transition-all duration-200 ${!notification.read ? 'ring-2 ring-purple-500/30' : ''}`}
+                >
+                  <CardContent className="p-6">
+                    <div className="flex items-start space-x-4">
+                      <div className={`p-3 rounded-xl bg-gradient-to-br ${notification.priority === 'high' ? 'from-red-600/30 to-orange-600/30' : notification.priority === 'medium' ? 'from-yellow-600/30 to-amber-600/30' : 'from-blue-600/30 to-cyan-600/30'} flex-shrink-0`}>
+                        <IconComponent className={`h-6 w-6 ${notification.priority === 'high' ? 'text-red-400' : notification.priority === 'medium' ? 'text-yellow-400' : 'text-blue-400'}`} />
                       </div>
-                      <div className="flex items-center space-x-2 mt-2">
-                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-500/20 text-green-400">
-                          Active
-                        </span>
-                        {credential.metadata?.collegeName && (
-                          <span className="text-gray-500 text-xs">
-                            {credential.metadata.collegeName}
-                          </span>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="text-lg font-semibold text-white">
+                            {notification.title}
+                          </h3>
+                          <div className="flex items-center space-x-2">
+                            {!notification.read && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-xs text-purple-400 hover:text-purple-300"
+                                onClick={() => markNotificationAsRead.mutate(notification.id)}
+                              >
+                                Mark Read
+                              </Button>
+                            )}
+                            <span className="text-xs text-gray-500">
+                              {new Date(notification.createdAt).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </div>
+                        <p className="text-gray-300 mb-3">
+                          {notification.message}
+                        </p>
+                        
+                        {/* Credential Details */}
+                        {notification.type === 'credential_issued' && notification.data && (
+                          <div className="bg-gray-900/50 rounded-lg p-4 mt-3 space-y-2">
+                            <h4 className="text-sm font-semibold text-purple-400 mb-2">📜 Credential Details</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                              <div>
+                                <span className="text-gray-400">Type:</span>
+                                <span className="ml-2 text-white font-medium">{notification.data.credentialType}</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-400">Title:</span>
+                                <span className="ml-2 text-white font-medium">{notification.data.credentialTitle}</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-400">Issuer:</span>
+                                <span className="ml-2 text-blue-400 font-medium">{notification.data.issuerName}</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-400">Status:</span>
+                                <span className={`ml-2 font-medium ${
+                                  notification.data.status === 'active' ? 'text-green-400' :
+                                  notification.data.status === 'expired' ? 'text-yellow-400' :
+                                  notification.data.status === 'revoked' ? 'text-red-400' : 'text-gray-400'
+                                }`}>
+                                  {notification.data.status?.charAt(0).toUpperCase() + notification.data.status?.slice(1)}
+                                </span>
+                              </div>
+                              <div className="md:col-span-2">
+                                <span className="text-gray-400">Issuer DID:</span>
+                                <div className="mt-1 p-2 bg-gray-800/50 rounded text-xs font-mono text-cyan-400 break-all">
+                                  {notification.data.issuerDID}
+                                </div>
+                              </div>
+                              {notification.data.issueDate && (
+                                <div>
+                                  <span className="text-gray-400">Issued:</span>
+                                  <span className="ml-2 text-white">
+                                    {new Date(notification.data.issueDate).toLocaleDateString()}
+                                  </span>
+                                </div>
+                              )}
+                              {notification.data.expiryDate && (
+                                <div>
+                                  <span className="text-gray-400">Expires:</span>
+                                  <span className="ml-2 text-white">
+                                    {new Date(notification.data.expiryDate).toLocaleDateString()}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         )}
                       </div>
                     </div>
-                  </div>
-                  
-                  <div className="flex items-center space-x-3">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="border-gray-600 text-gray-400 hover:bg-gray-700"
-                      onClick={() => setActiveSection('credentials')}
-                    >
-                      <Eye className="h-4 w-4 mr-1" />
-                      View Details
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      className="bg-red-600/20 border-red-500/30 text-red-400 hover:bg-red-600/30 hover:border-red-400"
-                      onClick={() => {
-                        if (window.confirm('Are you sure you want to revoke access to this credential? This action cannot be undone.')) {
-                          toast({
-                            title: "Credential Access Revoked",
-                            description: "You have revoked access to this credential.",
-                          });
-                        }
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4 mr-1" />
-                      Revoke Access
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-
-      {/* Revocation Information */}
-      <Card className="bg-yellow-500/10 border-yellow-500/30">
-        <CardContent className="p-6">
-          <div className="flex items-start space-x-3">
-            <AlertCircle className="h-6 w-6 text-yellow-400 mt-1" />
-            <div>
-              <h3 className="text-lg font-semibold text-yellow-400 mb-2">Important Information</h3>
-              <ul className="text-gray-300 text-sm space-y-1">
-                <li>• Revoking a credential removes access for verifiers who have already received it</li>
-                <li>• This action is permanent and cannot be undone</li>
-                <li>• The credential will remain in your wallet but marked as revoked</li>
-                <li>• Future verification requests will show this credential as inactive</li>
-              </ul>
-            </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-gray-900">
       <div className="flex">
-        <UserSidebar activeSection={activeSection} onSectionChange={setActiveSection} />
+        <UserSidebar activeSection={activeSection} onSectionChange={setActiveSection} userDID={userDID} />
         
         <main className="flex-1 ml-64">
           {activeSection === 'dashboard' && renderDashboard()}
           {activeSection === 'credentials' && renderCredentials()}
           {activeSection === 'share-credential' && renderShareCredential()}
-          {activeSection === 'revoke-credentials' && renderRevokeCredentials()}
+          {activeSection === 'notifications' && renderNotifications()}
           {activeSection === 'verification-requests' && renderVerificationRequests()}
         </main>
       </div>

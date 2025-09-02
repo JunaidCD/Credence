@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertUserSchema, insertCredentialSchema, insertVerificationRequestSchema } from "@shared/schema";
+import { insertUserSchema, insertCredentialSchema, insertVerificationRequestSchema, insertNotificationSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
@@ -180,11 +180,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/credentials", async (req, res) => {
     try {
+      console.log('=== CREDENTIAL CREATION API DEBUG ===');
+      console.log('Received credential creation request:', req.body);
+      
       const credentialData = insertCredentialSchema.parse(req.body);
+      console.log('Parsed credential data:', credentialData);
+      
       const credential = await storage.createCredential(credentialData);
+      console.log('Successfully created credential:', credential.id);
+      
+      console.log('=== END CREDENTIAL CREATION API DEBUG ===');
       res.json(credential);
     } catch (error) {
-      res.status(400).json({ message: error.message });
+      console.error('Error creating credential:', error);
+      res.status(400).json({ message: (error as Error).message });
     }
   });
 
@@ -259,6 +268,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Notification routes
+  app.get("/api/notifications/user/:userId", async (req, res) => {
+    try {
+      console.log('=== NOTIFICATION API DEBUG ===');
+      console.log('Fetching notifications for userId:', req.params.userId);
+      
+      const notifications = await storage.getNotificationsByUserId(req.params.userId);
+      console.log(`Found ${notifications.length} notifications for user ${req.params.userId}`);
+      console.log('Notifications:', notifications.map(n => ({
+        id: n.id,
+        type: n.type,
+        title: n.title,
+        read: n.read,
+        createdAt: n.createdAt
+      })));
+      
+      // Debug: Check all notifications in storage
+      const allNotifications = Array.from((storage as any).notifications.values());
+      console.log(`Total notifications in storage: ${allNotifications.length}`);
+      console.log('All notifications by userId:', allNotifications.reduce((acc, n) => {
+        acc[n.userId] = (acc[n.userId] || 0) + 1;
+        return acc;
+      }, {}));
+      
+      console.log('=== END NOTIFICATION API DEBUG ===');
+      res.json(notifications);
+    } catch (error) {
+      console.error('Error in notifications endpoint:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/notifications", async (req, res) => {
+    try {
+      const notificationData = insertNotificationSchema.parse(req.body);
+      const notification = await storage.createNotification(notificationData);
+      res.json(notification);
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  app.patch("/api/notifications/:id/read", async (req, res) => {
+    try {
+      const notification = await storage.markNotificationAsRead(req.params.id);
+      if (!notification) {
+        return res.status(404).json({ message: "Notification not found" });
+      }
+      res.json(notification);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.patch("/api/notifications/user/:userId/read-all", async (req, res) => {
+    try {
+      await storage.markAllNotificationsAsRead(req.params.userId);
+      res.json({ message: "All notifications marked as read" });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Blockchain credential sync endpoint
   app.post("/api/credentials/sync-blockchain", async (req, res) => {
     try {
@@ -284,6 +356,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const syncedCredentials = [];
+      const newCredentials = [];
       
       // Process each blockchain credential
       for (const blockchainCred of credentials) {
@@ -292,10 +365,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const existingCred = await storage.getCredential(blockchainCred.id.toString());
           
           if (!existingCred) {
+            // Find the actual issuer by blockchain address
+            let actualIssuer = await storage.getUserByAddress(blockchainCred.issuer?.toLowerCase());
+            const issuerId = actualIssuer?.id || user.id; // Fallback to user.id if issuer not found
+            
             // Create new credential from blockchain data
             const credentialData = insertCredentialSchema.parse({
               userId: user.id,
-              issuerId: user.id, // Temporary - should be mapped to actual issuer
+              issuerId: issuerId,
               type: blockchainCred.credentialType,
               title: `${blockchainCred.credentialType} Credential`,
               issueDate: blockchainCred.issueDate,
@@ -317,6 +394,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             const newCredential = await storage.createCredential(credentialData);
             syncedCredentials.push(newCredential);
+            newCredentials.push(newCredential);
+            
+            console.log('✅ Created credential and notification for blockchain sync:', newCredential.id);
           } else {
             syncedCredentials.push(existingCred);
           }
@@ -325,13 +405,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // Create notifications for newly synced credentials
+      if (newCredentials.length > 0) {
+        console.log(`🔔 Creating notifications for ${newCredentials.length} newly synced credentials`);
+        // The createCredential method already creates notifications, so they should be created automatically
+      }
+
       res.json({ 
         message: `Synced ${syncedCredentials.length} credentials from blockchain`,
         syncedCredentials,
-        user
+        user,
+        newNotifications: newCredentials.length
       });
     } catch (error) {
       console.error('Blockchain sync error:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Test endpoint to create a notification manually
+  app.post("/api/test/notification", async (req, res) => {
+    try {
+      const { walletAddress } = req.body;
+      
+      if (!walletAddress) {
+        return res.status(400).json({ message: "Wallet address is required" });
+      }
+
+      const normalizedAddress = walletAddress.toLowerCase();
+      
+      // Find user by wallet address
+      let user = await storage.getUserByAddress(normalizedAddress);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Create a test notification
+      const testNotification = await storage.createNotification({
+        userId: user.id,
+        type: 'credential_issued',
+        title: 'Test Credential Issued',
+        message: 'This is a test notification to verify the notification system is working.',
+        data: {
+          credentialId: 'test-123',
+          credentialType: 'Test Certificate',
+          issuerName: 'Test Issuer',
+          issueDate: new Date().toISOString()
+        },
+        read: false,
+        priority: 'high'
+      });
+
+      console.log('✅ Created test notification:', testNotification.id);
+      
+      res.json({ 
+        message: 'Test notification created successfully',
+        notification: testNotification,
+        user: { id: user.id, address: user.address, name: user.name }
+      });
+    } catch (error) {
+      console.error('Test notification creation error:', error);
       res.status(500).json({ message: error.message });
     }
   });
