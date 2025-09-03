@@ -358,41 +358,127 @@ export class MemStorage implements IStorage {
     console.log('=== END CREATE CREDENTIAL NOTIFICATION DEBUG ===');
   }
 
-  // Helper method to create notifications for newly linked credentials
+  // Helper method to create notifications for newly linked credentials during registration
   private async createNotificationsForLinkedCredentials(userId: string, credentials: Credential[]): Promise<void> {
+    console.log(`=== CREATING REGISTRATION NOTIFICATIONS ===`);
+    console.log(`Creating notifications for ${credentials.length} credentials for user ${userId}`);
+    
     for (const credential of credentials) {
       try {
         // Get issuer information
         const issuer = await this.getUser(credential.issuerId);
         const issuerName = issuer?.name || 'Unknown Issuer';
-        const issuerDID = issuer?.did || 'Unknown DID';
+        const metadata = credential.metadata as any;
+        const issuerDID = issuer?.did || (metadata?.issuerAddress ? `did:ethr:${metadata.issuerAddress}` : 'Unknown DID');
+        
+        console.log(`Creating notification for credential ${credential.id}:`);
+        console.log(`- Credential Type: ${credential.type}`);
+        console.log(`- Credential Title: ${credential.title}`);
+        console.log(`- Issuer Name: ${issuerName}`);
+        console.log(`- Issuer DID: ${issuerDID}`);
+        console.log(`- Issue Date: ${credential.issueDate}`);
         
         // Create notification for the newly linked credential
-        await this.createNotification({
+        const notificationData = {
           userId: userId,
           type: 'credential_issued',
-          title: 'New Credential Received',
-          message: `You have received a new ${credential.type} credential: "${credential.title}" from ${issuerName}`,
+          title: 'Existing Credential Found',
+          message: `We found an existing ${credential.type} credential: "${credential.title}" issued by ${issuerName}. This credential was issued to your wallet address before registration.`,
           data: {
             credentialId: credential.id,
             credentialType: credential.type,
             credentialTitle: credential.title,
             issuerName,
             issuerDID,
-            issuerAddress: issuer?.address,
+            issuerAddress: issuer?.address || (credential.metadata as any)?.issuerAddress,
             issueDate: credential.issueDate,
             expiryDate: credential.expiryDate,
             status: credential.status,
-            metadata: credential.metadata
+            metadata: credential.metadata,
+            isExistingCredential: true
           },
           read: false,
           priority: 'high'
-        });
-        console.log(`Created notification for linked credential ${credential.id} to user ${userId}`);
+        };
+        
+        const createdNotification = await this.createNotification(notificationData);
+        console.log(`✅ Created registration notification ${createdNotification.id} for credential ${credential.id}`);
       } catch (error) {
-        console.error(`Failed to create notification for linked credential ${credential.id}:`, error);
+        console.error(`❌ Failed to create notification for linked credential ${credential.id}:`, error);
       }
     }
+    console.log(`=== REGISTRATION NOTIFICATIONS COMPLETE ===`);
+  }
+
+  // New method to create notifications for blockchain credentials during registration
+  async createNotificationsForBlockchainCredentials(userId: string, blockchainCredentials: any[]): Promise<void> {
+    console.log(`=== CREATING BLOCKCHAIN CREDENTIAL NOTIFICATIONS ===`);
+    console.log(`Processing ${blockchainCredentials.length} blockchain credentials for user ${userId}`);
+    
+    for (const blockchainCred of blockchainCredentials) {
+      try {
+        // Find issuer by blockchain address
+        let issuer = await this.getUserByAddress(blockchainCred.issuer?.toLowerCase());
+        const issuerName = issuer?.name || `Issuer ${blockchainCred.issuer?.slice(-4)}`;
+        const issuerDID = issuer?.did || `did:ethr:${blockchainCred.issuer}`;
+        
+        console.log(`Creating notification for blockchain credential:`);
+        console.log(`- Blockchain ID: ${blockchainCred.id}`);
+        console.log(`- Credential Type: ${blockchainCred.credentialType}`);
+        console.log(`- Issuer Address: ${blockchainCred.issuer}`);
+        console.log(`- Issuer Name: ${issuerName}`);
+        console.log(`- Issuer DID: ${issuerDID}`);
+        console.log(`- Issue Date: ${blockchainCred.issueDate}`);
+        
+        // Create notification for blockchain credential
+        const notificationData = {
+          userId: userId,
+          type: 'credential_issued',
+          title: 'Blockchain Credential Found',
+          message: `We found a ${blockchainCred.credentialType} credential on the blockchain issued by ${issuerName}. This credential is now linked to your account.`,
+          data: {
+            credentialId: blockchainCred.id?.toString(),
+            credentialType: blockchainCred.credentialType,
+            credentialTitle: `${blockchainCred.credentialType} Credential`,
+            issuerName,
+            issuerDID,
+            issuerAddress: blockchainCred.issuer,
+            issueDate: blockchainCred.issueDate,
+            expiryDate: blockchainCred.expiryDate,
+            status: blockchainCred.status?.toLowerCase() || 'active',
+            metadata: {
+              blockchainId: blockchainCred.id,
+              source: 'blockchain',
+              issuedAt: blockchainCred.issuedAt,
+              expiresAt: blockchainCred.expiresAt,
+              isActive: blockchainCred.isActive,
+              isRevoked: blockchainCred.isRevoked
+            },
+            isBlockchainCredential: true
+          },
+          read: false,
+          priority: 'high'
+        };
+        
+        const createdNotification = await this.createNotification(notificationData);
+        console.log(`✅ Created blockchain notification ${createdNotification.id} for blockchain credential ${blockchainCred.id}`);
+      } catch (error) {
+        console.error(`❌ Failed to create notification for blockchain credential ${blockchainCred.id}:`, error);
+      }
+    }
+    console.log(`=== BLOCKCHAIN CREDENTIAL NOTIFICATIONS COMPLETE ===`);
+  }
+
+  // Check if notification already exists for a specific blockchain event
+  async notificationExistsForBlockchainEvent(userId: string, credentialId: string, transactionHash: string): Promise<boolean> {
+    const userNotifications = await this.getNotificationsByUserId(userId);
+    
+    return userNotifications.some(notification => {
+      const data = notification.data as any;
+      return data?.credentialId === credentialId || 
+             data?.metadata?.transactionHash === transactionHash ||
+             data?.metadata?.blockchainId === credentialId;
+    });
   }
 }
 

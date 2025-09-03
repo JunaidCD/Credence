@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import web3Service from '@/utils/web3.js';
+import blockchainNotificationService from '@/utils/blockchainNotifications.js';
 import { 
   Fingerprint, 
   Award, 
@@ -67,6 +68,108 @@ const UserDashboard = () => {
   const [isSharing, setIsSharing] = useState(false);
   const dropdownRef = useRef(null);
 
+  // Blockchain notification state
+  const [notifications, setNotifications] = useState([]);
+  const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
+  
+  // Handle new notification from blockchain events
+  const handleNewNotification = (notification) => {
+    console.log('🔔 New blockchain notification received:', notification);
+    
+    // Update local notifications state
+    setNotifications(prev => [notification, ...prev]);
+    
+    // Show toast notification
+    toast({
+      title: notification.title,
+      description: notification.message,
+      duration: 5000
+    });
+  };
+  
+  // Refresh notifications from blockchain service
+  const refreshNotifications = () => {
+    if (walletAddress) {
+      const userNotifications = blockchainNotificationService.getNotifications(walletAddress);
+      setNotifications(userNotifications);
+    }
+  };
+
+  // Fetch and create notifications from past blockchain events
+  const fetchPastEventsAndCreateNotifications = async (userAddress) => {
+    try {
+      console.log(` Fetching past credential events for ${userAddress}`);
+      
+      // Get past events from blockchain
+      const pastEvents = await web3Service.getPastCredentialEvents(userAddress);
+      console.log(` Found ${pastEvents.length} past credential events`);
+      
+      if (pastEvents.length === 0) {
+        console.log(' No past events found');
+        return 0;
+      }
+      
+      let createdCount = 0;
+      
+      // Create notifications for each past event
+      for (const eventData of pastEvents) {
+        const success = await createNotificationFromEvent(eventData, userAddress, true);
+        if (success) {
+          createdCount++;
+        }
+        // Small delay to avoid overwhelming the API
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      
+      console.log(` Created ${createdCount} notifications from past events`);
+      return createdCount;
+    } catch (error) {
+      console.error(' Error fetching past events:', error);
+      return 0;
+    }
+  };
+
+  // Real-time credential event listener
+  const startCredentialEventListener = async (userAddress) => {
+    try {
+      console.log(` Setting up real-time credential event listener for ${userAddress}`);
+      
+      // Event handler for when credentials are issued to this user
+      const handleCredentialIssued = async (eventData) => {
+        console.log(' Real-time credential event received:', eventData);
+        
+        const success = await createNotificationFromEvent(eventData, userAddress, false);
+        
+        if (success) {
+          // Refresh notifications and credentials
+          queryClient.invalidateQueries({ queryKey: ['notifications', 'user', userAddress] });
+          queryClient.invalidateQueries({ queryKey: ['credentials', 'user', userAddress] });
+          queryClient.invalidateQueries({ queryKey: ['blockchain-credentials', userAddress] });
+          
+          // Show toast notification
+          toast({
+            title: "New Credential Received! ",
+            description: `${eventData.credentialType} credential from ${eventData.issuerDID.slice(0, 20)}...`,
+          });
+        }
+      };
+      
+      // Start listening for events
+      const success = await web3Service.startListeningForCredentialEvents(userAddress, handleCredentialIssued);
+      
+      if (success) {
+        console.log(' Real-time credential event listener started successfully');
+        return true;
+      } else {
+        console.log(' Failed to start real-time credential event listener');
+        return false;
+      }
+    } catch (error) {
+      console.error(' Error setting up credential event listener:', error);
+      return false;
+    }
+  };
+
   // Real-time clock
   useEffect(() => {
     const timer = setInterval(() => {
@@ -80,6 +183,56 @@ const UserDashboard = () => {
       setLocation('/');
     }
   }, [isAuthenticated, setLocation]);
+
+  // Setup blockchain notifications when user registers or wallet connects
+  useEffect(() => {
+    const setupBlockchainNotifications = async () => {
+      if (isRegisteredUser && walletAddress && walletConnected) {
+        console.log(' Setting up blockchain notifications for', walletAddress);
+        
+        setIsLoadingNotifications(true);
+        
+        try {
+          // Setup complete notification system (past events + real-time)
+          const result = await blockchainNotificationService.setupNotifications(
+            walletAddress, 
+            handleNewNotification
+          );
+          
+          if (result.success) {
+            console.log(` Blockchain notifications setup complete:`, result);
+            
+            // Refresh notifications from service
+            refreshNotifications();
+            
+            if (result.pastEventsCount > 0) {
+              toast({
+                title: "Historical Credentials Found! ",
+                description: `Found ${result.pastEventsCount} historical credentials. Check your notifications!`,
+                duration: 5000
+              });
+            }
+          } else {
+            console.error(' Failed to setup blockchain notifications:', result.error);
+          }
+        } catch (error) {
+          console.error(' Error setting up blockchain notifications:', error);
+        } finally {
+          setIsLoadingNotifications(false);
+        }
+      }
+    };
+    
+    setupBlockchainNotifications();
+    
+    // Cleanup on unmount or wallet change
+    return () => {
+      if (walletAddress) {
+        console.log(' Cleaning up blockchain notifications for', walletAddress);
+        blockchainNotificationService.cleanup(walletAddress);
+      }
+    };
+  }, [isRegisteredUser, walletAddress, walletConnected]);
 
   // Initialize Web3 service
   useEffect(() => {
@@ -111,6 +264,12 @@ const UserDashboard = () => {
       if (accounts.length > 0) {
         const newAccount = accounts[0];
         const previousAccount = walletAddress;
+        
+        // Stop event listeners for previous account
+        if (previousAccount && previousAccount !== newAccount) {
+          console.log(` Stopping event listeners for previous account: ${previousAccount}`);
+          web3Service.stopListeningForCredentialEvents(previousAccount);
+        }
         
         // Update wallet state
         setWalletAddress(newAccount);
@@ -283,15 +442,13 @@ const UserDashboard = () => {
           setIsRegisteredUser(true);
           setUserDID(`did:ethr:${blockchainResult.address}`);
           
-          // Store blockchain credentials in backend if any exist
+          // Setup blockchain notifications for existing credentials
           if (blockchainResult.credentials && blockchainResult.credentials.length > 0) {
-            await fetch('/api/credentials/sync-blockchain', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                walletAddress: blockchainResult.address,
-                credentials: blockchainResult.credentials
-              })
+            console.log(` Found ${blockchainResult.credentials.length} existing blockchain credentials, setting up notifications...`);
+            
+            toast({
+              title: "Existing Credentials Found! ",
+              description: `Found ${blockchainResult.credentials.length} existing credentials. Setting up notifications...`,
             });
           }
           
@@ -303,8 +460,16 @@ const UserDashboard = () => {
           queryClient.refetchQueries({ queryKey: [`/api/credentials/wallet/${walletAddress}`] });
           queryClient.refetchQueries({ queryKey: ['blockchain-credentials', walletAddress] });
           
+          // Setup blockchain notifications after registration
+          if (walletAddress) {
+            console.log(' Setting up blockchain notifications after registration...');
+            
+            // This will be handled by the useEffect hook that monitors registration status
+            // No need to duplicate the setup here
+          }
+          
           toast({
-            title: "Registration Successful! 🎉",
+            title: "Registration Successful! ",
             description: `You are now registered as a user. Found ${blockchainResult.credentials?.length || 0} existing credentials on blockchain.`,
           });
           
@@ -333,74 +498,16 @@ const UserDashboard = () => {
     enabled: walletConnected && !!walletAddress
   });
 
-  // Fetch user notifications
-  const { data: notifications = [], isLoading: isLoadingNotifications, refetch: refetchNotifications } = useQuery({
-    queryKey: ['notifications', 'user', walletAddress],
-    queryFn: async () => {
-      console.log('=== FRONTEND NOTIFICATION FETCH DEBUG ===');
+  // Refresh notifications periodically from blockchain service
+  useEffect(() => {
+    if (walletAddress && isRegisteredUser) {
+      const interval = setInterval(() => {
+        refreshNotifications();
+      }, 5000); // Refresh every 5 seconds
       
-      if (!walletAddress) {
-        console.log('❌ No wallet address for notifications');
-        return [];
-      }
-      console.log('🔍 Fetching notifications for wallet:', walletAddress);
-      console.log('🔍 User registration status:', isRegisteredUser);
-      
-      // First get user by wallet address to get user ID
-      const userLookupUrl = `/api/users/wallet/${walletAddress.toLowerCase()}`;
-      console.log('🔍 User lookup URL:', userLookupUrl);
-      
-      const userResponse = await fetch(userLookupUrl);
-      console.log('📡 User lookup response status:', userResponse.status);
-      
-      if (!userResponse.ok) {
-        console.log('❌ User lookup failed - user may not be registered yet');
-        console.log('❌ Response status:', userResponse.status);
-        const errorText = await userResponse.text();
-        console.log('❌ Error response:', errorText);
-        return [];
-      }
-      
-      const user = await userResponse.json();
-      console.log('✅ Found user:', {
-        id: user.id,
-        address: user.address,
-        name: user.name,
-        userType: user.userType
-      });
-      
-      // Then fetch notifications for this user
-      const notificationsUrl = `/api/notifications/user/${user.id}`;
-      console.log('🔍 Notifications fetch URL:', notificationsUrl);
-      
-      const notificationsResponse = await fetch(notificationsUrl);
-      console.log('📡 Notifications response status:', notificationsResponse.status);
-      
-      if (!notificationsResponse.ok) {
-        console.log('❌ Notifications fetch failed');
-        const errorText = await notificationsResponse.text();
-        console.log('❌ Error response:', errorText);
-        return [];
-      }
-      
-      const notificationData = await notificationsResponse.json();
-      console.log('✅ Successfully fetched notifications:', {
-        count: notificationData.length,
-        notifications: notificationData.map(n => ({
-          id: n.id,
-          type: n.type,
-          title: n.title,
-          read: n.read,
-          createdAt: n.createdAt
-        }))
-      });
-      
-      console.log('=== END FRONTEND NOTIFICATION FETCH DEBUG ===');
-      return notificationData;
-    },
-    enabled: !!walletAddress, // Remove isRegisteredUser dependency to always try fetching
-    refetchInterval: 5000 // Refetch every 5 seconds to catch new notifications
-  });
+      return () => clearInterval(interval);
+    }
+  }, [walletAddress, isRegisteredUser]);
 
   // Query for blockchain credentials - only fetch if user is registered
   const { data: blockchainCredentials = [], isLoading: blockchainLoading } = useQuery({
@@ -816,10 +923,6 @@ const UserDashboard = () => {
                   <Globe className="h-4 w-4 text-blue-400" />
                   <span className="text-blue-400 text-sm font-medium">Blockchain: {blockchainCredentials.length}</span>
                 </div>
-                <div className="flex items-center space-x-2 bg-purple-500/10 px-3 py-2 rounded-lg border border-purple-500/20">
-                  <Layers className="h-4 w-4 text-purple-400" />
-                  <span className="text-purple-400 text-sm font-medium">Backend: {backendCredentials.length}</span>
-                </div>
                 <div className="flex items-center space-x-2 bg-green-500/10 px-3 py-2 rounded-lg border border-green-500/20">
                   <CheckCircle className="h-4 w-4 text-green-400" />
                   <span className="text-green-400 text-sm font-medium">Total: {myCredentials.length}</span>
@@ -1219,43 +1322,28 @@ const UserDashboard = () => {
     );
   };
 
-  // Mark notification as read
-  const markNotificationAsRead = useMutation({
-    mutationFn: async (notificationId) => {
-      const response = await fetch(`/api/notifications/${notificationId}/read`, {
-        method: 'PATCH'
-      });
-      if (!response.ok) throw new Error('Failed to mark notification as read');
-      return response.json();
-    },
-    onSuccess: () => {
-      refetchNotifications();
+  // Mark notification as read using blockchain service
+  const markNotificationAsRead = (notificationId) => {
+    if (walletAddress) {
+      blockchainNotificationService.markAsRead(walletAddress, notificationId);
+      refreshNotifications(); // Refresh to update UI
     }
-  });
+  };
 
-  // Mark all notifications as read
-  const markAllNotificationsAsRead = useMutation({
-    mutationFn: async () => {
-      if (!walletAddress) return;
-      // Get user ID first
-      const userResponse = await fetch(`/api/users/wallet/${walletAddress.toLowerCase()}`);
-      if (!userResponse.ok) throw new Error('Failed to get user');
-      const user = await userResponse.json();
+  // Mark all notifications as read using blockchain service
+  const markAllNotificationsAsRead = () => {
+    if (walletAddress) {
+      const markedCount = blockchainNotificationService.markAllAsRead(walletAddress);
+      refreshNotifications(); // Refresh to update UI
       
-      const response = await fetch(`/api/notifications/user/${user.id}/read-all`, {
-        method: 'PATCH'
-      });
-      if (!response.ok) throw new Error('Failed to mark all notifications as read');
-      return response.json();
-    },
-    onSuccess: () => {
-      refetchNotifications();
-      toast({
-        title: "Success",
-        description: "All notifications marked as read"
-      });
+      if (markedCount > 0) {
+        toast({
+          title: "All Notifications Marked as Read",
+          description: `Marked ${markedCount} notifications as read`,
+        });
+      }
     }
-  });
+  };
 
   const renderNotifications = () => {
     const unreadCount = notifications.filter(n => !n.read).length;
@@ -1332,12 +1420,9 @@ const UserDashboard = () => {
                 size="sm"
                 variant="outline"
                 className="border-gray-600 text-gray-400 hover:bg-gray-700"
-                onClick={() => markAllNotificationsAsRead.mutate()}
-                disabled={markAllNotificationsAsRead.isPending || unreadCount === 0}
+                onClick={() => markAllNotificationsAsRead()}
+                disabled={unreadCount === 0}
               >
-                {markAllNotificationsAsRead.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : null}
                 Mark All Read
               </Button>
             </div>
@@ -1406,6 +1491,43 @@ const UserDashboard = () => {
               const IconComponent = getNotificationIcon(notification.type);
               const colorClass = getNotificationColor(notification.priority);
               
+              // Simple notification card for credential_issued notifications
+              if (notification.type === 'credential_issued') {
+                return (
+                  <Card 
+                    key={notification.id} 
+                    className={`bg-gradient-to-r from-slate-800/90 to-slate-700/90 border border-slate-600/50 backdrop-blur-sm hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300 transform hover:-translate-y-0.5 ${!notification.read ? 'ring-2 ring-blue-400/30 shadow-lg shadow-blue-500/20' : 'hover:border-slate-500/70'}`}
+                  >
+                    <CardContent className="p-5">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                          <div className="p-2.5 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-xl border border-blue-400/30">
+                            <Award className="h-5 w-5 text-blue-400" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-white text-sm leading-tight">{notification.title}</p>
+                            <p className="text-sm text-slate-300 mt-0.5">{notification.message}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          {!notification.read && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-xs text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 px-3 py-1.5 rounded-lg transition-colors duration-200"
+                              onClick={() => markNotificationAsRead(notification.id)}
+                            >
+                              Mark Read
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              }
+              
+              // Regular notification display for non-credential notifications
               return (
                 <Card 
                   key={notification.id} 
@@ -1428,7 +1550,7 @@ const UserDashboard = () => {
                                 size="sm"
                                 variant="ghost"
                                 className="text-xs text-purple-400 hover:text-purple-300"
-                                onClick={() => markNotificationAsRead.mutate(notification.id)}
+                                onClick={() => markNotificationAsRead(notification.id)}
                               >
                                 Mark Read
                               </Button>
@@ -1441,59 +1563,6 @@ const UserDashboard = () => {
                         <p className="text-gray-300 mb-3">
                           {notification.message}
                         </p>
-                        
-                        {/* Credential Details */}
-                        {notification.type === 'credential_issued' && notification.data && (
-                          <div className="bg-gray-900/50 rounded-lg p-4 mt-3 space-y-2">
-                            <h4 className="text-sm font-semibold text-purple-400 mb-2">📜 Credential Details</h4>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                              <div>
-                                <span className="text-gray-400">Type:</span>
-                                <span className="ml-2 text-white font-medium">{notification.data.credentialType}</span>
-                              </div>
-                              <div>
-                                <span className="text-gray-400">Title:</span>
-                                <span className="ml-2 text-white font-medium">{notification.data.credentialTitle}</span>
-                              </div>
-                              <div>
-                                <span className="text-gray-400">Issuer:</span>
-                                <span className="ml-2 text-blue-400 font-medium">{notification.data.issuerName}</span>
-                              </div>
-                              <div>
-                                <span className="text-gray-400">Status:</span>
-                                <span className={`ml-2 font-medium ${
-                                  notification.data.status === 'active' ? 'text-green-400' :
-                                  notification.data.status === 'expired' ? 'text-yellow-400' :
-                                  notification.data.status === 'revoked' ? 'text-red-400' : 'text-gray-400'
-                                }`}>
-                                  {notification.data.status?.charAt(0).toUpperCase() + notification.data.status?.slice(1)}
-                                </span>
-                              </div>
-                              <div className="md:col-span-2">
-                                <span className="text-gray-400">Issuer DID:</span>
-                                <div className="mt-1 p-2 bg-gray-800/50 rounded text-xs font-mono text-cyan-400 break-all">
-                                  {notification.data.issuerDID}
-                                </div>
-                              </div>
-                              {notification.data.issueDate && (
-                                <div>
-                                  <span className="text-gray-400">Issued:</span>
-                                  <span className="ml-2 text-white">
-                                    {new Date(notification.data.issueDate).toLocaleDateString()}
-                                  </span>
-                                </div>
-                              )}
-                              {notification.data.expiryDate && (
-                                <div>
-                                  <span className="text-gray-400">Expires:</span>
-                                  <span className="ml-2 text-white">
-                                    {new Date(notification.data.expiryDate).toLocaleDateString()}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
                       </div>
                     </div>
                   </CardContent>

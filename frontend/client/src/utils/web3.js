@@ -48,6 +48,7 @@ class Web3Service {
     this.credentialRegistry = null;
     this.userRegistry = null;
     this.isInitialized = false;
+    this.eventListeners = new Map(); // Store active event listeners
   }
 
   async init() {
@@ -665,6 +666,221 @@ class Web3Service {
   }
 
   // Debug function to identify current account
+  // Event listener methods for real-time notifications
+  async startListeningForCredentialEvents(userAddress, onCredentialIssued) {
+    try {
+      if (!this.credentialRegistry) {
+        console.log('Credential registry not loaded, cannot start event listening');
+        return false;
+      }
+
+      const listenerKey = `credential-issued-${userAddress}`;
+      
+      // Remove existing listener if any
+      if (this.eventListeners.has(listenerKey)) {
+        this.stopListeningForCredentialEvents(userAddress);
+      }
+
+      console.log(`🎧 Starting to listen for CredentialIssued events for user: ${userAddress}`);
+
+      // Create event filter for CredentialIssued events where the user is the holder
+      const filter = this.credentialRegistry.filters.CredentialIssued(null, null, userAddress);
+      
+      // Event handler function
+      const eventHandler = async (credentialId, issuer, holder, credentialType, event) => {
+        console.log('🔔 CredentialIssued event detected!', {
+          credentialId: Number(credentialId),
+          issuer,
+          holder,
+          credentialType,
+          blockNumber: event.blockNumber,
+          transactionHash: event.transactionHash
+        });
+
+        try {
+          // Get full credential details from blockchain
+          const credential = await this.credentialRegistry.getCredential(Number(credentialId));
+          
+          // Parse credential data
+          let parsedData = {};
+          try {
+            parsedData = JSON.parse(credential.data);
+          } catch {
+            parsedData = { raw: credential.data };
+          }
+
+          // Create notification data with all required fields
+          const notificationData = {
+            credentialId: Number(credentialId),
+            issuer: issuer,
+            holder: holder,
+            credentialType: credentialType,
+            issuerDID: `did:ethr:${issuer}`,
+            credentialTitle: parsedData.title || `${credentialType} Credential`,
+            issueDate: new Date(Number(credential.issuedAt) * 1000).toISOString(),
+            expiryDate: new Date(Number(credential.expiresAt) * 1000).toISOString(),
+            data: parsedData,
+            blockNumber: event.blockNumber,
+            transactionHash: event.transactionHash,
+            timestamp: new Date().toISOString()
+          };
+
+          console.log('📋 Processed credential event data:', notificationData);
+
+          // Call the callback function with notification data
+          if (onCredentialIssued && typeof onCredentialIssued === 'function') {
+            await onCredentialIssued(notificationData);
+          }
+        } catch (error) {
+          console.error('❌ Error processing CredentialIssued event:', error);
+        }
+      };
+
+      // Start listening for events
+      this.credentialRegistry.on(filter, eventHandler);
+      
+      // Store the listener for cleanup
+      this.eventListeners.set(listenerKey, {
+        filter,
+        handler: eventHandler,
+        userAddress
+      });
+
+      console.log(`✅ Successfully started listening for CredentialIssued events for ${userAddress}`);
+      return true;
+    } catch (error) {
+      console.error('❌ Failed to start listening for credential events:', error);
+      return false;
+    }
+  }
+
+  stopListeningForCredentialEvents(userAddress) {
+    try {
+      const listenerKey = `credential-issued-${userAddress}`;
+      const listener = this.eventListeners.get(listenerKey);
+      
+      if (listener) {
+        console.log(`🔇 Stopping CredentialIssued event listener for ${userAddress}`);
+        this.credentialRegistry.off(listener.filter, listener.handler);
+        this.eventListeners.delete(listenerKey);
+        console.log(`✅ Successfully stopped listening for events for ${userAddress}`);
+        return true;
+      } else {
+        console.log(`⚠️ No active listener found for ${userAddress}`);
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ Error stopping credential event listener:', error);
+      return false;
+    }
+  }
+
+  // Stop all active event listeners
+  stopAllEventListeners() {
+    try {
+      console.log(`🔇 Stopping all ${this.eventListeners.size} active event listeners`);
+      
+      for (const [key, listener] of this.eventListeners.entries()) {
+        try {
+          this.credentialRegistry.off(listener.filter, listener.handler);
+          console.log(`✅ Stopped listener: ${key}`);
+        } catch (error) {
+          console.error(`❌ Error stopping listener ${key}:`, error);
+        }
+      }
+      
+      this.eventListeners.clear();
+      console.log('✅ All event listeners stopped');
+      return true;
+    } catch (error) {
+      console.error('❌ Error stopping all event listeners:', error);
+      return false;
+    }
+  }
+
+  // Get active listeners info
+  getActiveListeners() {
+    const listeners = [];
+    for (const [key, listener] of this.eventListeners.entries()) {
+      listeners.push({
+        key,
+        userAddress: listener.userAddress,
+        type: 'CredentialIssued'
+      });
+    }
+    return listeners;
+  }
+
+  // Fetch all past CredentialIssued events for a specific user
+  async getPastCredentialEvents(userAddress, fromBlock = 0) {
+    try {
+      if (!this.credentialRegistry) {
+        console.log('Credential registry not loaded, cannot fetch past events');
+        return [];
+      }
+
+      console.log(`📜 Fetching past CredentialIssued events for ${userAddress} from block ${fromBlock}`);
+
+      // Create event filter for CredentialIssued events where the user is the holder
+      const filter = this.credentialRegistry.filters.CredentialIssued(null, null, userAddress);
+      
+      // Query past events
+      const events = await this.credentialRegistry.queryFilter(filter, fromBlock, 'latest');
+      
+      console.log(`📜 Found ${events.length} past CredentialIssued events for ${userAddress}`);
+
+      const processedEvents = [];
+      
+      for (const event of events) {
+        try {
+          // Extract event data
+          const { credentialId, issuer, holder, credentialType } = event.args;
+          
+          console.log(`Processing past event: credentialId=${Number(credentialId)}, issuer=${issuer}, holder=${holder}, type=${credentialType}`);
+          
+          // Get full credential details from blockchain
+          const credential = await this.credentialRegistry.getCredential(Number(credentialId));
+          
+          // Parse credential data
+          let parsedData = {};
+          try {
+            parsedData = JSON.parse(credential.data);
+          } catch {
+            parsedData = { raw: credential.data };
+          }
+
+          // Create notification data structure
+          const eventData = {
+            credentialId: Number(credentialId),
+            issuer: issuer,
+            holder: holder,
+            credentialType: credentialType,
+            issuerDID: `did:ethr:${issuer}`,
+            credentialTitle: parsedData.title || `${credentialType} Credential`,
+            issueDate: new Date(Number(credential.issuedAt) * 1000).toISOString(),
+            expiryDate: new Date(Number(credential.expiresAt) * 1000).toISOString(),
+            data: parsedData,
+            blockNumber: event.blockNumber,
+            transactionHash: event.transactionHash,
+            timestamp: new Date(Number(credential.issuedAt) * 1000).toISOString(),
+            isPastEvent: true
+          };
+
+          processedEvents.push(eventData);
+          console.log(`✅ Processed past event for credential ${credentialId}`);
+        } catch (error) {
+          console.error(`❌ Error processing past event:`, error);
+        }
+      }
+
+      console.log(`✅ Successfully processed ${processedEvents.length} past events for ${userAddress}`);
+      return processedEvents;
+    } catch (error) {
+      console.error('❌ Failed to fetch past credential events:', error);
+      return [];
+    }
+  }
+
   debugAccountInfo() {
     const currentAccount = this.getAccount();
     const hardhatAccounts = {
@@ -684,12 +900,14 @@ class Web3Service {
     console.log('Current Account:', currentAccount);
     console.log('Account Type:', accountInfo);
     console.log('Is Issuer Account:', ['0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266', '0x70997970C51812dc3A010C7d01b50e0d17dc79C8'].includes(currentAccount));
+    console.log('Active Event Listeners:', this.getActiveListeners().length);
     console.log('========================');
     
     return {
       address: currentAccount,
       type: accountInfo,
-      isIssuerAccount: ['0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266', '0x70997970C51812dc3A010C7d01b50e0d17dc79C8'].includes(currentAccount)
+      isIssuerAccount: ['0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266', '0x70997970C51812dc3A010C7d01b50e0d17dc79C8'].includes(currentAccount),
+      activeListeners: this.getActiveListeners()
     };
   }
 }

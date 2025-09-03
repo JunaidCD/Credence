@@ -441,6 +441,10 @@ const IssuerDashboard = () => {
   };
 
   const getCredentialIcon = (type) => {
+    if (!type || typeof type !== 'string') {
+      return FileText;
+    }
+    
     switch (type.toLowerCase()) {
       case 'university degree':
       case 'degree':
@@ -456,6 +460,10 @@ const IssuerDashboard = () => {
   };
 
   const getCredentialGradient = (type) => {
+    if (!type || typeof type !== 'string') {
+      return 'from-web3-cyan to-web3-purple';
+    }
+    
     switch (type.toLowerCase()) {
       case 'university degree':
       case 'degree':

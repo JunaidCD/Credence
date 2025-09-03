@@ -34,6 +34,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // After creating user, link any existing credentials issued to this wallet address
         await storage.linkCredentialsToUser(user.id, normalizedAddress);
+        
+        console.log(`🔔 User registration complete for ${normalizedAddress}, checking for blockchain credentials...`);
       } else {
         // Update existing user's userType if it's different
         if (user.userType !== userType) {
@@ -355,8 +357,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         user = await storage.createUser(userData);
       }
 
-      const syncedCredentials = [];
-      const newCredentials = [];
+      const syncedCredentials: any[] = [];
+      const newCredentials: any[] = [];
       
       // Process each blockchain credential
       for (const blockchainCred of credentials) {
@@ -409,6 +411,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (newCredentials.length > 0) {
         console.log(`🔔 Creating notifications for ${newCredentials.length} newly synced credentials`);
         // The createCredential method already creates notifications, so they should be created automatically
+      }
+      
+      // Also create notifications for any blockchain credentials that weren't synced to backend
+      const blockchainOnlyCredentials = credentials.filter(blockchainCred => 
+        !syncedCredentials.some(synced => synced.metadata?.blockchainId === blockchainCred.id)
+      );
+      
+      if (blockchainOnlyCredentials.length > 0) {
+        console.log(`🔔 Creating notifications for ${blockchainOnlyCredentials.length} blockchain-only credentials`);
+        await storage.createNotificationsForBlockchainCredentials(user.id, blockchainOnlyCredentials);
       }
 
       res.json({ 
