@@ -4,7 +4,8 @@ import { ethers } from 'ethers';
 const CONTRACT_ADDRESSES = {
   ISSUER_REGISTRY: '',
   CREDENTIAL_REGISTRY: '',
-  USER_REGISTRY: ''
+  USER_REGISTRY: '',
+  VERIFIER_REGISTRY: ''
 };
 
 // Contract ABIs - simplified for frontend use
@@ -39,6 +40,17 @@ const USER_REGISTRY_ABI = [
   "event UserRegistered(address indexed userAddress, string name, string email)"
 ];
 
+const VERIFIER_REGISTRY_ABI = [
+  "function registerVerifier(string memory _name, string memory _organization, string memory _email) external",
+  "function isRegisteredVerifier(address) external view returns (bool)",
+  "function getVerifier(address) external view returns (tuple(address verifierAddress, string name, string organization, string email, bool isActive, uint256 registeredAt, uint256 verificationsCount))",
+  "function getAllVerifiers() external view returns (address[])",
+  "function getActiveVerifiers() external view returns (address[])",
+  "function getTotalVerifiers() external view returns (uint256)",
+  "function getActiveVerifierCount() external view returns (uint256)",
+  "event VerifierRegistered(address indexed verifierAddress, string name, string organization)"
+];
+
 class Web3Service {
   constructor() {
     this.provider = null;
@@ -47,6 +59,7 @@ class Web3Service {
     this.issuerRegistry = null;
     this.credentialRegistry = null;
     this.userRegistry = null;
+    this.verifierRegistry = null;
     this.isInitialized = false;
     this.eventListeners = new Map(); // Store active event listeners
   }
@@ -77,6 +90,7 @@ class Web3Service {
       CONTRACT_ADDRESSES.ISSUER_REGISTRY = deploymentInfo.contracts.IssuerRegistry;
       CONTRACT_ADDRESSES.CREDENTIAL_REGISTRY = deploymentInfo.contracts.CredentialRegistry;
       CONTRACT_ADDRESSES.USER_REGISTRY = deploymentInfo.contracts.UserRegistry;
+      CONTRACT_ADDRESSES.VERIFIER_REGISTRY = deploymentInfo.contracts.VerifierRegistry;
       
       this.issuerRegistry = new ethers.Contract(
         CONTRACT_ADDRESSES.ISSUER_REGISTRY,
@@ -93,6 +107,12 @@ class Web3Service {
       this.userRegistry = new ethers.Contract(
         CONTRACT_ADDRESSES.USER_REGISTRY,
         USER_REGISTRY_ABI,
+        this.provider
+      );
+      
+      this.verifierRegistry = new ethers.Contract(
+        CONTRACT_ADDRESSES.VERIFIER_REGISTRY,
+        VERIFIER_REGISTRY_ABI,
         this.provider
       );
     } catch (error) {
@@ -160,6 +180,59 @@ class Web3Service {
     } catch (error) {
       console.error('Failed to check issuer eligibility:', error);
       throw error;
+    }
+  }
+
+  // Validate verifier registration eligibility (accounts 8-9)
+  async checkVerifierEligibility(address = null) {
+    try {
+      const targetAddress = (address || this.account)?.toLowerCase();
+      console.log('Account changed:', targetAddress);
+      
+      if (!targetAddress) {
+        return {
+          isAllowed: false,
+          isRegistered: false,
+          canRegister: false
+        };
+      }
+
+      // Define allowed Hardhat accounts (accounts 8-9 for verifiers) - use real addresses
+      const ALLOWED_VERIFIER_ACCOUNTS = [
+        '0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f', // Account 8
+        '0xa0Ee7A142d267C1f36714E4a8F75612F20a79720'  // Account 9
+      ];
+
+      const isAllowed = ALLOWED_VERIFIER_ACCOUNTS.some(addr => 
+        addr.toLowerCase() === targetAddress
+      );
+      
+      // Always check on-chain registration status for eligible accounts
+      let isRegistered = false;
+      if (isAllowed && this.verifierRegistry) {
+        try {
+          // Use the smart contract's isRegisteredVerifier method to check on-chain status
+          isRegistered = await this.verifierRegistry.isRegisteredVerifier(targetAddress);
+          console.log('isVerifier:', isRegistered);
+        } catch (error) {
+          console.log('Could not check verifier registration status from blockchain:', error);
+          // If we can't check blockchain, assume not registered to be safe
+          isRegistered = false;
+        }
+      }
+      
+      return {
+        isAllowed,
+        isRegistered,
+        canRegister: isAllowed && !isRegistered
+      };
+    } catch (error) {
+      console.error('Failed to check verifier eligibility:', error);
+      return {
+        isAllowed: false,
+        isRegistered: false,
+        canRegister: false
+      };
     }
   }
 
@@ -798,6 +871,149 @@ class Web3Service {
     }
   }
 
+  async validateVerifierRegistration(address = null) {
+    // Get the standard Hardhat accounts (these are deterministic)
+    const standardHardhatAccounts = [
+      '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266', // Account 0
+      '0x70997970C51812dc3A010C7d01b50e0d17dc79C8', // Account 1
+      '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC', // Account 2
+      '0x90F79bf6EB2c4f870365E785982E1f101E93b906', // Account 3
+      '0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65', // Account 4
+      '0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc', // Account 5
+      '0x976EA74026E726554dB657fA54763abd0C3a0aa9', // Account 6
+      '0x14dC79964da2C08b23698B3D3cc7Ca32193d9955', // Account 7
+      '0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f', // Account 8
+      '0xa0Ee7A142d267C1f36714E4a8F75612F20a79720'  // Account 9
+    ];
+
+    // Define allowed verifier accounts (accounts 8-9) - use real addresses
+    const allowedVerifierAccounts = [
+      '0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f', // Account 8
+      '0xa0Ee7A142d267C1f36714E4a8F75612F20a79720'  // Account 9
+    ];
+
+    const targetAddress = address || this.account;
+    
+    if (!targetAddress) {
+      console.log('No target address provided for verifier validation');
+      return false;
+    }
+    
+    // Debug logging to help troubleshoot
+    console.log('🔍 Validating verifier registration for address:', targetAddress);
+    console.log('📋 Allowed verifier accounts (8-9):', allowedVerifierAccounts);
+    console.log('📝 All Hardhat accounts:', standardHardhatAccounts);
+    
+    // Return boolean for UI validation
+    const isValid = allowedVerifierAccounts.some(addr => 
+      addr.toLowerCase() === targetAddress.toLowerCase()
+    );
+    console.log('✅ Is address valid for verifier registration:', isValid);
+    
+    // Additional debugging - show which account index this is
+    const accountIndex = standardHardhatAccounts.findIndex(addr => 
+      addr.toLowerCase() === targetAddress.toLowerCase()
+    );
+    console.log('🔢 Account index:', accountIndex >= 0 ? accountIndex : 'Not a standard Hardhat account');
+    
+    return isValid;
+  }
+
+  async registerVerifierOnChain(name, organization, email = '') {
+    try {
+      if (!this.signer) {
+        throw new Error('Wallet not connected. Please connect your MetaMask wallet first.');
+      }
+      if (!this.verifierRegistry) {
+        throw new Error('Verifier Registry contract not loaded. Please ensure contracts are deployed.');
+      }
+
+      // Validate verifier account eligibility
+      const eligibility = await this.checkVerifierEligibility();
+      if (!eligibility.isAllowed) {
+        throw new Error('Only Hardhat accounts 8-9 can register as verifiers. Please use a valid verifier account.');
+      }
+      if (eligibility.isRegistered) {
+        throw new Error('This account is already registered as a verifier.');
+      }
+
+      console.log('Register clicked');
+      console.log('🔐 Executing on-chain verifier registration...');
+      
+      // Execute blockchain transaction directly
+      const contract = this.verifierRegistry.connect(this.signer);
+      const tx = await contract.registerVerifier(name, organization, email);
+      
+      console.log('Tx sent:', tx.hash);
+      console.log('⏳ Transaction submitted, waiting for confirmation...');
+      
+      // Wait for transaction confirmation
+      const receipt = await tx.wait();
+      
+      console.log('Tx confirmed:', tx.hash);
+      console.log('✅ Verifier registration confirmed on blockchain');
+      console.log('📋 Block number:', receipt.blockNumber);
+      console.log('⛽ Gas used:', receipt.gasUsed.toString());
+      
+      return {
+        success: true,
+        transactionHash: tx.hash,
+        blockNumber: receipt.blockNumber,
+        gasUsed: receipt.gasUsed.toString(),
+        address: this.account,
+        name,
+        organization,
+        email
+      };
+    } catch (error) {
+      console.error('❌ Verifier registration failed:', error);
+      throw error;
+    }
+  }
+
+  async checkVerifierRegistrationStatus(address = null) {
+    try {
+      const targetAddress = address || this.account;
+      if (!targetAddress) {
+        return {
+          isEligible: false,
+          isRegistered: false,
+          canRegister: false
+        };
+      }
+
+      // Use local validation for account eligibility
+      const isEligible = await this.validateVerifierRegistration(targetAddress);
+      
+      // Check registration status directly from blockchain
+      let isRegistered = false;
+      try {
+        if (this.verifierRegistry && isEligible) {
+          isRegistered = await this.verifierRegistry.isRegisteredVerifier(targetAddress);
+        }
+      } catch (error) {
+        console.log('Could not check verifier registration status from blockchain:', error);
+      }
+      
+      return {
+        success: true,
+        address: targetAddress,
+        isEligible,
+        isRegistered,
+        canRegister: isEligible && !isRegistered
+      };
+    } catch (error) {
+      console.error('Failed to check verifier registration status:', error);
+      // Fallback to local validation
+      const isEligible = await this.validateVerifierRegistration(targetAddress);
+      return {
+        isEligible,
+        isRegistered: false,
+        canRegister: isEligible
+      };
+    }
+  }
+
   // Get active listeners info
   getActiveListeners() {
     const listeners = [];
@@ -912,4 +1128,6 @@ class Web3Service {
   }
 }
 
+// Export both the class and a singleton instance
+export { Web3Service };
 export default new Web3Service();

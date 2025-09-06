@@ -35,6 +35,15 @@ async function main() {
   const userRegistryAddress = await userRegistry.getAddress();
   console.log("✅ UserRegistry deployed to:", userRegistryAddress);
 
+  // Deploy VerifierRegistry
+  console.log("\n🔍 Deploying VerifierRegistry...");
+  const VerifierRegistry = await ethers.getContractFactory("VerifierRegistry");
+  const verifierRegistry = await VerifierRegistry.deploy();
+  await verifierRegistry.waitForDeployment();
+  
+  const verifierRegistryAddress = await verifierRegistry.getAddress();
+  console.log("✅ VerifierRegistry deployed to:", verifierRegistryAddress);
+
   // Save deployment addresses to backend and frontend
   const fs = require('fs');
   const path = require('path');
@@ -44,7 +53,8 @@ async function main() {
     contracts: {
       IssuerRegistry: issuerRegistryAddress,
       CredentialRegistry: credentialRegistryAddress,
-      UserRegistry: userRegistryAddress
+      UserRegistry: userRegistryAddress,
+      VerifierRegistry: verifierRegistryAddress
     },
     deployedAt: new Date().toISOString(),
     deployer: deployer.address
@@ -71,9 +81,11 @@ async function main() {
   console.log("- IssuerRegistry:", issuerRegistryAddress);
   console.log("- CredentialRegistry:", credentialRegistryAddress);
   console.log("- UserRegistry:", userRegistryAddress);
+  console.log("- VerifierRegistry:", verifierRegistryAddress);
   console.log("- Network: Hardhat Localhost (Chain ID: 31337)");
-  console.log("- Allowed Issuers: Account 2-7 only");
+  console.log("- Allowed Issuers: Account 0-1 only");
   console.log("- Allowed Users: Account 2-7 only");
+  console.log("- Allowed Verifiers: Account 8-9 only");
 }
 
 main()

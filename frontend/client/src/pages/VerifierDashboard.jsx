@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Web3Service } from '@/utils/web3.js';
 import { 
   Send, 
   CheckCircle, 
@@ -214,6 +215,15 @@ const VerifierDashboard = () => {
   // Add current time state
   const [currentTime, setCurrentTime] = useState(new Date());
   
+  // Verifier registration states
+  const [web3Service] = useState(() => new Web3Service());
+  const [walletConnected, setWalletConnected] = useState(false);
+  const [walletAddress, setWalletAddress] = useState('');
+  const [isEligibleVerifier, setIsEligibleVerifier] = useState(false);
+  const [isRegisteredVerifier, setIsRegisteredVerifier] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [isCheckingRegistration, setIsCheckingRegistration] = useState(false);
+  
   // Update time every minute
   useEffect(() => {
     const timer = setInterval(() => {
@@ -232,12 +242,121 @@ const VerifierDashboard = () => {
     };
   }, []);
 
+  // Initialize Web3 and check wallet connection on component mount
+  useEffect(() => {
+    const initializeWallet = async () => {
+      try {
+        await web3Service.init();
+        const currentAccount = await web3Service.getCurrentAccount();
+        if (currentAccount) {
+          setWalletAddress(currentAccount);
+          setWalletConnected(true);
+          await checkVerifierStatus(currentAccount);
+        }
+      } catch (error) {
+        console.error('Failed to initialize wallet:', error);
+      }
+    };
+
+    // Listen for account changes in MetaMask - re-run step 1 each time
+    const handleAccountsChanged = async (accounts) => {
+      if (accounts.length > 0) {
+        const newAddress = accounts[0].toLowerCase();
+        setWalletAddress(newAddress);
+        
+        // Update Web3Service with new account
+        try {
+          const connection = await web3Service.connectWallet();
+          setWalletAddress(connection.account);
+          
+          // Check eligibility with new account - update UI immediately
+          const eligibility = await web3Service.checkVerifierEligibility(connection.account);
+          setIsRegisteredVerifier(eligibility.isRegistered);
+          setIsEligibleVerifier(eligibility.isAllowed);
+        } catch (error) {
+          console.error('Failed to update account:', error);
+        }
+      } else {
+        // No accounts connected
+        setWalletConnected(false);
+        setWalletAddress('');
+        setIsRegisteredVerifier(false);
+        setIsEligibleVerifier(false);
+      }
+    };
+
+    initializeWallet();
+
+    // Add MetaMask account change listener
+    if (window.ethereum) {
+      window.ethereum.on('accountsChanged', handleAccountsChanged);
+    }
+
+    // Cleanup listener on unmount
+    return () => {
+      if (window.ethereum) {
+        window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
+      }
+    };
+  }, []);
+
+  // Check verifier eligibility and registration status
+  const checkVerifierStatus = async (address = null) => {
+    try {
+      const targetAddress = address || walletAddress;
+      if (!targetAddress) return;
+
+      setIsCheckingRegistration(true);
+      
+      // Always check on-chain registration status - no hardcoded assumptions
+      const eligibility = await web3Service.checkVerifierEligibility(targetAddress);
+      setIsEligibleVerifier(eligibility.isAllowed);
+      setIsRegisteredVerifier(eligibility.isRegistered);
+      
+      console.log('Verifier eligibility check:', {
+        address: targetAddress,
+        isAllowed: eligibility.isAllowed,
+        isRegistered: eligibility.isRegistered,
+        canRegister: eligibility.canRegister
+      });
+    } catch (error) {
+      console.error('Failed to check verifier status:', error);
+      // On error, reset to safe defaults
+      setIsEligibleVerifier(false);
+      setIsRegisteredVerifier(false);
+    } finally {
+      setIsCheckingRegistration(false);
+    }
+  };
+
+  // Connect wallet function
+  const connectWallet = async () => {
+    try {
+      const connection = await web3Service.connectWallet();
+      setWalletAddress(connection.account);
+      setWalletConnected(true);
+      await checkVerifierStatus(connection.account);
+      
+      toast({
+        title: "Wallet Connected",
+        description: `Connected to ${connection.account.slice(0, 6)}...${connection.account.slice(-4)}`,
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Connection Failed",
+        description: error.message,
+      });
+    }
+  };
+
   // Form states
   const [searchForm, setSearchForm] = useState({
     did: '',
     credentialType: '',
     message: ''
   });
+
   
   // Settings state
   const [settings, setSettings] = useState({
@@ -286,6 +405,64 @@ const VerifierDashboard = () => {
   const filteredRequests = approvedRequests.filter(request => 
     !searchDID || request.userDID?.toLowerCase().includes(searchDID.toLowerCase())
   );
+
+  // Register as verifier function with proper validation and logging
+  const registerAsVerifier = async () => {
+    setIsRegistering(true);
+    try {
+      // First ensure wallet is connected
+      if (!walletConnected) {
+        console.log('Connecting wallet for registration...');
+        const connection = await web3Service.connectWallet();
+        setWalletConnected(true);
+        setWalletAddress(connection.account);
+      }
+
+      // Check eligibility before registration
+      const currentAccount = web3Service.account || walletAddress;
+      const eligibility = await web3Service.checkVerifierEligibility(currentAccount);
+      
+      if (!eligibility.isAllowed) {
+        throw new Error(`Account ${currentAccount} is not allowed. Only Hardhat accounts 8 (0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f) or 9 (0xa0Ee7A142d267C1f36714E4a8F75612F20a79720) can register as verifiers.`);
+      }
+
+      if (eligibility.isRegistered) {
+        setIsRegisteredVerifier(true);
+        throw new Error('This account is already registered as a verifier');
+      }
+
+      console.log('Account is eligible, proceeding with blockchain registration...');
+
+      // Register on blockchain - this will open MetaMask, send registerVerifier() transaction
+      const defaultName = `Verifier ${walletAddress.slice(0, 6)}`;
+      const defaultOrganization = 'Credence Network';
+      const defaultEmail = '';
+      
+      const result = await web3Service.registerVerifierOnChain(
+        defaultName,
+        defaultOrganization,
+        defaultEmail
+      );
+      
+      // Only update status after on-chain transaction confirms
+      // Re-check registration status from blockchain to confirm
+      await checkVerifierStatus(currentAccount);
+      
+      toast({
+        title: "Registered as verifier — tx confirmed",
+        description: `Successfully registered! Transaction: ${result.transactionHash.slice(0, 10)}...`,
+      });
+    } catch (error) {
+      console.error('Registration error:', error);
+      toast({
+        variant: "destructive",
+        title: "Registration Failed",
+        description: error.message,
+      });
+    } finally {
+      setIsRegistering(false);
+    }
+  };
 
   // Mutations
   const sendRequestMutation = useMutation({
@@ -432,6 +609,129 @@ const VerifierDashboard = () => {
             <div className="text-2xl font-bold text-white mt-1">98.5%</div>
           </div>
         </div>
+      </div>
+
+      {/* Verifier Registration Section */}
+      <Card className="glass-effect mb-8">
+        <CardContent className="p-8">
+          <div className="text-center mb-6">
+            <Shield className="h-16 w-16 text-blue-400 mx-auto mb-4 floating-icon" />
+            <h3 className="text-2xl font-bold gradient-text mb-2">Verifier Registration</h3>
+            {!walletConnected ? (
+              <p className="text-gray-300 mb-4">Connect your MetaMask wallet to register as a verifier</p>
+            ) : isCheckingRegistration ? (
+              <div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400 mx-auto mb-2"></div>
+                <p className="text-blue-300 mb-2">Checking registration status...</p>
+              </div>
+            ) : isRegisteredVerifier ? (
+              <div>
+                <CheckCircle className="h-8 w-8 text-green-400 mx-auto mb-2" />
+                <p className="text-green-300 mb-2">You are successfully registered as a verifier!</p>
+              </div>
+            ) : (
+              <p className="text-gray-300 mb-4">Register yourself as a verifier on the Credence platform</p>
+            )}
+          </div>
+          
+          {!walletConnected ? (
+            <div className="text-center">
+              <Button
+                onClick={connectWallet}
+                className="enhanced-button text-white px-8 py-3 rounded-xl font-bold mb-4"
+              >
+                <div className="flex items-center space-x-2">
+                  <Shield className="h-5 w-5" />
+                  <span>Connect MetaMask</span>
+                </div>
+              </Button>
+            </div>
+          ) : (
+            <div className="text-center">
+              <Button
+                onClick={registerAsVerifier}
+                disabled={!isEligibleVerifier || isRegisteredVerifier || isRegistering || isCheckingRegistration}
+                className={`px-8 py-3 rounded-xl font-bold mb-4 transition-all duration-300 ${
+                  isEligibleVerifier && !isRegisteredVerifier && !isRegistering && !isCheckingRegistration
+                    ? 'enhanced-button text-white hover:scale-105' 
+                    : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                <div className="flex items-center space-x-2">
+                  {isCheckingRegistration ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                      <span>Checking status...</span>
+                    </>
+                  ) : isRegistering ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                      <span>Registering...</span>
+                    </>
+                  ) : isRegisteredVerifier ? (
+                    <>
+                      <CheckCircle className="h-5 w-5" />
+                      <span>Already registered</span>
+                    </>
+                  ) : isEligibleVerifier ? (
+                    <>
+                      <Shield className="h-5 w-5" />
+                      <span>Register as Verifier</span>
+                    </>
+                  ) : (
+                    <>
+                      <Shield className="h-5 w-5" />
+                      <span>Register as Verifier</span>
+                    </>
+                  )}
+                </div>
+              </Button>
+            </div>
+          )}
+          
+          <div className="text-center mt-4">
+            {!walletConnected ? (
+              <p className="text-sm text-yellow-300">
+                Only hardhat accounts 8–9 can register as a verifier
+              </p>
+            ) : isEligibleVerifier ? (
+              <div>
+                <p className="text-xs text-gray-400">
+                  Current wallet: {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+                </p>
+                {isCheckingRegistration ? (
+                  <p className="text-xs text-blue-400 mt-1">
+                    ⏳ Checking blockchain status...
+                  </p>
+                ) : isRegisteredVerifier ? (
+                  <p className="text-xs text-green-400 mt-1">
+                    ✓ Already registered
+                  </p>
+                ) : (
+                  <p className="text-xs text-blue-400 mt-1">
+                    ✓ Eligible for registration
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div>
+                <p className="text-sm text-yellow-300">
+                  Only hardhat accounts 8–9 can register as a verifier
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Current wallet: {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+                </p>
+                <p className="text-xs text-red-400 mt-1">
+                  Please switch to accounts 8 or 9 in MetaMask
+                </p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Continue with existing dashboard content */}
+      <div className="grid md:grid-cols-4 gap-6 mb-8">
       </div>
 
       {/* Enhanced Statistics Cards */}

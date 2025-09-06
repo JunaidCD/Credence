@@ -107,6 +107,41 @@
       "artifacts": [
         "UserRegistry"
       ]
+    },
+    "C:\\Users\\ASUS\\OneDrive\\Desktop\\Credence\\backend\\contracts\\VerifierRegistry.sol": {
+      "lastModificationDate": 1757096929916,
+      "contentHash": "797f613dad723223955cc910b6541910",
+      "sourceName": "contracts/VerifierRegistry.sol",
+      "solcConfig": {
+        "version": "0.8.19",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.19"
+      ],
+      "artifacts": [
+        "VerifierRegistry"
+      ]
     }
   }
 }
