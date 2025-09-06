@@ -1100,56 +1100,6 @@ const VerifierDashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Enhanced Quick DID Lookup */}
-        <Card className="lookup-card form-section">
-          <CardHeader>
-            <CardTitle className="flex items-center text-xl">
-              <div className="relative mr-3">
-                <Search className="h-6 w-6 text-cyan-400 floating-icon" />
-                <div className="absolute inset-0 bg-cyan-500 rounded blur-md opacity-30"></div>
-              </div>
-              Quick DID Lookup
-              <div className="ml-auto flex items-center space-x-2">
-                <div className="h-2 w-2 bg-cyan-400 rounded-full animate-pulse"></div>
-                <span className="text-cyan-400 text-sm font-medium">Instant Search</span>
-              </div>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex space-x-3">
-                <div className="relative flex-1">
-                  <Input
-                    placeholder="Enter DID to lookup instantly..."
-                    className="form-input text-white placeholder-gray-400 pl-12 h-12 text-lg"
-                    data-testid="input-lookup-did"
-                  />
-                  <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
-                    <Eye className="h-5 w-5 text-cyan-400" />
-                  </div>
-                </div>
-                <Button
-                  variant="outline"
-                  className="enhanced-button border-2 border-cyan-400 text-cyan-400 hover:bg-cyan-400 hover:text-gray-900 h-12 px-6 rounded-xl font-semibold"
-                  data-testid="button-lookup"
-                >
-                  <Search className="h-5 w-5 mr-2" />
-                  Lookup
-                </Button>
-              </div>
-              
-              <div className="bg-cyan-500 bg-opacity-10 rounded-lg p-4 border border-cyan-500 border-opacity-20">
-                <div className="flex items-center space-x-2 mb-2">
-                  <Shield className="h-5 w-5 text-cyan-400" />
-                  <span className="text-cyan-300 font-medium">Instant Verification</span>
-                </div>
-                <p className="text-gray-300 text-sm">
-                  Quickly verify if a DID exists and check its public credentials without sending a formal request
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
