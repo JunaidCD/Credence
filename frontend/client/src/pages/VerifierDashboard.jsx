@@ -262,6 +262,7 @@ const VerifierDashboard = () => {
     const handleAccountsChanged = async (accounts) => {
       if (accounts.length > 0) {
         const newAddress = accounts[0].toLowerCase();
+        console.log('ACCOUNT_CHANGED:', newAddress);
         setWalletAddress(newAddress);
         
         // Update Web3Service with new account
@@ -277,6 +278,7 @@ const VerifierDashboard = () => {
           console.error('Failed to update account:', error);
         }
       } else {
+        console.log('ACCOUNT_CHANGED: disconnected');
         // No accounts connected
         setWalletConnected(false);
         setWalletAddress('');
@@ -547,27 +549,67 @@ const VerifierDashboard = () => {
               <p className="text-gray-300 text-lg mb-2">
                 Ready to verify credentials and manage identity requests
               </p>
-              {user?.did && (
-                <div className="flex items-center space-x-2 mt-3">
-                  <div className="bg-blue-500 bg-opacity-20 px-3 py-1 rounded-full border border-blue-500 border-opacity-30">
-                    <span className="text-blue-300 text-sm font-medium">DID:</span>
-                    <span className="text-white text-sm font-mono ml-2">
-                      {user.did.length > 40 ? `${user.did.slice(0, 20)}...${user.did.slice(-15)}` : user.did}
-                    </span>
-                  </div>
-                  <button 
-                    onClick={() => navigator.clipboard.writeText(user.did)}
-                    className="text-blue-400 hover:text-blue-300 transition-colors"
-                    title="Copy DID"
-                  >
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                    </svg>
-                  </button>
+              <div className="flex items-center space-x-2 mt-3">
+                <div className="bg-blue-500 bg-opacity-20 px-3 py-1 rounded-full border border-blue-500 border-opacity-30">
+                  <span className="text-blue-300 text-sm font-medium">DID:</span>
+                  <span className="text-white text-sm font-mono ml-2">
+                    {(() => {
+                      const isAccount8 = walletAddress?.toLowerCase() === '0x23618e81e3f5cdf7f54c3d65f7fbc0abf5b21e8f';
+                      const isAccount9 = walletAddress?.toLowerCase() === '0xa0ee7a142d267c1f36714e4a8f75612f20a79720';
+                      
+                      let displayedDid;
+                      if (walletConnected && (isAccount8 || isAccount9)) {
+                        displayedDid = `did:ethr:${walletAddress}`;
+                      } else {
+                        displayedDid = 'did:ethr:0x0000000000000000000000000000000000000000';
+                      }
+                      
+                      console.log('DID_RENDER:', displayedDid);
+                      
+                      return displayedDid.length > 40 ? `${displayedDid.slice(0, 20)}...${displayedDid.slice(-15)}` : displayedDid;
+                    })()}
+                  </span>
                 </div>
-              )}
+                <button 
+                  onClick={async (event) => {
+                    try {
+                      const isAccount8 = walletAddress?.toLowerCase() === '0x23618e81e3f5cdf7f54c3d65f7fbc0abf5b21e8f';
+                      const isAccount9 = walletAddress?.toLowerCase() === '0xa0ee7a142d267c1f36714e4a8f75612f20a79720';
+                      
+                      const didToCopy = (walletConnected && (isAccount8 || isAccount9)) 
+                        ? `did:ethr:${walletAddress}`
+                        : 'did:ethr:0x0000000000000000000000000000000000000000';
+                      
+                      await navigator.clipboard.writeText(didToCopy);
+                      console.log('DID copied to clipboard:', didToCopy);
+                      
+                      // Show temporary success feedback
+                      const button = event.target.closest('button');
+                      const originalTitle = button.title;
+                      button.title = 'Copied!';
+                      button.style.color = '#10b981';
+                      
+                      setTimeout(() => {
+                        button.title = originalTitle;
+                        button.style.color = '';
+                      }, 2000);
+                      
+                    } catch (error) {
+                      console.error('Failed to copy DID:', error);
+                      alert('Failed to copy DID to clipboard');
+                    }
+                  }}
+                  className="text-blue-400 hover:text-blue-300 transition-colors"
+                  title="Copy DID"
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
+          
           <div className="text-right">
             <div className="text-2xl font-bold text-white mb-1">
               {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -615,7 +657,7 @@ const VerifierDashboard = () => {
       <Card className="glass-effect mb-8">
         <CardContent className="p-8">
           <div className="text-center mb-6">
-            <Shield className="h-16 w-16 text-blue-400 mx-auto mb-4 floating-icon" />
+            <Shield className="h-16 w-16 text-blue-400 mx-auto floating-icon" />
             <h3 className="text-2xl font-bold gradient-text mb-2">Verifier Registration</h3>
             {!walletConnected ? (
               <p className="text-gray-300 mb-4">Connect your MetaMask wallet to register as a verifier</p>
@@ -833,7 +875,7 @@ const VerifierDashboard = () => {
         </CardHeader>
         <CardContent>
           {requestsLoading ? (
-            <div className="space-y-4">
+            <div className="p-6 space-y-4">
               {[1, 2, 3].map(i => (
                 <div key={i} className="glass-effect rounded-lg p-4 animate-pulse">
                   <div className="flex items-center space-x-4">
@@ -869,7 +911,7 @@ const VerifierDashboard = () => {
                 <div className="bg-purple-500 bg-opacity-10 rounded-lg p-4 border border-purple-500 border-opacity-20">
                   <Shield className="h-8 w-8 text-purple-400 mx-auto mb-2" />
                   <p className="text-purple-300 font-medium">Secure Network</p>
-                  <p className="text-gray-400 text-sm mt-1">Maintain trust ecosystem</p>
+                  <p className="text-gray-400 text-sm mt-1">Build trusted connections</p>
                 </div>
               </div>
             </div>
@@ -896,10 +938,10 @@ const VerifierDashboard = () => {
                       <div className="flex-1">
                         <div className="flex items-center space-x-2 mb-1">
                           <h4 className="font-semibold text-white">{request.credentialType}</h4>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            request.status === 'approved' ? 'text-green-400 bg-green-500 bg-opacity-20' :
-                            request.status === 'rejected' ? 'text-red-400 bg-red-500 bg-opacity-20' :
-                            'text-yellow-400 bg-yellow-500 bg-opacity-20'
+                          <span className={`px-2 py-1 rounded-full text-sm capitalize ${
+                            request.status === 'approved' ? 'text-green-500 bg-green-500 bg-opacity-20' :
+                            request.status === 'rejected' ? 'text-red-500 bg-red-500 bg-opacity-20' :
+                            'text-yellow-500 bg-yellow-500 bg-opacity-20'
                           }`}>
                             {request.status}
                           </span>
@@ -1369,383 +1411,61 @@ const VerifierDashboard = () => {
                 <div>
                   <h4 className="text-blue-300 font-semibold mb-1">🔐 Your DID</h4>
                   <p className="text-gray-400 text-sm font-mono">
-                    {user?.did ? `${user.did.slice(0, 30)}...${user.did.slice(-20)}` : 'Not available'}
+                    {(() => {
+                      const isAccount8 = walletAddress?.toLowerCase() === '0x23618e81e3f5cdf7f54c3d65f7fbc0abf5b21e8f';
+                      const isAccount9 = walletAddress?.toLowerCase() === '0xa0ee7a142d267c1f36714e4a8f75612f20a79720';
+                      
+                      let displayedDid;
+                      if (walletConnected && (isAccount8 || isAccount9)) {
+                        displayedDid = `did:ethr:${walletAddress}`;
+                      } else {
+                        displayedDid = 'did:ethr:0x0000000000000000000000000000000000000000';
+                      }
+                      
+                      console.log('DID_RENDER:', displayedDid);
+                      
+                      return displayedDid.length > 40 ? `${displayedDid.slice(0, 20)}...${displayedDid.slice(-15)}` : displayedDid;
+                    })()}
                   </p>
                 </div>
-                <Button
-                  onClick={() => user?.did && navigator.clipboard.writeText(user.did)}
-                  variant="outline"
-                  className="border-blue-400 text-blue-400 hover:bg-blue-400 hover:text-gray-900"
+                <button 
+                  onClick={async (event) => {
+                    try {
+                      const isAccount8 = walletAddress?.toLowerCase() === '0x23618e81e3f5cdf7f54c3d65f7fbc0abf5b21e8f';
+                      const isAccount9 = walletAddress?.toLowerCase() === '0xa0ee7a142d267c1f36714e4a8f75612f20a79720';
+                      
+                      const didToCopy = (walletConnected && (isAccount8 || isAccount9)) 
+                        ? `did:ethr:${walletAddress}`
+                        : 'did:ethr:0x0000000000000000000000000000000000000000';
+                      
+                      await navigator.clipboard.writeText(didToCopy);
+                      console.log('DID copied to clipboard:', didToCopy);
+                      
+                      // Show success message
+                      alert('DID copied to clipboard!');
+                      
+                    } catch (error) {
+                      console.error('Failed to copy DID:', error);
+                      alert('Failed to copy DID to clipboard');
+                    }
+                  }}
+                  disabled={(() => {
+                    const isAccount8 = walletAddress?.toLowerCase() === '0x23618e81e3f5cdf7f54c3d65f7fbc0abf5b21e8f';
+                    const isAccount9 = walletAddress?.toLowerCase() === '0xa0ee7a142d267c1f36714e4a8f75612f20a79720';
+                    return !walletConnected || (!isAccount8 && !isAccount9);
+                  })()}
+                  className={(() => {
+                    const isAccount8 = walletAddress?.toLowerCase() === '0x23618e81e3f5cdf7f54c3d65f7fbc0abf5b21e8f';
+                    const isAccount9 = walletAddress?.toLowerCase() === '0xa0ee7a142d267c1f36714e4a8f75612f20a79720';
+                    const isDisabled = !walletConnected || (!isAccount8 && !isAccount9);
+                    return isDisabled 
+                      ? "text-gray-500 cursor-not-allowed transition-colors" 
+                      : "text-blue-400 hover:text-blue-300 transition-colors";
+                  })()}
+                  title={(() => {
+                    const isAccount8 = walletAddress?.toLowerCase() === '0x23618e81e3f5cdf7f54c3d65f7fbc0abf5b21e8f';
+                    const isAccount9 = walletAddress?.toLowerCase() === '0xa0ee7a142d267c1f36714e4a8f75612f20a79720';
+                    const isDisabled = !walletConnected || (!isAccount8 && !isAccount9);
+                    return isDisabled ? "Copy not available for placeholder DID" : "Copy DID";
+                  })()}
                 >
-                  <Key className="h-4 w-4 mr-2" />
-                  Copy DID
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Verification Preferences */}
-        <Card className="form-card form-section">
-          <CardHeader>
-            <CardTitle className="flex items-center text-xl">
-              <div className="relative mr-3">
-                <Shield className="h-6 w-6 text-green-400" />
-              </div>
-              Verification Preferences
-              <div className="ml-auto">
-                <div className="bg-green-500 bg-opacity-20 px-3 py-1 rounded-full border border-green-500 border-opacity-30">
-                  <span className="text-green-400 text-sm font-medium">Verification Rules</span>
-                </div>
-              </div>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-gray-800 bg-opacity-50 rounded-lg">
-                  <div>
-                    <h4 className="text-white font-medium">Auto-approve requests</h4>
-                    <p className="text-gray-400 text-sm">Automatically approve trusted requests</p>
-                  </div>
-                  <button
-                    onClick={() => setSettings(prev => ({
-                      ...prev,
-                      verification: { ...prev.verification, autoApprove: !prev.verification.autoApprove }
-                    }))}
-                    className={`w-12 h-6 rounded-full ${
-                      settings.verification.autoApprove ? 'bg-green-500' : 'bg-gray-600'
-                    }`}
-                  >
-                    <div className={`w-5 h-5 bg-white rounded-full ${
-                      settings.verification.autoApprove ? 'translate-x-6' : 'translate-x-0.5'
-                    }`} />
-                  </button>
-                </div>
-                
-                <div className="flex items-center justify-between p-4 bg-gray-800 bg-opacity-50 rounded-lg">
-                  <div>
-                    <h4 className="text-white font-medium">Require message</h4>
-                    <p className="text-gray-400 text-sm">Users must provide a reason</p>
-                  </div>
-                  <button
-                    onClick={() => setSettings(prev => ({
-                      ...prev,
-                      verification: { ...prev.verification, requireMessage: !prev.verification.requireMessage }
-                    }))}
-                    className={`w-12 h-6 rounded-full ${
-                      settings.verification.requireMessage ? 'bg-green-500' : 'bg-gray-600'
-                    }`}
-                  >
-                    <div className={`w-5 h-5 bg-white rounded-full ${
-                      settings.verification.requireMessage ? 'translate-x-6' : 'translate-x-0.5'
-                    }`} />
-                  </button>
-                </div>
-              </div>
-              
-              <div className="form-section">
-                <label className="form-label block text-sm font-semibold text-orange-300 mb-3">
-                  📊 Max Requests Per Day
-                </label>
-                <Input
-                  type="number"
-                  value={settings.verification.maxRequestsPerDay}
-                  onChange={(e) => setSettings(prev => ({
-                    ...prev,
-                    verification: { ...prev.verification, maxRequestsPerDay: parseInt(e.target.value) }
-                  }))}
-                  className="form-input text-white h-12"
-                  min="1"
-                  max="1000"
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Security Settings */}
-        <Card className="form-card form-section">
-          <CardHeader>
-            <CardTitle className="flex items-center text-xl">
-              <div className="relative mr-3">
-                <Lock className="h-6 w-6 text-red-400" />
-              </div>
-              Security Settings
-              <div className="ml-auto">
-                <div className="bg-red-500 bg-opacity-20 px-3 py-1 rounded-full border border-red-500 border-opacity-30">
-                  <span className="text-red-400 text-sm font-medium">Account Security</span>
-                </div>
-              </div>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-gray-800 bg-opacity-50 rounded-lg">
-                  <div>
-                    <h4 className="text-white font-medium flex items-center">
-                      <Smartphone className="h-4 w-4 mr-2 text-blue-400" />
-                      Two-Factor Authentication
-                    </h4>
-                    <p className="text-gray-400 text-sm">Add extra security to your account</p>
-                  </div>
-                  <button
-                    onClick={() => setSettings(prev => ({
-                      ...prev,
-                      security: { ...prev.security, twoFactorEnabled: !prev.security.twoFactorEnabled }
-                    }))}
-                    className={`w-12 h-6 rounded-full ${
-                      settings.security.twoFactorEnabled ? 'bg-green-500' : 'bg-gray-600'
-                    }`}
-                  >
-                    <div className={`w-5 h-5 bg-white rounded-full ${
-                      settings.security.twoFactorEnabled ? 'translate-x-6' : 'translate-x-0.5'
-                    }`} />
-                  </button>
-                </div>
-                
-                <div className="flex items-center justify-between p-4 bg-gray-800 bg-opacity-50 rounded-lg">
-                  <div>
-                    <h4 className="text-white font-medium flex items-center">
-                      <Globe className="h-4 w-4 mr-2 text-green-400" />
-                      Allow Remote Access
-                    </h4>
-                    <p className="text-gray-400 text-sm">Access from different locations</p>
-                  </div>
-                  <button
-                    onClick={() => setSettings(prev => ({
-                      ...prev,
-                      security: { ...prev.security, allowRemoteAccess: !prev.security.allowRemoteAccess }
-                    }))}
-                    className={`w-12 h-6 rounded-full ${
-                      settings.security.allowRemoteAccess ? 'bg-green-500' : 'bg-gray-600'
-                    }`}
-                  >
-                    <div className={`w-5 h-5 bg-white rounded-full ${
-                      settings.security.allowRemoteAccess ? 'translate-x-6' : 'translate-x-0.5'
-                    }`} />
-                  </button>
-                </div>
-              </div>
-              
-              <div className="form-section">
-                <label className="form-label block text-sm font-semibold text-yellow-300 mb-3">
-                  ⏱️ Session Timeout (minutes)
-                </label>
-                <Input
-                  type="number"
-                  value={settings.security.sessionTimeout}
-                  onChange={(e) => setSettings(prev => ({
-                    ...prev,
-                    security: { ...prev.security, sessionTimeout: parseInt(e.target.value) }
-                  }))}
-                  className="form-input text-white h-12"
-                  min="5"
-                  max="480"
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Notification Settings */}
-        <Card className="form-card form-section">
-          <CardHeader>
-            <CardTitle className="flex items-center text-xl">
-              <div className="relative mr-3">
-                <Bell className="h-6 w-6 text-yellow-400" />
-              </div>
-              Notification Settings
-              <div className="ml-auto">
-                <div className="bg-yellow-500 bg-opacity-20 px-3 py-1 rounded-full border border-yellow-500 border-opacity-30">
-                  <span className="text-yellow-400 text-sm font-medium">Alerts & Updates</span>
-                </div>
-              </div>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="flex items-center justify-between p-4 bg-gray-800 bg-opacity-50 rounded-lg">
-                <div>
-                  <h4 className="text-white font-medium flex items-center">
-                    <Mail className="h-4 w-4 mr-2 text-blue-400" />
-                    Email Notifications
-                  </h4>
-                  <p className="text-gray-400 text-sm">Receive updates via email</p>
-                </div>
-                <button
-                  onClick={() => setSettings(prev => ({
-                    ...prev,
-                    notifications: { ...prev.notifications, emailNotifications: !prev.notifications.emailNotifications }
-                  }))}
-                  className={`w-12 h-6 rounded-full ${
-                    settings.notifications.emailNotifications ? 'bg-green-500' : 'bg-gray-600'
-                  }`}
-                >
-                  <div className={`w-5 h-5 bg-white rounded-full ${
-                    settings.notifications.emailNotifications ? 'translate-x-6' : 'translate-x-0.5'
-                  }`} />
-                </button>
-              </div>
-              
-              <div className="flex items-center justify-between p-4 bg-gray-800 bg-opacity-50 rounded-lg">
-                <div>
-                  <h4 className="text-white font-medium flex items-center">
-                    <Smartphone className="h-4 w-4 mr-2 text-green-400" />
-                    Push Notifications
-                  </h4>
-                  <p className="text-gray-400 text-sm">Browser push notifications</p>
-                </div>
-                <button
-                  onClick={() => setSettings(prev => ({
-                    ...prev,
-                    notifications: { ...prev.notifications, pushNotifications: !prev.notifications.pushNotifications }
-                  }))}
-                  className={`w-12 h-6 rounded-full ${
-                    settings.notifications.pushNotifications ? 'bg-green-500' : 'bg-gray-600'
-                  }`}
-                >
-                  <div className={`w-5 h-5 bg-white rounded-full ${
-                    settings.notifications.pushNotifications ? 'translate-x-6' : 'translate-x-0.5'
-                  }`} />
-                </button>
-              </div>
-              
-              <div className="flex items-center justify-between p-4 bg-gray-800 bg-opacity-50 rounded-lg">
-                <div>
-                  <h4 className="text-white font-medium flex items-center">
-                    <Bell className="h-4 w-4 mr-2 text-orange-400" />
-                    Request Alerts
-                  </h4>
-                  <p className="text-gray-400 text-sm">New verification requests</p>
-                </div>
-                <button
-                  onClick={() => setSettings(prev => ({
-                    ...prev,
-                    notifications: { ...prev.notifications, requestAlerts: !prev.notifications.requestAlerts }
-                  }))}
-                  className={`w-12 h-6 rounded-full ${
-                    settings.notifications.requestAlerts ? 'bg-green-500' : 'bg-gray-600'
-                  }`}
-                >
-                  <div className={`w-5 h-5 bg-white rounded-full ${
-                    settings.notifications.requestAlerts ? 'translate-x-6' : 'translate-x-0.5'
-                  }`} />
-                </button>
-              </div>
-              
-              <div className="flex items-center justify-between p-4 bg-gray-800 bg-opacity-50 rounded-lg">
-                <div>
-                  <h4 className="text-white font-medium flex items-center">
-                    <TrendingUp className="h-4 w-4 mr-2 text-purple-400" />
-                    Weekly Reports
-                  </h4>
-                  <p className="text-gray-400 text-sm">Activity summary emails</p>
-                </div>
-                <button
-                  onClick={() => setSettings(prev => ({
-                    ...prev,
-                    notifications: { ...prev.notifications, weeklyReports: !prev.notifications.weeklyReports }
-                  }))}
-                  className={`w-12 h-6 rounded-full ${
-                    settings.notifications.weeklyReports ? 'bg-green-500' : 'bg-gray-600'
-                  }`}
-                >
-                  <div className={`w-5 h-5 bg-white rounded-full ${
-                    settings.notifications.weeklyReports ? 'translate-x-6' : 'translate-x-0.5'
-                  }`} />
-                </button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Account Management */}
-        <Card className="form-card form-section">
-          <CardHeader>
-            <CardTitle className="flex items-center text-xl">
-              <div className="relative mr-3">
-                <Database className="h-6 w-6 text-cyan-400" />
-              </div>
-              Account Management
-              <div className="ml-auto">
-                <div className="bg-cyan-500 bg-opacity-20 px-3 py-1 rounded-full border border-cyan-500 border-opacity-30">
-                  <span className="text-cyan-400 text-sm font-medium">Data & Account</span>
-                </div>
-              </div>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <Button
-                  variant="outline"
-                  className="w-full border-blue-400 text-blue-400 hover:bg-blue-400 hover:text-gray-900 h-12"
-                >
-                  <Download className="h-5 w-5 mr-2" />
-                  Export Account Data
-                </Button>
-                
-                <Button
-                  variant="outline"
-                  className="w-full border-green-400 text-green-400 hover:bg-green-400 hover:text-gray-900 h-12"
-                >
-                  <Upload className="h-5 w-5 mr-2" />
-                  Import Settings
-                </Button>
-              </div>
-              
-              <div className="space-y-4">
-                <Button
-                  variant="outline"
-                  className="w-full border-orange-400 text-orange-400 hover:bg-orange-400 hover:text-gray-900 h-12"
-                >
-                  <RefreshCw className="h-5 w-5 mr-2" />
-                  Reset to Defaults
-                </Button>
-                
-                <Button
-                  variant="outline"
-                  className="w-full border-red-400 text-red-400 hover:bg-red-400 hover:text-white h-12"
-                >
-                  <Trash2 className="h-5 w-5 mr-2" />
-                  Delete Account
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Save Settings Button */}
-        <div className="flex justify-center pt-6">
-          <Button
-            className="enhanced-button text-white px-12 py-4 rounded-2xl font-bold h-14 text-lg flex items-center justify-center relative z-10"
-          >
-            <Save className="h-6 w-6 mr-3" />
-            Save All Settings
-            <CheckCircle className="h-5 w-5 ml-3" />
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-
-  return (
-    <div className="flex h-screen pt-16">
-      <VerifierSidebar 
-        activeSection={activeSection} 
-        onSectionChange={setActiveSection}
-      />
-      
-      <div className="flex-1 overflow-auto">
-        {activeSection === 'dashboard' && renderDashboard()}
-        {activeSection === 'search' && renderSearch()}
-        {(activeSection === 'requests' || activeSection === 'issued-credentials' || activeSection === 'approved-requests') && renderRequests()}
-        {activeSection === 'settings' && renderSettings()}
-      </div>
-    </div>
-  );
-};
-
-export default VerifierDashboard;
