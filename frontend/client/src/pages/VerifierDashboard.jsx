@@ -107,20 +107,17 @@ const styles = `
   }
   
   .form-card:hover::before {
-    left: 100%;
   }
   
   .form-input {
-    background: rgba(30, 41, 59, 0.8);
-    border: 2px solid rgba(59, 130, 246, 0.2);
-    transition: all 0.3s ease;
-    position: relative;
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    backdrop-filter: blur(10px);
   }
   
   .form-input:focus {
-    border-color: #3b82f6;
+    border-color: rgba(59, 130, 246, 0.5);
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-    background: rgba(30, 41, 59, 0.9);
   }
   
   .form-input:hover {
@@ -128,58 +125,76 @@ const styles = `
   }
   
   .form-label {
-    position: relative;
-    display: inline-block;
-  }
-  
-  .form-label::after {
-    content: '';
-    position: absolute;
-    bottom: -2px;
-    left: 0;
-    width: 0;
-    height: 2px;
-    background: linear-gradient(90deg, #3b82f6, #8b5cf6);
-    transition: width 0.3s ease;
-  }
-  
-  .form-label:hover::after {
-    width: 100%;
-  }
-  
-  .enhanced-button {
-    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-    border: none;
-    position: relative;
-    overflow: hidden;
-    transition: all 0.3s ease;
-  }
-  
-  .enhanced-button::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-    transition: width 0.6s, height 0.6s;
-  }
-  
-  .enhanced-button:hover::before {
-    width: 300px;
-    height: 300px;
-  }
-  
-  .enhanced-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
   }
   
   .form-section {
     animation: slideInUp 0.6s ease-out;
+  }
+  
+  .lookup-card {
+    background: linear-gradient(135deg, rgba(6, 182, 212, 0.08), rgba(59, 130, 246, 0.08));
+    border: 1px solid rgba(6, 182, 212, 0.2);
+    transition: all 0.3s ease;
+  }
+  
+  .lookup-card:hover {
+    border-color: rgba(6, 182, 212, 0.4);
+    box-shadow: 0 8px 25px rgba(6, 182, 212, 0.15);
+  }
+  
+  .enhanced-button {
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+    transition: all 0.3s ease;
+  }
+  
+  .enhanced-button:hover {
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+    transform: translateY(-2px);
+  }
+  
+  .gradient-text {
+    background: linear-gradient(135deg, #60a5fa, #34d399);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .floating-icon {
+    animation: float 3s ease-in-out infinite;
+  }
+  
+  .welcome-card {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(16, 185, 129, 0.1));
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    backdrop-filter: blur(20px);
+  }
+  
+  /* Toast notification styles */
+  [data-sonner-toaster] {
+    z-index: 9999 !important;
+  }
+  
+  [data-sonner-toast] {
+    z-index: 9999 !important;
+    background: rgba(15, 23, 42, 0.95) !important;
+    backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(34, 197, 94, 0.3) !important;
+    color: white !important;
+  }
+  
+  [data-sonner-toast][data-type="success"] {
+    border-color: rgba(34, 197, 94, 0.5) !important;
+  }
+  
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
   }
   
   @keyframes slideInUp {
@@ -1806,6 +1821,53 @@ const VerifierDashboard = () => {
                   </svg>
                 </button>
               </div>
+            </div>
+            
+            {/* Save Button */}
+            <div className="flex justify-end pt-6 border-t border-gray-700">
+              <Button
+                onClick={() => {
+                  // Save to localStorage for persistence
+                  const userSettings = {
+                    name: settings.profile.name,
+                    email: settings.profile.email,
+                    organization: settings.profile.organization,
+                    bio: settings.profile.bio
+                  };
+                  
+                  localStorage.setItem('verifierUserSettings', JSON.stringify(userSettings));
+                  
+                  // Update the user object in the component state
+                  // This will trigger a re-render and update the sidebar
+                  const updatedUser = {
+                    ...user,
+                    ...userSettings
+                  };
+                  
+                  // Force a re-render by updating the settings state
+                  setSettings(prev => ({
+                    ...prev,
+                    profile: {
+                      ...prev.profile,
+                      ...userSettings
+                    }
+                  }));
+                  
+                  // Trigger a custom event to update sidebar immediately
+                  window.dispatchEvent(new CustomEvent('userSettingsUpdated', {
+                    detail: userSettings
+                  }));
+                  
+                  toast({
+                    title: "Settings Saved",
+                    description: "Your profile settings have been updated successfully.",
+                  });
+                }}
+                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-8 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Save Settings
+              </Button>
             </div>
           </CardContent>
         </Card>

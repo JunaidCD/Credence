@@ -7,10 +7,57 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext.jsx';
 import { useLocation } from 'wouter';
+import { useState, useEffect } from 'react';
 
 const VerifierSidebar = ({ activeSection, setActiveSection }) => {
   const { user, disconnect } = useAuth();
   const [, setLocation] = useLocation();
+  const [displayName, setDisplayName] = useState(user?.name || 'User 93bc');
+
+  // Load saved user settings from localStorage
+  useEffect(() => {
+    const savedSettings = localStorage.getItem('verifierUserSettings');
+    if (savedSettings) {
+      try {
+        const parsedSettings = JSON.parse(savedSettings);
+        if (parsedSettings.name) {
+          setDisplayName(parsedSettings.name);
+        }
+      } catch (error) {
+        console.error('Failed to parse saved settings:', error);
+      }
+    }
+  }, []);
+
+  // Listen for custom events and storage changes to update name when settings are saved
+  useEffect(() => {
+    const handleCustomEvent = (e) => {
+      if (e.detail && e.detail.name) {
+        setDisplayName(e.detail.name);
+      }
+    };
+
+    const handleStorageChange = (e) => {
+      if (e.key === 'verifierUserSettings') {
+        try {
+          const parsedSettings = JSON.parse(e.newValue);
+          if (parsedSettings.name) {
+            setDisplayName(parsedSettings.name);
+          }
+        } catch (error) {
+          console.error('Failed to parse updated settings:', error);
+        }
+      }
+    };
+
+    window.addEventListener('userSettingsUpdated', handleCustomEvent);
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('userSettingsUpdated', handleCustomEvent);
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
 
   const handleLogout = () => {
     disconnect();
@@ -34,7 +81,7 @@ const VerifierSidebar = ({ activeSection, setActiveSection }) => {
           </div>
           <div className="ml-3">
             <p className="text-white font-semibold" data-testid="sidebar-user-name">
-              {user?.name || 'Verifier'}
+              {displayName}
             </p>
             <p className="text-gray-400 text-sm">Verifier</p>
           </div>
