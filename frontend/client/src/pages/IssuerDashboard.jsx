@@ -37,7 +37,8 @@ import {
   BarChart3,
   Link,
   Zap,
-  Star
+  Star,
+  Save
 } from 'lucide-react';
 
 const IssuerDashboard = () => {
@@ -76,6 +77,29 @@ const IssuerDashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [didInput, setDidInput] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
+
+  // Settings form states
+  const [settings, setSettings] = useState({
+    name: user?.name || '',
+    email: user?.email || '',
+    institutionType: 'university'
+  });
+
+  // Load saved settings on component mount
+  useEffect(() => {
+    const savedSettings = localStorage.getItem('issuerUserSettings');
+    if (savedSettings) {
+      try {
+        const parsedSettings = JSON.parse(savedSettings);
+        setSettings(prev => ({
+          ...prev,
+          ...parsedSettings
+        }));
+      } catch (error) {
+        console.error('Error parsing saved issuer settings:', error);
+      }
+    }
+  }, [user]);
 
   useEffect(() => {
     if (!isAuthenticated || (user && user.userType !== 'issuer')) {
@@ -1508,7 +1532,8 @@ const IssuerDashboard = () => {
                   </label>
                   <div className="relative">
                     <Input 
-                      defaultValue={user.name} 
+                      value={settings.name}
+                      onChange={(e) => setSettings(prev => ({ ...prev, name: e.target.value }))}
                       className="bg-gray-800/50 border-purple-500/30 text-white focus:ring-2 focus:ring-purple-500/50 focus:border-purple-400 hover:border-purple-400/50 transition-all duration-200 pl-4 pr-4 py-3 rounded-xl group-hover/field:bg-gray-800/70"
                       data-testid="input-institution-name"
                     />
@@ -1524,7 +1549,8 @@ const IssuerDashboard = () => {
                   <div className="relative">
                     <Input 
                       type="email" 
-                      defaultValue={user.email} 
+                      value={settings.email}
+                      onChange={(e) => setSettings(prev => ({ ...prev, email: e.target.value }))}
                       className="bg-gray-800/50 border-purple-500/30 text-white focus:ring-2 focus:ring-purple-500/50 focus:border-purple-400 hover:border-purple-400/50 transition-all duration-200 pl-4 pr-4 py-3 rounded-xl group-hover/field:bg-gray-800/70"
                       data-testid="input-contact-email"
                     />
@@ -1535,7 +1561,7 @@ const IssuerDashboard = () => {
               
               <div className="group/field">
                 <label className="block text-sm font-medium text-gray-300 mb-3">Institution Type</label>
-                <Select defaultValue="university">
+                <Select value={settings.institutionType} onValueChange={(value) => setSettings(prev => ({ ...prev, institutionType: value }))}>
                   <SelectTrigger className="bg-gray-800/50 border-purple-500/30 text-white focus:ring-2 focus:ring-purple-500/50 focus:border-purple-400 h-12 rounded-xl transition-all duration-200 group-hover/field:border-purple-400/50" data-testid="select-institution-type">
                     <SelectValue />
                   </SelectTrigger>
@@ -1550,9 +1576,33 @@ const IssuerDashboard = () => {
               </div>
 
               <div className="flex justify-end pt-4">
-                <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-6 py-2 rounded-xl transition-all duration-200 shadow-lg hover:shadow-purple-500/25">
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Save Changes
+                <Button 
+                  onClick={() => {
+                    // Save to localStorage for persistence
+                    const userSettings = {
+                      name: settings.name,
+                      email: settings.email,
+                      institutionType: settings.institutionType
+                    };
+                    localStorage.setItem('issuerUserSettings', JSON.stringify(userSettings));
+                    
+                    // Show success toast
+                    toast({
+                      title: "Settings Saved",
+                      description: "Profile updated successfully.",
+                      className: "bg-gray-900/90 backdrop-blur-sm border-green-500/30 text-white shadow-lg text-sm max-w-xs",
+                      duration: 3000
+                    });
+                    
+                    // Dispatch custom event to update sidebar
+                    window.dispatchEvent(new CustomEvent('issuerSettingsUpdated', { 
+                      detail: userSettings 
+                    }));
+                  }}
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-6 py-2 rounded-xl transition-all duration-200 shadow-lg hover:shadow-purple-500/25"
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Settings
                 </Button>
               </div>
             </CardContent>

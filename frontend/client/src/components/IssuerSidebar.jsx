@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, 
   PlusCircle, 
@@ -12,6 +13,52 @@ import { useLocation } from 'wouter';
 const IssuerSidebar = ({ activeSection, onSectionChange }) => {
   const { user, disconnect } = useAuth();
   const [, setLocation] = useLocation();
+  const [displayName, setDisplayName] = useState(user?.name || 'Issuer');
+
+  // Load saved settings on component mount
+  useEffect(() => {
+    const savedSettings = localStorage.getItem('issuerUserSettings');
+    if (savedSettings) {
+      try {
+        const parsedSettings = JSON.parse(savedSettings);
+        if (parsedSettings.name) {
+          setDisplayName(parsedSettings.name);
+        }
+      } catch (error) {
+        console.error('Error parsing saved issuer settings:', error);
+      }
+    }
+  }, []);
+
+  // Listen for settings updates
+  useEffect(() => {
+    const handleCustomEvent = (e) => {
+      if (e.detail?.name) {
+        setDisplayName(e.detail.name);
+      }
+    };
+
+    const handleStorageChange = (e) => {
+      if (e.key === 'issuerUserSettings') {
+        try {
+          const newSettings = JSON.parse(e.newValue);
+          if (newSettings?.name) {
+            setDisplayName(newSettings.name);
+          }
+        } catch (error) {
+          console.error('Error parsing storage change:', error);
+        }
+      }
+    };
+
+    window.addEventListener('issuerSettingsUpdated', handleCustomEvent);
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('issuerSettingsUpdated', handleCustomEvent);
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
 
   const handleLogout = () => {
     disconnect();
@@ -35,7 +82,7 @@ const IssuerSidebar = ({ activeSection, onSectionChange }) => {
           </div>
           <div className="ml-3">
             <p className="text-white font-semibold" data-testid="sidebar-user-name">
-              {user?.name || 'Issuer'}
+              {displayName}
             </p>
             <p className="text-gray-400 text-sm">Issuer</p>
           </div>

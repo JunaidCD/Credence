@@ -1860,7 +1860,9 @@ const VerifierDashboard = () => {
                   
                   toast({
                     title: "Settings Saved",
-                    description: "Your profile settings have been updated successfully.",
+                    description: "Profile updated successfully.",
+                    className: "bg-gray-900/90 backdrop-blur-sm border-green-500/30 text-white shadow-lg text-sm max-w-xs",
+                    duration: 3000
                   });
                 }}
                 className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-8 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
