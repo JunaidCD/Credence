@@ -645,10 +645,10 @@ const VerifierDashboard = () => {
           </div>
           <div className="bg-purple-500 bg-opacity-20 rounded-lg p-4 border border-purple-500 border-opacity-30">
             <div className="flex items-center">
-              <Zap className="h-5 w-5 text-purple-400 mr-2" />
-              <span className="text-purple-300 font-medium">Success Rate</span>
+              <Clock className="h-5 w-5 text-purple-400 mr-2" />
+              <span className="text-purple-300 font-medium">Pending Verification</span>
             </div>
-            <div className="text-2xl font-bold text-white mt-1">98.5%</div>
+            <div className="text-2xl font-bold text-white mt-1">0</div>
           </div>
         </div>
       </div>
@@ -772,92 +772,6 @@ const VerifierDashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Continue with existing dashboard content */}
-      <div className="grid md:grid-cols-4 gap-6 mb-8">
-      </div>
-
-      {/* Enhanced Statistics Cards */}
-      <div className="grid md:grid-cols-4 gap-6 mb-8">
-        <Card className="stat-card glass-effect">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-gray-400 text-sm font-medium">Total Credentials</p>
-                <p className="text-3xl font-bold text-web3-blue" data-testid="stat-total">
-                  {stats.total}
-                </p>
-                <div className="flex items-center mt-2 text-green-400 text-sm">
-                  <TrendingUp className="h-3 w-3 mr-1" />
-                  +12%
-                </div>
-              </div>
-              <div className="relative">
-                <Send className="h-8 w-8 text-web3-blue floating-icon" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="stat-card glass-effect">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-gray-400 text-sm font-medium">Active</p>
-                <p className="text-3xl font-bold text-green-500" data-testid="stat-active">
-                  {stats.active}
-                </p>
-                <div className="flex items-center mt-2 text-green-400 text-sm">
-                  <TrendingUp className="h-3 w-3 mr-1" />
-                  +8%
-                </div>
-              </div>
-              <div className="relative">
-                <CheckCircle className="h-8 w-8 text-green-500 floating-icon" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="stat-card glass-effect">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-gray-400 text-sm font-medium">Expired</p>
-                <p className="text-3xl font-bold text-yellow-500" data-testid="stat-expired">
-                  {stats.expired}
-                </p>
-                <div className="flex items-center mt-2 text-yellow-400 text-sm">
-                  <AlertCircle className="h-3 w-3 mr-1" />
-                  {stats.expired > 0 ? 'Monitor' : 'Good'}
-                </div>
-              </div>
-              <div className="relative">
-                <Clock className="h-8 w-8 text-yellow-500 floating-icon" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="stat-card glass-effect">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-gray-400 text-sm font-medium">Revoked</p>
-                <p className="text-3xl font-bold text-red-500" data-testid="stat-revoked">
-                  {stats.revoked}
-                </p>
-                <div className="flex items-center mt-2 text-red-400 text-sm">
-                  <XCircle className="h-3 w-3 mr-1" />
-                  {stats.revoked === 0 ? 'Excellent' : 'Review'}
-                </div>
-              </div>
-              <div className="relative">
-                <XCircle className="h-8 w-8 text-red-500 floating-icon" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Enhanced Recent Issued Credentials */}
       <Card className="glass-effect">
@@ -892,28 +806,49 @@ const VerifierDashboard = () => {
           ) : approvedRequests.length === 0 ? (
             <div className="text-center py-16">
               <div className="relative mb-6">
-                <Shield className="h-20 w-20 text-gray-600 mx-auto floating-icon" />
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur-xl opacity-20 animate-pulse"></div>
+                <CheckCircle className="h-20 w-20 text-gray-600 mx-auto floating-icon" />
+                <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-blue-500 rounded-full blur-xl opacity-20 animate-pulse"></div>
               </div>
-              <h3 className="text-xl font-semibold text-white mb-2">No Credentials Yet</h3>
-              <p className="text-gray-400 mb-6">Start verifying credentials to see them here</p>
-              <div className="grid md:grid-cols-3 gap-4 max-w-2xl mx-auto">
-                <div className="bg-blue-500 bg-opacity-10 rounded-lg p-4 border border-blue-500 border-opacity-20">
-                  <Eye className="h-8 w-8 text-blue-400 mx-auto mb-2" />
-                  <p className="text-blue-300 font-medium">Verify Identity</p>
-                  <p className="text-gray-400 text-sm mt-1">Authenticate user credentials</p>
+              <h3 className="text-xl font-semibold text-white mb-2">
+                {searchDID ? 'No Matching Requests Found' : 'No Approved Requests Yet'}
+              </h3>
+              <p className="text-gray-400 mb-8 max-w-md mx-auto">
+                {searchDID 
+                  ? 'Try adjusting your search criteria or check if the DID is correct' 
+                  : 'When users approve your verification requests, they will appear here for you to track and manage'
+                }
+              </p>
+              
+              
+              <div className="grid md:grid-cols-3 gap-4 max-w-3xl mx-auto">
+                <div className="bg-green-500 bg-opacity-10 rounded-lg p-6 border border-green-500 border-opacity-20 hover:bg-opacity-20 transition-all duration-300">
+                  <CheckCircle className="h-10 w-10 text-green-400 mx-auto mb-3" />
+                  <p className="text-green-300 font-semibold mb-2">User Approvals</p>
+                  <p className="text-gray-400 text-sm">Track and manage all verification requests approved by users</p>
                 </div>
-                <div className="bg-green-500 bg-opacity-10 rounded-lg p-4 border border-green-500 border-opacity-20">
-                  <CheckCircle className="h-8 w-8 text-green-400 mx-auto mb-2" />
-                  <p className="text-green-300 font-medium">Approve Requests</p>
-                  <p className="text-gray-400 text-sm mt-1">Process verification requests</p>
+                <div className="bg-blue-500 bg-opacity-10 rounded-lg p-6 border border-blue-500 border-opacity-20 hover:bg-opacity-20 transition-all duration-300">
+                  <Eye className="h-10 w-10 text-blue-400 mx-auto mb-3" />
+                  <p className="text-blue-300 font-semibold mb-2">Real-time Status</p>
+                  <p className="text-gray-400 text-sm">Monitor approval status and user responses instantly</p>
                 </div>
-                <div className="bg-purple-500 bg-opacity-10 rounded-lg p-4 border border-purple-500 border-opacity-20">
-                  <Shield className="h-8 w-8 text-purple-400 mx-auto mb-2" />
-                  <p className="text-purple-300 font-medium">Secure Network</p>
-                  <p className="text-gray-400 text-sm mt-1">Build trusted connections</p>
+                <div className="bg-purple-500 bg-opacity-10 rounded-lg p-6 border border-purple-500 border-opacity-20 hover:bg-opacity-20 transition-all duration-300">
+                  <Shield className="h-10 w-10 text-purple-400 mx-auto mb-3" />
+                  <p className="text-purple-300 font-semibold mb-2">Trust Network</p>
+                  <p className="text-gray-400 text-sm">Build verified connections and expand your network</p>
                 </div>
               </div>
+              
+              {!searchDID && (
+                <div className="mt-8">
+                  <Button 
+                    onClick={() => setActiveSection('search')}
+                    className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white px-8 py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105"
+                  >
+                    <Search className="h-5 w-5 mr-2" />
+                    Start Verifying Now
+                  </Button>
+                </div>
+              )}
             </div>
           ) : (
             <div className="space-y-4">
@@ -938,7 +873,7 @@ const VerifierDashboard = () => {
                       <div className="flex-1">
                         <div className="flex items-center space-x-2 mb-1">
                           <h4 className="font-semibold text-white">{request.credentialType}</h4>
-                          <span className={`px-2 py-1 rounded-full text-sm capitalize ${
+                          <span className={`px-3 py-1 rounded-full text-sm capitalize ${
                             request.status === 'approved' ? 'text-green-500 bg-green-500 bg-opacity-20' :
                             request.status === 'rejected' ? 'text-red-500 bg-red-500 bg-opacity-20' :
                             'text-yellow-500 bg-yellow-500 bg-opacity-20'
@@ -1219,28 +1154,45 @@ const VerifierDashboard = () => {
                 <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-blue-500 rounded-full blur-xl opacity-20 animate-pulse"></div>
               </div>
               <h3 className="text-xl font-semibold text-white mb-2">
-                {searchDID ? 'No Matching Requests' : 'No Approved Requests Yet'}
+                {searchDID ? 'No Matching Requests Found' : 'No Approved Requests Yet'}
               </h3>
-              <p className="text-gray-400 mb-6">
-                {searchDID ? 'Try adjusting your search criteria' : 'Approved verification requests will appear here'}
+              <p className="text-gray-400 mb-8 max-w-md mx-auto">
+                {searchDID 
+                  ? 'Try adjusting your search criteria or check if the DID is correct' 
+                  : 'When users approve your verification requests, they will appear here for you to track and manage'
+                }
               </p>
-              <div className="grid md:grid-cols-3 gap-4 max-w-2xl mx-auto">
-                <div className="bg-green-500 bg-opacity-10 rounded-lg p-4 border border-green-500 border-opacity-20">
-                  <CheckCircle className="h-8 w-8 text-green-400 mx-auto mb-2" />
-                  <p className="text-green-300 font-medium">User Approvals</p>
-                  <p className="text-gray-400 text-sm mt-1">Track approved verification requests</p>
+              
+              
+              <div className="grid md:grid-cols-3 gap-4 max-w-3xl mx-auto">
+                <div className="bg-green-500 bg-opacity-10 rounded-lg p-6 border border-green-500 border-opacity-20 hover:bg-opacity-20 transition-all duration-300">
+                  <CheckCircle className="h-10 w-10 text-green-400 mx-auto mb-3" />
+                  <p className="text-green-300 font-semibold mb-2">User Approvals</p>
+                  <p className="text-gray-400 text-sm">Track and manage all verification requests approved by users</p>
                 </div>
-                <div className="bg-blue-500 bg-opacity-10 rounded-lg p-4 border border-blue-500 border-opacity-20">
-                  <Eye className="h-8 w-8 text-blue-400 mx-auto mb-2" />
-                  <p className="text-blue-300 font-medium">Monitor Status</p>
-                  <p className="text-gray-400 text-sm mt-1">View request approval status</p>
+                <div className="bg-blue-500 bg-opacity-10 rounded-lg p-6 border border-blue-500 border-opacity-20 hover:bg-opacity-20 transition-all duration-300">
+                  <Eye className="h-10 w-10 text-blue-400 mx-auto mb-3" />
+                  <p className="text-blue-300 font-semibold mb-2">Real-time Status</p>
+                  <p className="text-gray-400 text-sm">Monitor approval status and user responses instantly</p>
                 </div>
-                <div className="bg-purple-500 bg-opacity-10 rounded-lg p-4 border border-purple-500 border-opacity-20">
-                  <Shield className="h-8 w-8 text-purple-400 mx-auto mb-2" />
-                  <p className="text-purple-300 font-medium">Verification Network</p>
-                  <p className="text-gray-400 text-sm mt-1">Build trusted connections</p>
+                <div className="bg-purple-500 bg-opacity-10 rounded-lg p-6 border border-purple-500 border-opacity-20 hover:bg-opacity-20 transition-all duration-300">
+                  <Shield className="h-10 w-10 text-purple-400 mx-auto mb-3" />
+                  <p className="text-purple-300 font-semibold mb-2">Trust Network</p>
+                  <p className="text-gray-400 text-sm">Build verified connections and expand your network</p>
                 </div>
               </div>
+              
+              {!searchDID && (
+                <div className="mt-8">
+                  <Button 
+                    onClick={() => setActiveSection('search')}
+                    className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white px-8 py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105"
+                  >
+                    <Search className="h-5 w-5 mr-2" />
+                    Start Verifying Now
+                  </Button>
+                </div>
+              )}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -1469,3 +1421,32 @@ const VerifierDashboard = () => {
                     return isDisabled ? "Copy not available for placeholder DID" : "Copy DID";
                   })()}
                 >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="flex h-screen">
+      <VerifierSidebar activeSection={activeSection} setActiveSection={setActiveSection} />
+      <div className="flex-1 flex justify-center">
+        <div className="w-full max-w-7xl">
+          {activeSection === 'dashboard' && renderDashboard()}
+          {activeSection === 'search' && renderSearch()}
+          {activeSection === 'requests' && renderRequests()}
+          {activeSection === 'settings' && renderSettings()}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default VerifierDashboard;

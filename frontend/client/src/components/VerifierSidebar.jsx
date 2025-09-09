@@ -8,7 +8,7 @@ import {
 import { useAuth } from '@/context/AuthContext.jsx';
 import { useLocation } from 'wouter';
 
-const VerifierSidebar = ({ activeSection, onSectionChange }) => {
+const VerifierSidebar = ({ activeSection, setActiveSection }) => {
   const { user, disconnect } = useAuth();
   const [, setLocation] = useLocation();
 
@@ -45,7 +45,7 @@ const VerifierSidebar = ({ activeSection, onSectionChange }) => {
           {menuItems.map((item) => (
             <button
               key={item.id}
-              onClick={() => onSectionChange(item.id)}
+              onClick={() => setActiveSection(item.id)}
               className={`w-full flex items-center px-3 py-2 rounded-lg transition-colors ${
                 activeSection === item.id
                   ? 'text-web3-blue bg-web3-blue bg-opacity-20'
