@@ -394,19 +394,133 @@ const VerifierDashboard = () => {
     }
   }, [isAuthenticated, user, setLocation]);
 
-  // Queries - Fetch approved verification requests
-  const { data: approvedRequests = [], isLoading: requestsLoading } = useQuery({
-    queryKey: ['/api/verification-requests/approved', user?.id],
+  // Mock credentials submitted by users for verification
+  const mockCredentials = [
+    {
+      id: 'DEG-19160',
+      credentialType: 'University Degree',
+      title: 'CSE',
+      subtitle: 'University Degree',
+      issuerDID: 'did:ethr:0x7099970c51812dc3A010C7d01b50e0d17dc7...',
+      recipientName: 'Junaid Mollah',
+      recipientDID: 'did:ethr:0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC',
+      issueDate: '2025-09-09',
+      status: 'pending',
+      submittedAt: new Date('2024-01-15'),
+      icon: '🎓',
+      details: {
+        institution: 'MIT University',
+        degree: 'Bachelor of Computer Science Engineering',
+        gpa: '3.8/4.0',
+        graduationYear: '2024'
+      }
+    },
+    {
+      id: 'CERT-28471',
+      credentialType: 'Professional Certificate',
+      title: 'AWS Solutions Architect',
+      subtitle: 'Professional Certificate',
+      issuerDID: 'did:ethr:0x90F79bf6EB2c4f870365E785982E1f101E93b906',
+      recipientName: 'Sarah Johnson',
+      recipientDID: 'did:ethr:0x90F79bf6EB2c4f870365E785982E1f101E93b906',
+      issueDate: '2024-12-15',
+      status: 'approved',
+      submittedAt: new Date('2024-01-14'),
+      approvedAt: new Date('2024-01-15'),
+      icon: '📜',
+      details: {
+        provider: 'Amazon Web Services',
+        validUntil: '2027-12-15',
+        certificationLevel: 'Professional',
+        score: '850/1000'
+      }
+    },
+    {
+      id: 'AWARD-51704',
+      credentialType: 'Achievement Award',
+      title: 'Innovation Excellence',
+      subtitle: 'Achievement Award',
+      issuerDID: 'did:ethr:0x976EA74026E726554dB657fA54763abd0C3a0aa9',
+      recipientName: 'Alex Rodriguez',
+      recipientDID: 'did:ethr:0x976EA74026E726554dB657fA54763abd0C3a0aa9',
+      issueDate: '2024-01-05',
+      status: 'rejected',
+      submittedAt: new Date('2024-01-11'),
+      rejectedAt: new Date('2024-01-12'),
+      icon: '🥇',
+      details: {
+        awardingBody: 'Tech Innovation Council',
+        category: 'Best Mobile App',
+        year: '2024',
+        reason: 'Outstanding contribution to healthcare technology'
+      }
+    }
+  ];
+
+  // Queries - Fetch submitted credentials for verification
+  const { data: credentials = mockCredentials, isLoading: credentialsLoading } = useQuery({
+    queryKey: ['/api/credentials/submitted', user?.id],
     enabled: !!user?.id,
+    initialData: mockCredentials,
   });
 
-  // Search state for filtering requests by DID
+  // Search and filter state
   const [searchDID, setSearchDID] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   
-  // Filter requests based on search DID
-  const filteredRequests = approvedRequests.filter(request => 
-    !searchDID || request.userDID?.toLowerCase().includes(searchDID.toLowerCase())
-  );
+  // Filter credentials based on search DID and status
+  const filteredCredentials = credentials.filter(credential => {
+    const matchesDID = !searchDID || credential.recipientDID?.toLowerCase().includes(searchDID.toLowerCase()) || credential.recipientName?.toLowerCase().includes(searchDID.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || credential.status === statusFilter;
+    return matchesDID && matchesStatus;
+  });
+
+  // Approve/Reject credential mutations
+  const approveCredentialMutation = useMutation({
+    mutationFn: async (credentialId) => {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return { success: true };
+    },
+    onSuccess: () => {
+      toast({
+        title: "Credential Approved",
+        description: "The credential has been successfully approved.",
+        variant: "success",
+      });
+      queryClient.invalidateQueries(['/api/credentials/submitted']);
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to approve credential. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const rejectCredentialMutation = useMutation({
+    mutationFn: async (credentialId) => {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return { success: true };
+    },
+    onSuccess: () => {
+      toast({
+        title: "Credential Rejected",
+        description: "The credential has been rejected.",
+        variant: "success",
+      });
+      queryClient.invalidateQueries(['/api/credentials/submitted']);
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to reject credential. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
 
   // Register as verifier function with proper validation and logging
   const registerAsVerifier = async () => {
@@ -527,10 +641,10 @@ const VerifierDashboard = () => {
   }
 
   const stats = {
-    total: approvedRequests.length,
-    active: approvedRequests.filter(r => r.status === 'approved').length,
-    expired: approvedRequests.filter(r => r.status === 'expired').length,
-    revoked: approvedRequests.filter(r => r.status === 'rejected').length,
+    total: credentials.length,
+    approved: credentials.filter(c => c.status === 'approved').length,
+    pending: credentials.filter(c => c.status === 'pending').length,
+    rejected: credentials.filter(c => c.status === 'rejected').length,
   };
 
   const renderDashboard = () => (
@@ -780,7 +894,7 @@ const VerifierDashboard = () => {
             <div className="relative mr-3">
               <Activity className="h-6 w-6 text-web3-blue floating-icon" />
             </div>
-            Recent Approved Requests
+            Recent Approve Credential
             <div className="ml-auto flex items-center space-x-2">
               <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
               <span className="text-sm text-gray-400">Live Updates</span>
@@ -788,7 +902,7 @@ const VerifierDashboard = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {requestsLoading ? (
+          {credentialsLoading ? (
             <div className="p-6 space-y-4">
               {[1, 2, 3].map(i => (
                 <div key={i} className="glass-effect rounded-lg p-4 animate-pulse">
@@ -803,14 +917,14 @@ const VerifierDashboard = () => {
                 </div>
               ))}
             </div>
-          ) : approvedRequests.length === 0 ? (
+          ) : credentials.length === 0 ? (
             <div className="text-center py-16">
               <div className="relative mb-6">
                 <CheckCircle className="h-20 w-20 text-gray-600 mx-auto floating-icon" />
                 <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-blue-500 rounded-full blur-xl opacity-20 animate-pulse"></div>
               </div>
               <h3 className="text-xl font-semibold text-white mb-2">
-                {searchDID ? 'No Matching Requests Found' : 'No Approved Requests Yet'}
+                {searchDID ? 'No Matching Credentials Found' : 'No Credentials Yet'}
               </h3>
               <p className="text-gray-400 mb-8 max-w-md mx-auto">
                 {searchDID 
@@ -852,19 +966,19 @@ const VerifierDashboard = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {approvedRequests.slice(0, 5).map((request, index) => (
-                <div key={request.id} className="glass-effect rounded-lg p-4 hover:shadow-lg transition-all duration-300 border-l-4 border-transparent hover:border-l-blue-500" data-testid={`recent-request-${index}`}>
+              {credentials.slice(0, 5).map((credential, index) => (
+                <div key={credential.id} className="glass-effect rounded-lg p-4 hover:shadow-lg transition-all duration-300 border-l-4 border-transparent hover:border-l-blue-500" data-testid={`recent-request-${index}`}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
                       <div className="relative">
                         <div className={`h-12 w-12 rounded-full flex items-center justify-center ${
-                          request.status === 'approved' ? 'bg-green-500 bg-opacity-20 border-2 border-green-500 border-opacity-50' :
-                          request.status === 'rejected' ? 'bg-red-500 bg-opacity-20 border-2 border-red-500 border-opacity-50' :
+                          credential.status === 'approved' ? 'bg-green-500 bg-opacity-20 border-2 border-green-500 border-opacity-50' :
+                          credential.status === 'rejected' ? 'bg-red-500 bg-opacity-20 border-2 border-red-500 border-opacity-50' :
                           'bg-yellow-500 bg-opacity-20 border-2 border-yellow-500 border-opacity-50'
                         }`}>
-                          {request.status === 'approved' ? 
+                          {credential.status === 'approved' ? 
                             <CheckCircle className="h-6 w-6 text-green-400" /> :
-                            request.status === 'rejected' ? 
+                            credential.status === 'rejected' ? 
                             <XCircle className="h-6 w-6 text-red-400" /> :
                             <AlertCircle className="h-6 w-6 text-yellow-400" />
                           }
@@ -872,26 +986,26 @@ const VerifierDashboard = () => {
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center space-x-2 mb-1">
-                          <h4 className="font-semibold text-white">{request.credentialType}</h4>
+                          <h4 className="font-semibold text-white">{credential.credentialType}</h4>
                           <span className={`px-3 py-1 rounded-full text-sm capitalize ${
-                            request.status === 'approved' ? 'text-green-500 bg-green-500 bg-opacity-20' :
-                            request.status === 'rejected' ? 'text-red-500 bg-red-500 bg-opacity-20' :
+                            credential.status === 'approved' ? 'text-green-500 bg-green-500 bg-opacity-20' :
+                            credential.status === 'rejected' ? 'text-red-500 bg-red-500 bg-opacity-20' :
                             'text-yellow-500 bg-yellow-500 bg-opacity-20'
                           }`}>
-                            {request.status}
+                            {credential.status}
                           </span>
                         </div>
                         <p className="text-gray-400 text-sm font-mono">
-                          {request.userDID ? `${request.userDID.slice(0, 30)}...` : 'N/A'}
+                          {credential.recipientDID ? `${credential.recipientDID.slice(0, 30)}...` : 'N/A'}
                         </p>
                       </div>
                     </div>
                     <div className="text-right">
                       <p className="text-white font-medium">
-                        {new Date(request.approvedAt || request.createdAt).toLocaleDateString()}
+                        {new Date(credential.submittedAt || credential.issuedAt).toLocaleDateString()}
                       </p>
                       <p className="text-gray-400 text-sm">
-                        {new Date(request.approvedAt || request.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {new Date(credential.submittedAt || credential.issuedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
                   </div>
@@ -1229,8 +1343,8 @@ const VerifierDashboard = () => {
             <div className="absolute inset-0 bg-green-500 rounded-full blur-lg opacity-20 animate-pulse"></div>
           </div>
           <div>
-            <h1 className="text-4xl font-bold gradient-text mb-2">Approved Requests</h1>
-            <p className="text-gray-300 text-lg">View all verification requests approved by users</p>
+            <h1 className="text-4xl font-bold gradient-text mb-2">Approve Credential</h1>
+            <p className="text-gray-300 text-lg">Review and approve credentials submitted by users</p>
           </div>
         </div>
       </div>
@@ -1263,47 +1377,89 @@ const VerifierDashboard = () => {
 
       {/* Filter Tabs */}
       <div className="flex space-x-4 mb-6">
-        <Button className="px-4 py-2 bg-web3-blue bg-opacity-20 text-web3-blue rounded-lg font-medium">
-          All Requests
+        <Button 
+          onClick={() => setStatusFilter('all')}
+          className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+            statusFilter === 'all' 
+              ? 'bg-web3-blue bg-opacity-20 text-web3-blue' 
+              : 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'
+          }`}
+        >
+          All Credentials ({credentials.length})
         </Button>
-        <Button variant="ghost" className="px-4 py-2 text-gray-400 hover:text-white">
-          Approved
+        <Button 
+          onClick={() => setStatusFilter('approved')}
+          className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+            statusFilter === 'approved' 
+              ? 'bg-green-500 bg-opacity-20 text-green-400' 
+              : 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'
+          }`}
+        >
+          Approved ({credentials.filter(c => c.status === 'approved').length})
         </Button>
-        <Button variant="ghost" className="px-4 py-2 text-gray-400 hover:text-white">
-          Pending
+        <Button 
+          onClick={() => setStatusFilter('pending')}
+          className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+            statusFilter === 'pending' 
+              ? 'bg-yellow-500 bg-opacity-20 text-yellow-400' 
+              : 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'
+          }`}
+        >
+          Pending ({credentials.filter(c => c.status === 'pending').length})
         </Button>
-        <Button variant="ghost" className="px-4 py-2 text-gray-400 hover:text-white">
-          Rejected
+        <Button 
+          onClick={() => setStatusFilter('rejected')}
+          className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+            statusFilter === 'rejected' 
+              ? 'bg-red-500 bg-opacity-20 text-red-400' 
+              : 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'
+          }`}
+        >
+          Rejected ({credentials.filter(c => c.status === 'rejected').length})
         </Button>
       </div>
 
-      {/* Approved Requests Table */}
+      {/* Approve Credential Table */}
       <Card className="glass-effect">
         <CardContent className="p-0">
-          {requestsLoading ? (
+          {credentialsLoading ? (
             <div className="p-6 space-y-4">
               {[1, 2, 3, 4, 5].map(i => (
                 <Skeleton key={i} className="h-16 w-full" />
               ))}
             </div>
-          ) : filteredRequests.length === 0 ? (
+          ) : filteredCredentials.length === 0 ? (
             <div className="text-center py-16">
               <div className="relative mb-6">
-                <CheckCircle className="h-20 w-20 text-gray-600 mx-auto floating-icon" />
+                {statusFilter === 'all' ? (
+                  <CheckCircle className="h-20 w-20 text-gray-600 mx-auto floating-icon" />
+                ) : statusFilter === 'approved' ? (
+                  <CheckCircle className="h-20 w-20 text-green-500 mx-auto floating-icon" />
+                ) : statusFilter === 'pending' ? (
+                  <Clock className="h-20 w-20 text-yellow-500 mx-auto floating-icon" />
+                ) : (
+                  <XCircle className="h-20 w-20 text-red-500 mx-auto floating-icon" />
+                )}
                 <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-blue-500 rounded-full blur-xl opacity-20 animate-pulse"></div>
               </div>
               <h3 className="text-xl font-semibold text-white mb-2">
-                {searchDID ? 'No Matching Requests Found' : 'No Approved Requests Yet'}
+                {searchDID ? 'No Matching Credentials Found' : 
+                 statusFilter === 'approved' ? 'No Approved Credentials' :
+                 statusFilter === 'pending' ? 'No Pending Credentials' :
+                 statusFilter === 'rejected' ? 'No Rejected Credentials' :
+                 'No Credentials Found'}
               </h3>
               <p className="text-gray-400 mb-8 max-w-md mx-auto">
                 {searchDID 
                   ? 'Try adjusting your search criteria or check if the DID is correct' 
-                  : 'When users approve your verification requests, they will appear here for you to track and manage'
+                  : statusFilter === 'approved' ? 'No verification requests have been approved yet'
+                  : statusFilter === 'pending' ? 'No verification requests are currently pending'
+                  : statusFilter === 'rejected' ? 'No verification requests have been rejected'
+                  : 'When users respond to your verification requests, they will appear here'
                 }
               </p>
               
-              
-              <div className="grid md:grid-cols-3 gap-4 max-w-3xl mx-auto">
+              <div className="grid md:grid-cols-3 gap-4 max-w-3xl mx-auto mb-8">
                 <div className="bg-green-500 bg-opacity-10 rounded-lg p-6 border border-green-500 border-opacity-20 hover:bg-opacity-20 transition-all duration-300">
                   <CheckCircle className="h-10 w-10 text-green-400 mx-auto mb-3" />
                   <p className="text-green-300 font-semibold mb-2">User Approvals</p>
@@ -1321,8 +1477,8 @@ const VerifierDashboard = () => {
                 </div>
               </div>
               
-              {!searchDID && (
-                <div className="mt-8">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                {!searchDID && statusFilter === 'all' && (
                   <Button 
                     onClick={() => setActiveSection('search')}
                     className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white px-8 py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105"
@@ -1330,72 +1486,157 @@ const VerifierDashboard = () => {
                     <Search className="h-5 w-5 mr-2" />
                     Start Verifying Now
                   </Button>
-                </div>
-              )}
+                )}
+                {statusFilter !== 'all' && (
+                  <Button 
+                    onClick={() => setStatusFilter('all')}
+                    variant="outline"
+                    className="border-gray-600 text-gray-300 hover:bg-gray-700 px-6 py-3"
+                  >
+                    View All Requests
+                  </Button>
+                )}
+                {searchDID && (
+                  <Button 
+                    onClick={() => setSearchDID('')}
+                    variant="outline"
+                    className="border-gray-600 text-gray-300 hover:bg-gray-700 px-6 py-3"
+                  >
+                    Clear Search
+                  </Button>
+                )}
+              </div>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-800">
-                  <tr>
-                    <th className="text-left py-4 px-6 text-gray-400 font-medium">Request ID</th>
-                    <th className="text-left py-4 px-6 text-gray-400 font-medium">User DID</th>
-                    <th className="text-left py-4 px-6 text-gray-400 font-medium">Credential Type</th>
-                    <th className="text-left py-4 px-6 text-gray-400 font-medium">Status</th>
-                    <th className="text-left py-4 px-6 text-gray-400 font-medium">Approved Date</th>
-                    <th className="text-left py-4 px-6 text-gray-400 font-medium">Message</th>
-                    <th className="text-left py-4 px-6 text-gray-400 font-medium">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredRequests.map((request, index) => (
-                    <tr key={request.id} className="border-b border-gray-800 hover:bg-gray-800 hover:bg-opacity-50" data-testid={`request-row-${index}`}>
-                      <td className="py-4 px-6 font-mono text-sm text-gray-300">
-                        #{request.id.toString().slice(-6)}
-                      </td>
-                      <td className="py-4 px-6 font-mono text-sm text-gray-300">
-                        {request.userDID ? `${request.userDID.slice(0, 20)}...` : 'N/A'}
-                      </td>
-                      <td className="py-4 px-6 text-white">{request.credentialType}</td>
-                      <td className="py-4 px-6">
-                        <span className={`px-3 py-1 rounded-full text-sm capitalize ${
-                          request.status === 'approved' ? 'text-green-500 bg-green-500 bg-opacity-20' :
-                          request.status === 'rejected' ? 'text-red-500 bg-red-500 bg-opacity-20' :
-                          'text-yellow-500 bg-yellow-500 bg-opacity-20'
-                        }`}>
-                          {request.status}
-                        </span>
-                      </td>
-                      <td className="py-4 px-6 text-gray-400">
-                        {new Date(request.approvedAt || request.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="py-4 px-6 text-gray-400 max-w-xs truncate">
-                        {request.message || 'No message'}
-                      </td>
-                      <td className="py-4 px-6">
-                        <div className="flex space-x-2">
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            className="text-web3-blue hover:text-web3-purple"
-                            data-testid={`button-view-${index}`}
-                          >
-                            View Details
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            className="text-green-400 hover:text-green-300"
-                            data-testid={`button-contact-${index}`}
-                          >
-                            Contact User
-                          </Button>
+            <div className="p-6 space-y-4">
+              {filteredCredentials.map((credential, index) => (
+                <div key={credential.id} className="bg-slate-800 bg-opacity-50 rounded-xl p-6 border border-slate-700 hover:border-slate-600 transition-all duration-300" data-testid={`credential-card-${index}`}>
+                  <div className="flex items-start justify-between">
+                    {/* Credential Info */}
+                    <div className="flex items-start space-x-4 flex-1">
+                      {/* Credential Icon */}
+                      <div className="flex-shrink-0">
+                        <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-600 rounded-lg flex items-center justify-center text-2xl">
+                          {credential.icon}
                         </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      </div>
+                      
+                      {/* Credential Details */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <span className="bg-slate-700 text-gray-300 px-3 py-1 rounded-full text-sm font-mono">
+                            # {credential.id}
+                          </span>
+                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                            credential.status === 'approved' ? 'bg-green-500 bg-opacity-20 text-green-400' :
+                            credential.status === 'pending' ? 'bg-yellow-500 bg-opacity-20 text-yellow-400' :
+                            credential.status === 'rejected' ? 'bg-red-500 bg-opacity-20 text-red-400' :
+                            'bg-gray-500 bg-opacity-20 text-gray-400'
+                          }`}>
+                            {credential.status === 'approved' ? 'Active' : credential.status.charAt(0).toUpperCase() + credential.status.slice(1)}
+                          </span>
+                        </div>
+                        
+                        <h3 className="text-xl font-bold text-white mb-1">{credential.title}</h3>
+                        <p className="text-gray-400 mb-3">{credential.subtitle}</p>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                          <div className="flex items-center space-x-2">
+                            <Database className="h-4 w-4 text-blue-400" />
+                            <div>
+                              <p className="text-gray-400">Issuer DID</p>
+                              <p className="text-white font-mono text-xs">{credential.issuerDID}</p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center space-x-2">
+                            <User className="h-4 w-4 text-green-400" />
+                            <div>
+                              <p className="text-gray-400">Recipient</p>
+                              <p className="text-white">{credential.recipientName}</p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center space-x-2">
+                            <Clock className="h-4 w-4 text-purple-400" />
+                            <div>
+                              <p className="text-gray-400">Issue Date</p>
+                              <p className="text-white">{credential.issueDate}</p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center space-x-2">
+                            <Activity className="h-4 w-4 text-orange-400" />
+                            <div>
+                              <p className="text-gray-400">Submitted</p>
+                              <p className="text-white">{credential.submittedAt.toLocaleDateString()}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Actions */}
+                    <div className="flex flex-col space-y-2 ml-4">
+                      {credential.status === 'pending' && (
+                        <>
+                          <Button
+                            onClick={() => approveCredentialMutation.mutate(credential.id)}
+                            disabled={approveCredentialMutation.isPending}
+                            className="relative overflow-hidden bg-gradient-to-r from-emerald-500 via-green-500 to-emerald-600 hover:from-emerald-600 hover:via-green-600 hover:to-emerald-700 text-white px-6 py-3 text-sm font-semibold rounded-xl shadow-lg hover:shadow-emerald-500/25 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none group"
+                            data-testid={`approve-${index}`}
+                          >
+                            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                            <div className="relative flex items-center justify-center">
+                              {approveCredentialMutation.isPending ? (
+                                <>
+                                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                                  <span>Approving...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <CheckCircle className="h-4 w-4 mr-2" />
+                                  <span>Approve</span>
+                                </>
+                              )}
+                            </div>
+                          </Button>
+                          <Button
+                            onClick={() => rejectCredentialMutation.mutate(credential.id)}
+                            disabled={rejectCredentialMutation.isPending}
+                            className="relative overflow-hidden bg-gradient-to-r from-red-500 via-rose-500 to-red-600 hover:from-red-600 hover:via-rose-600 hover:to-red-700 text-white px-6 py-3 text-sm font-semibold rounded-xl shadow-lg hover:shadow-red-500/25 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none group"
+                            data-testid={`reject-${index}`}
+                          >
+                            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                            <div className="relative flex items-center justify-center">
+                              {rejectCredentialMutation.isPending ? (
+                                <>
+                                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                                  <span>Rejecting...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <XCircle className="h-4 w-4 mr-2" />
+                                  <span>Reject</span>
+                                </>
+                              )}
+                            </div>
+                          </Button>
+                        </>
+                      )}
+                      
+                      <Button
+                        variant="ghost"
+                        className="text-blue-400 hover:text-blue-300 px-4 py-2 text-sm"
+                        data-testid={`view-details-${index}`}
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        View Details
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </CardContent>
@@ -1580,7 +1821,7 @@ const VerifierDashboard = () => {
         <div className="w-full max-w-7xl">
           {activeSection === 'dashboard' && renderDashboard()}
           {activeSection === 'search' && renderSearch()}
-          {activeSection === 'requests' && renderRequests()}
+          {activeSection === 'approved-requests' && renderRequests()}
           {activeSection === 'settings' && renderSettings()}
         </div>
       </div>
