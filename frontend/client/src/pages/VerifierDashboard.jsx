@@ -979,10 +979,150 @@ const VerifierDashboard = () => {
                   Enter the complete DID of the identity holder
                 </p>
               </div>
+
+              {/* Valid Recipients Section */}
+              <div className="form-section">
+                <div className="bg-slate-800 bg-opacity-50 rounded-lg p-4 border border-slate-700">
+                  <div className="flex items-center mb-3">
+                    <Users className="h-4 w-4 text-blue-400 mr-2" />
+                    <h3 className="text-base font-semibold text-blue-300">Valid Recipients (Accounts 2-7)</h3>
+                  </div>
+                  <div className="grid md:grid-cols-3 gap-3">
+                    {/* Account 2 */}
+                    <div className="bg-slate-700 bg-opacity-50 rounded-lg p-3 border border-slate-600">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-gray-300 text-xs font-medium mb-1">Account 2</p>
+                          <p className="text-gray-400 text-xs font-mono truncate">0x3C44...4293BC</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setSearchForm(prev => ({ ...prev, did: 'did:ethr:0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC' }))}
+                          className="ml-2 flex-shrink-0 p-1.5 bg-blue-500 bg-opacity-20 hover:bg-opacity-30 rounded border border-blue-500 border-opacity-30 transition-all duration-200"
+                          title="Copy to search field"
+                        >
+                          <svg className="h-3 w-3 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Account 3 */}
+                    <div className="bg-slate-700 bg-opacity-50 rounded-lg p-3 border border-slate-600">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-gray-300 text-xs font-medium mb-1">Account 3</p>
+                          <p className="text-gray-400 text-xs font-mono truncate">0x90F7...3b906</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setSearchForm(prev => ({ ...prev, did: 'did:ethr:0x90F79bf6EB2c4f870365E785982E1f101E93b906' }))}
+                          className="ml-2 flex-shrink-0 p-1.5 bg-blue-500 bg-opacity-20 hover:bg-opacity-30 rounded border border-blue-500 border-opacity-30 transition-all duration-200"
+                          title="Copy to search field"
+                        >
+                          <svg className="h-3 w-3 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Account 4 */}
+                    <div className="bg-slate-700 bg-opacity-50 rounded-lg p-3 border border-slate-600">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-gray-300 text-xs font-medium mb-1">Account 4</p>
+                          <p className="text-gray-400 text-xs font-mono truncate">0x15d3...C6A65</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setSearchForm(prev => ({ ...prev, did: 'did:ethr:0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65' }))}
+                          className="ml-2 flex-shrink-0 p-1.5 bg-blue-500 bg-opacity-20 hover:bg-opacity-30 rounded border border-blue-500 border-opacity-30 transition-all duration-200"
+                          title="Copy to search field"
+                        >
+                          <svg className="h-3 w-3 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Account 5 */}
+                    <div className="bg-slate-700 bg-opacity-50 rounded-lg p-3 border border-slate-600">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-gray-300 text-xs font-medium mb-1">Account 5</p>
+                          <p className="text-gray-400 text-xs font-mono truncate">0x9965...A4dc</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setSearchForm(prev => ({ ...prev, did: 'did:ethr:0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc' }))}
+                          className="ml-2 flex-shrink-0 p-1.5 bg-blue-500 bg-opacity-20 hover:bg-opacity-30 rounded border border-blue-500 border-opacity-30 transition-all duration-200"
+                          title="Copy to search field"
+                        >
+                          <svg className="h-3 w-3 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Account 6 */}
+                    <div className="bg-slate-700 bg-opacity-50 rounded-lg p-3 border border-slate-600">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-gray-300 text-xs font-medium mb-1">Account 6</p>
+                          <p className="text-gray-400 text-xs font-mono truncate">0x976E...0aa9</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setSearchForm(prev => ({ ...prev, did: 'did:ethr:0x976EA74026E726554dB657fA54763abd0C3a0aa9' }))}
+                          className="ml-2 flex-shrink-0 p-1.5 bg-blue-500 bg-opacity-20 hover:bg-opacity-30 rounded border border-blue-500 border-opacity-30 transition-all duration-200"
+                          title="Copy to search field"
+                        >
+                          <svg className="h-3 w-3 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Account 7 */}
+                    <div className="bg-slate-700 bg-opacity-50 rounded-lg p-3 border border-slate-600">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-gray-300 text-xs font-medium mb-1">Account 7</p>
+                          <p className="text-gray-400 text-xs font-mono truncate">0x14dC...9955</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setSearchForm(prev => ({ ...prev, did: 'did:ethr:0x14dC79964da2C08b23698B3D3cc7Ca32193d9955' }))}
+                          className="ml-2 flex-shrink-0 p-1.5 bg-blue-500 bg-opacity-20 hover:bg-opacity-30 rounded border border-blue-500 border-opacity-30 transition-all duration-200"
+                          title="Copy to search field"
+                        >
+                          <svg className="h-3 w-3 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-3 p-2 bg-yellow-500 bg-opacity-10 rounded border border-yellow-500 border-opacity-20">
+                    <div className="flex items-center">
+                      <AlertCircle className="h-3 w-3 text-yellow-400 mr-2" />
+                      <p className="text-yellow-300 text-xs">
+                        Only accounts 2-7 can receive credentials. Accounts 0-1 cannot send to themselves or other accounts.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
               
               {/* Credential Type */}
               <div className="form-section">
-                <label className="form-label block text-sm font-semibold text-purple-300 mb-3">
+                <label className="form-label block text-xs font-semibold text-purple-300 mb-2">
                   📋 Credential Type
                 </label>
                 <div className="relative">
@@ -990,7 +1130,7 @@ const VerifierDashboard = () => {
                     value={searchForm.credentialType}
                     onValueChange={(value) => setSearchForm(prev => ({ ...prev, credentialType: value }))}
                   >
-                    <SelectTrigger className="form-input text-white h-12 text-lg pl-12" data-testid="select-credential-type">
+                    <SelectTrigger className="form-input text-white h-10 text-sm pl-10" data-testid="select-credential-type">
                       <SelectValue placeholder="Choose the type of credential to verify..." />
                     </SelectTrigger>
                     <SelectContent className="bg-gray-800 border-gray-600">
@@ -1015,59 +1155,58 @@ const VerifierDashboard = () => {
                     </SelectContent>
                   </Select>
                   <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
-                    <ClipboardList className="h-5 w-5 text-purple-400" />
+                    <ClipboardList className="h-4 w-4 text-purple-400" />
                   </div>
                 </div>
               </div>
 
               {/* Request Message */}
               <div className="form-section">
-                <label className="form-label block text-sm font-semibold text-green-300 mb-3">
+                <label className="form-label block text-xs font-semibold text-green-300 mb-2">
                   💬 Request Message (Optional)
                 </label>
                 <div className="relative">
                   <Textarea
                     value={searchForm.message}
                     onChange={(e) => setSearchForm(prev => ({ ...prev, message: e.target.value }))}
-                    rows={4}
-                    placeholder="Describe why you need this verification and provide any additional context..."
-                    className="form-input text-white placeholder-gray-400 pl-12 pt-4 text-lg resize-none"
+                    rows={3}
+                    placeholder="Describe why you need this verification..."
+                    className="form-input text-white placeholder-gray-400 pl-10 pt-3 text-sm resize-none"
                     data-testid="textarea-message"
                   />
-                  <div className="absolute left-3 top-4">
-                    <Users className="h-5 w-5 text-green-400" />
+                  <div className="absolute left-3 top-3">
+                    <Users className="h-4 w-4 text-green-400" />
                   </div>
                 </div>
-                <div className="flex justify-between items-center mt-2">
-                  <p className="text-gray-400 text-sm flex items-center">
-                    <Eye className="h-4 w-4 mr-1" />
+                <div className="flex justify-between items-center mt-1">
+                  <p className="text-gray-400 text-xs flex items-center">
+                    <Eye className="h-3 w-3 mr-1" />
                     This message will be visible to the credential holder
                   </p>
-                  <span className="text-gray-500 text-sm">
+                  <span className="text-gray-500 text-xs">
                     {searchForm.message.length}/500
                   </span>
                 </div>
               </div>
 
               {/* Submit Button */}
-              <div className="pt-4">
+              <div className="form-section">
                 <Button
                   type="submit"
-                  disabled={sendRequestMutation.isPending}
-                  className="enhanced-button text-white px-8 py-4 rounded-2xl font-bold w-full h-14 text-lg flex items-center justify-center relative z-10"
+                  disabled={sendRequestMutation.isPending || !searchForm.did || !searchForm.credentialType}
+                  className="enhanced-button w-full text-white py-3 text-sm font-bold"
                   data-testid="button-send-request"
                 >
-                  <div className="flex items-center space-x-3">
+                  <div className="flex items-center justify-center space-x-2">
                     {sendRequestMutation.isPending ? (
                       <>
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                         <span>Sending Request...</span>
                       </>
                     ) : (
                       <>
-                        <Send className="h-6 w-6" />
+                        <Send className="h-4 w-4" />
                         <span>Send Verification Request</span>
-                        <Zap className="h-5 w-5" />
                       </>
                     )}
                   </div>
