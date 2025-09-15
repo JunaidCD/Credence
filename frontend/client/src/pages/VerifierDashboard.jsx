@@ -409,68 +409,8 @@ const VerifierDashboard = () => {
     }
   }, [isAuthenticated, user, setLocation]);
 
-  // Mock credentials submitted by users for verification
-  const mockCredentials = [
-    {
-      id: 'DEG-19160',
-      credentialType: 'University Degree',
-      title: 'CSE',
-      subtitle: 'University Degree',
-      issuerDID: 'did:ethr:0x7099970c51812dc3A010C7d01b50e0d17dc7...',
-      recipientName: 'Junaid Mollah',
-      recipientDID: 'did:ethr:0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC',
-      issueDate: '2025-09-09',
-      status: 'pending',
-      submittedAt: new Date('2024-01-15'),
-      icon: '🎓',
-      details: {
-        institution: 'MIT University',
-        degree: 'Bachelor of Computer Science Engineering',
-        gpa: '3.8/4.0',
-        graduationYear: '2024'
-      }
-    },
-    {
-      id: 'CERT-28471',
-      credentialType: 'Professional Certificate',
-      title: 'AWS Solutions Architect',
-      subtitle: 'Professional Certificate',
-      issuerDID: 'did:ethr:0x90F79bf6EB2c4f870365E785982E1f101E93b906',
-      recipientName: 'Sarah Johnson',
-      recipientDID: 'did:ethr:0x90F79bf6EB2c4f870365E785982E1f101E93b906',
-      issueDate: '2024-12-15',
-      status: 'approved',
-      submittedAt: new Date('2024-01-14'),
-      approvedAt: new Date('2024-01-15'),
-      icon: '📜',
-      details: {
-        provider: 'Amazon Web Services',
-        validUntil: '2027-12-15',
-        certificationLevel: 'Professional',
-        score: '850/1000'
-      }
-    },
-    {
-      id: 'AWARD-51704',
-      credentialType: 'Achievement Award',
-      title: 'Innovation Excellence',
-      subtitle: 'Achievement Award',
-      issuerDID: 'did:ethr:0x976EA74026E726554dB657fA54763abd0C3a0aa9',
-      recipientName: 'Alex Rodriguez',
-      recipientDID: 'did:ethr:0x976EA74026E726554dB657fA54763abd0C3a0aa9',
-      issueDate: '2024-01-05',
-      status: 'rejected',
-      submittedAt: new Date('2024-01-11'),
-      rejectedAt: new Date('2024-01-12'),
-      icon: '🥇',
-      details: {
-        awardingBody: 'Tech Innovation Council',
-        category: 'Best Mobile App',
-        year: '2024',
-        reason: 'Outstanding contribution to healthcare technology'
-      }
-    }
-  ];
+  // Empty credentials array - no mock data
+  const mockCredentials = [];
 
   // Queries - Fetch submitted credentials for verification
   const { data: credentials = mockCredentials, isLoading: credentialsLoading } = useQuery({
@@ -1526,7 +1466,7 @@ const VerifierDashboard = () => {
                  statusFilter === 'approved' ? 'No Approved Credentials' :
                  statusFilter === 'pending' ? 'No Pending Credentials' :
                  statusFilter === 'rejected' ? 'No Rejected Credentials' :
-                 'No Credentials Found'}
+                 'New Verification Request Will Appear here'}
               </h3>
               <p className="text-gray-400 mb-8 max-w-md mx-auto">
                 {searchDID 
