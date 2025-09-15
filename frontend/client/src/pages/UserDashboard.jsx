@@ -1391,16 +1391,33 @@ const UserDashboard = () => {
     );
   };
 
-  // Mark notification as read using blockchain service
-  const markNotificationAsRead = (notificationId) => {
+  // Mark notification as read using blockchain service and backend
+  const markNotificationAsRead = async (notificationId) => {
     if (walletAddress) {
       blockchainNotificationService.markAsRead(walletAddress, notificationId);
       refreshNotifications(); // Refresh to update UI
     }
+    
+    // Also mark as read in backend if it's a backend notification
+    if (userId) {
+      try {
+        const response = await fetch(`/api/notifications/${notificationId}/read`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        if (response.ok) {
+          // Invalidate backend notifications query to refetch updated data
+          queryClient.invalidateQueries({ queryKey: [`/api/notifications/user/${userId}`] });
+        }
+      } catch (error) {
+        console.error('Error marking backend notification as read:', error);
+      }
+    }
   };
 
-  // Mark all notifications as read using blockchain service
-  const markAllNotificationsAsRead = () => {
+  // Mark all notifications as read using blockchain service and backend
+  const markAllNotificationsAsRead = async () => {
     if (walletAddress) {
       const markedCount = blockchainNotificationService.markAllAsRead(walletAddress);
       refreshNotifications(); // Refresh to update UI
@@ -1410,6 +1427,23 @@ const UserDashboard = () => {
           title: "All Notifications Marked as Read",
           description: `Marked ${markedCount} notifications as read`,
         });
+      }
+    }
+    
+    // Also mark all backend notifications as read
+    if (userId) {
+      try {
+        const response = await fetch(`/api/notifications/user/${userId}/read-all`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        if (response.ok) {
+          // Invalidate backend notifications query to refetch updated data
+          queryClient.invalidateQueries({ queryKey: [`/api/notifications/user/${userId}`] });
+        }
+      } catch (error) {
+        console.error('Error marking all backend notifications as read:', error);
       }
     }
   };
