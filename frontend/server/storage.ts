@@ -47,6 +47,9 @@ export class MemStorage implements IStorage {
     
     // Initialize with some test data for debugging
     this.initializeTestData();
+    
+    const timestamp = new Date().toISOString();
+    console.log(`🔧 MemStorage initialized at ${timestamp} - all data will persist until server restart`);
   }
 
   private initializeTestData() {
@@ -62,6 +65,21 @@ export class MemStorage implements IStorage {
     } as User;
 
     this.users.set(testIssuer.id, testIssuer);
+
+    // Create test user (account 2) - the one from the error
+    const testUser: User = {
+      id: "test-user-1",
+      address: "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc",
+      did: "did:ethr:0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc",
+      name: "Test User",
+      email: "user@example.com",
+      userType: "user", 
+      createdAt: new Date()
+    } as User;
+
+    this.users.set(testUser.id, testUser);
+
+    // No test credential - removed as requested by user
 
     // No test credentials - only real credentials issued by users will be stored
 
@@ -82,7 +100,9 @@ export class MemStorage implements IStorage {
   }
 
   async getUserByDID(did: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.did === did);
+    // Normalize DID to lowercase for case-insensitive lookup
+    const normalizedDID = did.toLowerCase();
+    return Array.from(this.users.values()).find(user => user.did?.toLowerCase() === normalizedDID);
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
@@ -230,6 +250,9 @@ export class MemStorage implements IStorage {
       console.log(`Creating notifications for ${linkedCredentials.length} linked credentials`);
       await this.createNotificationsForLinkedCredentials(userId, linkedCredentials);
     }
+
+    // Link existing verification requests to the newly registered user
+    await this.linkVerificationRequestsToUser(userId, walletAddress);
     
     console.log(`=== LINKING COMPLETE ===`);
   }
@@ -240,9 +263,10 @@ export class MemStorage implements IStorage {
   }
 
   async getNotificationsByUserId(userId: string): Promise<Notification[]> {
-    return Array.from(this.notifications.values())
-      .filter(notification => notification.userId === userId)
-      .sort((a, b) => {
+    const notifications = Array.from(this.notifications.values()).filter(notification => notification.userId === userId);
+    console.log(`🔍 Storage: Found ${notifications.length} notifications for userId: ${userId}`);
+    console.log('🔍 Storage: All notifications in memory:', Array.from(this.notifications.values()).map(n => ({ id: n.id, userId: n.userId, type: n.type, title: n.title })));
+    return notifications.sort((a, b) => {
         const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
         const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
         return dateB - dateA;
@@ -479,6 +503,85 @@ export class MemStorage implements IStorage {
              data?.metadata?.transactionHash === transactionHash ||
              data?.metadata?.blockchainId === credentialId;
     });
+  }
+
+  // Link existing verification requests to a newly registered user
+  async linkVerificationRequestsToUser(userId: string, walletAddress: string): Promise<void> {
+    console.log(`=== LINKING VERIFICATION REQUESTS ===`);
+    console.log(`User ID: ${userId}`);
+    console.log(`Wallet Address: ${walletAddress}`);
+    
+    const user = await this.getUser(userId);
+    if (!user) {
+      console.log('❌ User not found, cannot link verification requests');
+      return;
+    }
+
+    const userDID = user.did || `did:ethr:${walletAddress.toLowerCase()}`;
+    console.log(`User DID: ${userDID}`);
+    
+    const allRequests = Array.from(this.verificationRequests.values());
+    console.log(`Total verification requests in storage: ${allRequests.length}`);
+    
+    // Find verification requests that were sent to this user's DID or wallet address but don't have a userId yet
+    const requestsToLink = allRequests.filter(request => {
+      const holderDID = request.holderDID?.toLowerCase();
+      const hasNoUser = !request.userId || request.userId === "";
+      const matchesDID = holderDID === userDID.toLowerCase();
+      const matchesWallet = holderDID === `did:ethr:${walletAddress.toLowerCase()}`;
+      
+      console.log(`Request ${request.id}: holderDID=${holderDID}, hasNoUser=${hasNoUser}, matchesDID=${matchesDID}, matchesWallet=${matchesWallet}`);
+      
+      return hasNoUser && (matchesDID || matchesWallet);
+    });
+    
+    console.log(`Found ${requestsToLink.length} verification requests to link`);
+    
+    // Update each verification request to link it to the user and create notifications
+    const linkedRequests = [];
+    for (const request of requestsToLink) {
+      console.log(`Linking verification request ${request.id} to user ${userId}`);
+      const updatedRequest = await this.updateVerificationRequest(request.id, { userId });
+      if (updatedRequest) {
+        linkedRequests.push(updatedRequest);
+        
+        // Create notification for this verification request
+        console.log(`🔔 Creating notification for linked verification request ${request.id}`);
+        
+        // Get verifier information
+        const verifier = await this.getUser(request.verifierId);
+        const verifierName = verifier?.name || 'Unknown Verifier';
+        const verifierDID = request.verifierDID || verifier?.did || 'Unknown DID';
+        
+        const notificationData = {
+          userId: userId,
+          type: 'verification_request',
+          title: 'Share Credential Request',
+          message: `You have received a request to share your ${request.credentialType} credential from ${verifierName}.`,
+          data: {
+            requestId: request.id,
+            verifierId: request.verifierId,
+            credentialType: request.credentialType,
+            message: request.message,
+            verifierDID: verifierDID,
+            holderDID: request.holderDID,
+            signature: request.signature,
+            blockchainData: request.blockchainData,
+            timestamp: request.requestedAt?.toISOString() || new Date().toISOString(),
+            verifierName: verifierName,
+            isExistingRequest: true
+          },
+          read: false,
+          priority: 'high'
+        };
+        
+        await this.createNotification(notificationData);
+        console.log(`✅ Created notification for linked verification request ${request.id}`);
+      }
+    }
+    
+    console.log(`=== VERIFICATION REQUEST LINKING COMPLETE ===`);
+    console.log(`Linked ${linkedRequests.length} verification requests and created notifications`);
   }
 }
 

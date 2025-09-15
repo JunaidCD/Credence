@@ -47,7 +47,6 @@ import {
 const UserDashboard = () => {
   const { isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
-  const [activeSection, setActiveSection] = useState('dashboard');
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -55,22 +54,45 @@ const UserDashboard = () => {
   // Web3 and User Registration state - independent from AuthContext
   const [walletConnected, setWalletConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState('');
+  const [activeSection, setActiveSection] = useState('dashboard');
+  const [userDID, setUserDID] = useState('');
+  const [userId, setUserId] = useState(null);
   const [isEligibleUser, setIsEligibleUser] = useState(false);
   const [isRegisteredUser, setIsRegisteredUser] = useState(false);
-  const [userDID, setUserDID] = useState('');
-  const [userName, setUserName] = useState('User');
-  
+  const [userName, setUserName] = useState('');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [selectedVerificationRequest, setSelectedVerificationRequest] = useState(null);
+  const dropdownRef = useRef(null);
+
   // Share Credential state
   const [selectedCredentialId, setSelectedCredentialId] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
   const [selectedCredential, setSelectedCredential] = useState(null);
   const [verifierDid, setVerifierDid] = useState('');
   const [isSharing, setIsSharing] = useState(false);
-  const dropdownRef = useRef(null);
 
   // Blockchain notification state
   const [notifications, setNotifications] = useState([]);
   const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
+  
+  // Backend notifications query
+  const { data: backendNotifications = [], isLoading: isLoadingBackendNotifications } = useQuery({
+    queryKey: [`/api/notifications/user/${userId}`],
+    queryFn: async () => {
+      if (!userId) {
+        console.log('🔍 No userId available for notification fetch');
+        return [];
+      }
+      console.log('🔍 Fetching notifications for userId:', userId);
+      const response = await fetch(`/api/notifications/user/${userId}`);
+      if (!response.ok) throw new Error('Failed to fetch notifications');
+      const notifications = await response.json();
+      console.log('🔍 Fetched backend notifications:', notifications);
+      return notifications;
+    },
+    enabled: !!userId,
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
   
   // Handle new notification from blockchain events
   const handleNewNotification = (notification) => {
@@ -78,6 +100,11 @@ const UserDashboard = () => {
     
     // Update local notifications state
     setNotifications(prev => [notification, ...prev]);
+    
+    // Invalidate backend notifications query to refetch
+    if (userId) {
+      queryClient.invalidateQueries({ queryKey: [`/api/notifications/user/${userId}`] });
+    }
     
     // Show toast notification
     toast({
@@ -92,6 +119,14 @@ const UserDashboard = () => {
     if (walletAddress) {
       const userNotifications = blockchainNotificationService.getNotifications(walletAddress);
       setNotifications(userNotifications);
+    }
+  };
+
+  // Force refresh backend notifications
+  const refreshBackendNotifications = () => {
+    if (userId) {
+      console.log('🔄 Force refreshing backend notifications for userId:', userId);
+      queryClient.invalidateQueries({ queryKey: [`/api/notifications/user/${userId}`] });
     }
   };
 
@@ -354,22 +389,35 @@ const UserDashboard = () => {
 
   const checkUserStatus = async (address) => {
     try {
-      console.log('Checking user status for address:', address);
+      // Use the correct method name from web3Service
       const isEligible = await web3Service.validateUserRegistration(address);
-      console.log('User eligibility result:', isEligible);
       setIsEligibleUser(isEligible);
       
-      // Check if user is already registered
-      try {
-        const registrationStatus = await web3Service.checkUserRegistrationStatus(address);
-        console.log('Registration status:', registrationStatus);
-        setIsRegisteredUser(registrationStatus.isRegistered);
-      } catch (regError) {
-        console.log('Could not check registration status, assuming not registered');
-        setIsRegisteredUser(false);
+      if (isEligible) {
+        const isRegistered = await web3Service.userRegistry.isRegisteredUser(address);
+        setIsRegisteredUser(isRegistered);
+        
+        if (isRegistered) {
+          setUserDID(`did:ethr:${address}`);
+          
+          // If user is already registered, get their backend userId
+          try {
+            const response = await fetch(`/api/users/wallet/${address}`);
+            if (response.ok) {
+              const userData = await response.json();
+              console.log('🔍 Found existing user data:', userData);
+              setUserId(userData.id);
+              console.log('🔍 Set userId for existing user:', userData.id);
+            } else {
+              console.log('🔍 No backend user found for registered blockchain user');
+            }
+          } catch (error) {
+            console.error('Error fetching backend user data:', error);
+          }
+        }
       }
     } catch (error) {
-      console.error('Failed to check user status:', error);
+      console.error('Error checking user status:', error);
       setIsEligibleUser(false);
       setIsRegisteredUser(false);
     }
@@ -439,8 +487,20 @@ const UserDashboard = () => {
         });
 
         if (response.ok) {
+          const userData = await response.json();
+          console.log('🔍 User registration response:', userData);
           setIsRegisteredUser(true);
           setUserDID(`did:ethr:${blockchainResult.address}`);
+          setUserId(userData.user.id); // Store user ID for backend notifications
+          console.log('🔍 Set userId to:', userData.user.id);
+          
+          // Immediately invalidate and refetch notifications for the new user
+          queryClient.invalidateQueries({ queryKey: [`/api/notifications/user/${userData.user.id}`] });
+          
+          // Force immediate refresh of backend notifications
+          setTimeout(() => {
+            refreshBackendNotifications();
+          }, 1000);
           
           // Setup blockchain notifications for existing credentials
           if (blockchainResult.credentials && blockchainResult.credentials.length > 0) {
@@ -498,16 +558,25 @@ const UserDashboard = () => {
     enabled: walletConnected && !!walletAddress
   });
 
-  // Refresh notifications periodically from blockchain service
+  // Refresh notifications periodically from blockchain service and backend
   useEffect(() => {
-    if (walletAddress && isRegisteredUser) {
+    if (walletAddress && isRegisteredUser && userId) {
       const interval = setInterval(() => {
         refreshNotifications();
+        refreshBackendNotifications();
       }, 5000); // Refresh every 5 seconds
       
       return () => clearInterval(interval);
     }
-  }, [walletAddress, isRegisteredUser]);
+  }, [walletAddress, isRegisteredUser, userId]);
+
+  // Force refresh notifications when userId becomes available
+  useEffect(() => {
+    if (userId) {
+      console.log('🔄 UserId available, refreshing backend notifications:', userId);
+      refreshBackendNotifications();
+    }
+  }, [userId]);
 
   // Query for blockchain credentials - only fetch if user is registered
   const { data: blockchainCredentials = [], isLoading: blockchainLoading } = useQuery({
@@ -1346,7 +1415,22 @@ const UserDashboard = () => {
   };
 
   const renderNotifications = () => {
-    const unreadCount = notifications.filter(n => !n.read).length;
+    // Combine blockchain and backend notifications
+    const allNotifications = [
+      ...backendNotifications.map(n => ({ ...n, source: 'backend' })),
+      ...notifications.map(n => ({ ...n, source: 'blockchain' }))
+    ].sort((a, b) => new Date(b.createdAt || b.timestamp) - new Date(a.createdAt || a.timestamp));
+    
+    console.log('🔍 Rendering notifications:', {
+      userId,
+      backendCount: backendNotifications.length,
+      blockchainCount: notifications.length,
+      totalCount: allNotifications.length,
+      backendNotifications,
+      allNotifications
+    });
+    
+    const unreadCount = allNotifications.filter(n => !n.read).length;
 
     const getNotificationIcon = (type) => {
       switch (type) {
@@ -1388,7 +1472,7 @@ const UserDashboard = () => {
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2 text-sm text-blue-400 bg-blue-500/10 px-3 py-2 rounded-lg border border-blue-500/20">
               <Bell className="h-4 w-4" />
-              <span>Total: {notifications.length}</span>
+              <span>Total: {allNotifications.length}</span>
             </div>
             {unreadCount > 0 && (
               <div className="flex items-center space-x-2 text-sm text-orange-400 bg-orange-500/10 px-3 py-2 rounded-lg border border-orange-500/20">
@@ -1447,7 +1531,7 @@ const UserDashboard = () => {
               </Card>
             ))}
           </div>
-        ) : notifications.length === 0 ? (
+        ) : allNotifications.length === 0 ? (
           <Card className="bg-gray-800/50 border-gray-700/50">
             <CardContent className="p-12 text-center">
               <div className="w-20 h-20 bg-gradient-to-br from-purple-600/20 to-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -1487,7 +1571,7 @@ const UserDashboard = () => {
           </Card>
         ) : (
           <div className="space-y-4">
-            {notifications.map((notification) => {
+            {allNotifications.map((notification) => {
               const IconComponent = getNotificationIcon(notification.type);
               const colorClass = getNotificationColor(notification.priority);
               
@@ -1527,7 +1611,56 @@ const UserDashboard = () => {
                 );
               }
               
-              // Regular notification display for non-credential notifications
+              // Verification request notification with consistent styling
+              if (notification.type === 'verification_request') {
+                return (
+                  <Card 
+                    key={notification.id} 
+                    className={`bg-gradient-to-r from-slate-800/90 to-slate-700/90 border border-slate-600/50 backdrop-blur-sm hover:shadow-xl hover:shadow-orange-500/10 transition-all duration-300 transform hover:-translate-y-0.5 ${!notification.read ? 'ring-2 ring-orange-400/30 shadow-lg shadow-orange-500/20' : 'hover:border-slate-500/70'}`}
+                  >
+                    <CardContent className="p-5">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                          <div className="p-2.5 bg-gradient-to-br from-orange-500/20 to-red-500/20 rounded-xl border border-orange-400/30">
+                            <Shield className="h-5 w-5 text-orange-400" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-white text-sm leading-tight">{notification.title}</p>
+                            <p className="text-sm text-slate-300 mt-0.5">
+                              {notification.data?.credentialType && `Request for ${notification.data.credentialType} credential`}
+                            </p>
+                            <p className="text-xs text-slate-400 mt-1">
+                              Issued on {new Date(notification.createdAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-xs text-orange-400 hover:text-orange-300 hover:bg-orange-500/10 px-3 py-1.5 rounded-lg transition-colors duration-200"
+                            onClick={() => setSelectedVerificationRequest(notification)}
+                          >
+                            View Details
+                          </Button>
+                          {!notification.read && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-xs text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 px-3 py-1.5 rounded-lg transition-colors duration-200"
+                              onClick={() => markNotificationAsRead(notification.id)}
+                            >
+                              Mark Read
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              }
+              
+              // Regular notification display for other notification types
               return (
                 <Card 
                   key={notification.id} 
@@ -1575,6 +1708,220 @@ const UserDashboard = () => {
     );
   };
 
+  // Verification Request Details Modal
+  const renderVerificationRequestModal = () => {
+    if (!selectedVerificationRequest) return null;
+
+    const request = selectedVerificationRequest;
+    const requestData = request.data || {};
+
+    return (
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl border border-gray-700/50 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="p-6">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-3">
+                <div className="p-3 bg-gradient-to-br from-orange-500/20 to-red-500/20 rounded-xl border border-orange-400/30">
+                  <Shield className="h-6 w-6 text-orange-400" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-white">Verification Request Details</h2>
+                  <p className="text-gray-400">Review the verification request information</p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedVerificationRequest(null)}
+                className="text-gray-400 hover:text-white hover:bg-gray-700"
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+
+            {/* Request Details */}
+            <div className="space-y-6">
+              {/* Basic Info */}
+              <Card className="bg-gray-800/50 border-gray-700/50">
+                <CardHeader>
+                  <CardTitle className="text-lg text-white flex items-center space-x-2">
+                    <Activity className="h-5 w-5 text-blue-400" />
+                    <span>Request Information</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-gray-400">Request Type</Label>
+                      <p className="text-white font-medium">{request.title}</p>
+                    </div>
+                    <div>
+                      <Label className="text-gray-400">Status</Label>
+                      <div className="flex items-center space-x-2">
+                        <div className={`w-2 h-2 rounded-full ${request.read ? 'bg-green-400' : 'bg-orange-400'}`}></div>
+                        <span className="text-white">{request.read ? 'Read' : 'Unread'}</span>
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-gray-400">Request Date</Label>
+                      <p className="text-white">{new Date(request.createdAt).toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <Label className="text-gray-400">Priority</Label>
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${
+                        request.priority === 'high' ? 'bg-red-500/20 text-red-400' :
+                        request.priority === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                        'bg-blue-500/20 text-blue-400'
+                      }`}>
+                        {request.priority?.toUpperCase() || 'NORMAL'}
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Verifier Information */}
+              {requestData.verifierDID && (
+                <Card className="bg-gray-800/50 border-gray-700/50">
+                  <CardHeader>
+                    <CardTitle className="text-lg text-white flex items-center space-x-2">
+                      <User className="h-5 w-5 text-purple-400" />
+                      <span>Verifier Information</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <Label className="text-gray-400">Verifier DID</Label>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <code className="text-purple-300 font-mono text-sm bg-gray-900/50 px-3 py-2 rounded border border-gray-700 flex-1 break-all">
+                          {requestData.verifierDID}
+                        </code>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            navigator.clipboard.writeText(requestData.verifierDID);
+                            toast({ title: "Copied to clipboard", description: "Verifier DID copied" });
+                          }}
+                          className="text-gray-400 hover:text-white"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    {requestData.verifierName && (
+                      <div>
+                        <Label className="text-gray-400">Verifier Name</Label>
+                        <p className="text-white">{requestData.verifierName}</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Credential Request Details */}
+              {requestData.credentialType && (
+                <Card className="bg-gray-800/50 border-gray-700/50">
+                  <CardHeader>
+                    <CardTitle className="text-lg text-white flex items-center space-x-2">
+                      <Award className="h-5 w-5 text-green-400" />
+                      <span>Credential Request</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-gray-400">Credential Type</Label>
+                        <p className="text-green-300 font-medium">{requestData.credentialType}</p>
+                      </div>
+                      {requestData.timestamp && (
+                        <div>
+                          <Label className="text-gray-400">Request Timestamp</Label>
+                          <p className="text-white">{new Date(requestData.timestamp).toLocaleString()}</p>
+                        </div>
+                      )}
+                    </div>
+                    {requestData.message && (
+                      <div>
+                        <Label className="text-gray-400">Message</Label>
+                        <div className="bg-gray-900/50 border border-gray-700 rounded-lg p-4 mt-2">
+                          <p className="text-gray-300">{requestData.message}</p>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Blockchain Information */}
+              {(requestData.signature || requestData.blockchainData) && (
+                <Card className="bg-gray-800/50 border-gray-700/50">
+                  <CardHeader>
+                    <CardTitle className="text-lg text-white flex items-center space-x-2">
+                      <Zap className="h-5 w-5 text-yellow-400" />
+                      <span>Blockchain Verification</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {requestData.signature && (
+                      <div>
+                        <Label className="text-gray-400">Digital Signature</Label>
+                        <div className="flex items-center space-x-2 mt-1">
+                          <code className="text-yellow-300 font-mono text-xs bg-gray-900/50 px-3 py-2 rounded border border-gray-700 flex-1 break-all">
+                            {requestData.signature}
+                          </code>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              navigator.clipboard.writeText(requestData.signature);
+                              toast({ title: "Copied to clipboard", description: "Signature copied" });
+                            }}
+                            className="text-gray-400 hover:text-white"
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                    <div className="flex items-center space-x-2 text-sm">
+                      <CheckCircle className="h-4 w-4 text-green-400" />
+                      <span className="text-green-300">Cryptographically verified request</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-700">
+                {!request.read && (
+                  <Button
+                    onClick={() => {
+                      markNotificationAsRead(request.id);
+                      setSelectedVerificationRequest(null);
+                    }}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <Check className="h-4 w-4 mr-2" />
+                    Mark as Read
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  onClick={() => setSelectedVerificationRequest(null)}
+                  className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-gray-900">
       <div className="flex">
@@ -1588,6 +1935,9 @@ const UserDashboard = () => {
           {activeSection === 'verification-requests' && renderVerificationRequests()}
         </main>
       </div>
+      
+      {/* Verification Request Details Modal */}
+      {renderVerificationRequestModal()}
     </div>
   );
 };

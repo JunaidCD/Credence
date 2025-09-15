@@ -598,34 +598,98 @@ const VerifierDashboard = () => {
   // Mutations
   const sendRequestMutation = useMutation({
     mutationFn: async (requestData) => {
-      // First, find user by DID
-      const userResponse = await fetch(`/api/users/did/${requestData.did}`);
-      if (!userResponse.ok) {
-        throw new Error('User with this DID not found');
-      }
-      const targetUser = await userResponse.json();
+      try {
+        console.log('🔍 Starting verification request process...');
+        console.log('Request data:', requestData);
 
-      // Send verification request
-      const response = await fetch('/api/verification-requests', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          verifierId: user.id,
-          userId: targetUser.id,
-          credentialType: requestData.credentialType,
-          message: requestData.message
-        })
-      });
-      
-      if (!response.ok) throw new Error('Failed to send verification request');
-      return response.json();
+        // Import Web3Service (using the singleton instance)
+        const web3Service = (await import('../utils/web3.js')).default;
+        console.log('✅ Web3Service imported successfully');
+        
+        // Initialize and connect wallet
+        console.log('🔧 Initializing Web3Service...');
+        await web3Service.init();
+        console.log('✅ Web3Service initialized');
+        
+        console.log('🔗 Connecting wallet...');
+        await web3Service.connectWallet();
+        console.log('✅ Wallet connected');
+
+        // Send blockchain verification request with MetaMask signing
+        console.log('📝 Sending blockchain verification request...');
+        const blockchainResult = await web3Service.sendVerificationRequest(
+          requestData.did,
+          requestData.credentialType,
+          requestData.message
+        );
+        console.log('✅ Blockchain verification request completed:', blockchainResult);
+
+        // First, find user by DID for backend storage
+        console.log('👤 Finding user by DID:', requestData.did);
+        console.log('👤 DID format check:', {
+          originalDID: requestData.did,
+          lowercaseDID: requestData.did.toLowerCase(),
+          isValidFormat: requestData.did.startsWith('did:ethr:')
+        });
+        
+        const userResponse = await fetch(`/api/users/did/${encodeURIComponent(requestData.did)}`);
+        console.log('👤 User lookup response status:', userResponse.status);
+        
+        if (!userResponse.ok) {
+          // Try to get more details about available users for debugging
+          const debugResponse = await fetch('/api/debug/data');
+          if (debugResponse.ok) {
+            const debugData = await debugResponse.json();
+            console.log('👤 Available users in system:', debugData.users);
+            console.log('👤 Looking for DID:', requestData.did);
+          }
+          throw new Error(`User with DID "${requestData.did}" not found. Please ensure the user is registered in the system.`);
+        }
+        const targetUser = await userResponse.json();
+        console.log('✅ Target user found:', targetUser);
+
+        // Store verification request in backend with blockchain signature
+        console.log('💾 Storing verification request in backend...');
+        const response = await fetch('/api/verification-requests', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            verifierId: user.id,
+            userId: targetUser.id,
+            credentialType: requestData.credentialType,
+            message: requestData.message,
+            signature: blockchainResult.signature,
+            verifierDID: blockchainResult.requestData.verifierDID,
+            holderDID: blockchainResult.requestData.holderDID,
+            blockchainData: blockchainResult.requestData
+          })
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Backend storage failed:', errorText);
+          throw new Error(`Failed to store verification request: ${errorText}`);
+        }
+        
+        const backendResult = await response.json();
+        console.log('✅ Verification request stored in backend:', backendResult);
+        
+        return {
+          ...backendResult,
+          blockchainResult
+        };
+      } catch (error) {
+        console.error('❌ Verification request failed at step:', error.message);
+        console.error('Full error:', error);
+        throw error;
+      }
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['/api/verification-requests/verifier'] });
       setSearchForm({ did: '', credentialType: '', message: '' });
       toast({
-        title: "Request Sent",
-        description: "Verification request has been sent successfully!",
+        title: "Request Sent Successfully!",
+        description: `Verification request signed with MetaMask and sent to user. Transaction: ${result.blockchainResult.signature.substring(0, 20)}...`,
       });
     },
     onError: (error) => {

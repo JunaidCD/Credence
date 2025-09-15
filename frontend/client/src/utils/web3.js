@@ -971,6 +971,130 @@ class Web3Service {
     }
   }
 
+  // Blockchain-based verification request functions
+  async sendVerificationRequest(holderDID, credentialType, message = '') {
+    try {
+      if (!this.signer) {
+        throw new Error('Wallet not connected. Please connect your MetaMask wallet first.');
+      }
+      if (!this.credentialRegistry) {
+        throw new Error('Credential Registry contract not loaded. Please ensure contracts are deployed.');
+      }
+
+      // Validate verifier eligibility
+      const eligibility = await this.checkVerifierEligibility();
+      if (!eligibility.isAllowed || !eligibility.isRegistered) {
+        throw new Error('Only registered verifiers (accounts 8-9) can send verification requests.');
+      }
+
+      // Extract address from DID
+      const holderAddress = holderDID.replace('did:ethr:', '');
+      
+      // Validate holder address format
+      if (!ethers.isAddress(holderAddress)) {
+        throw new Error('Invalid holder DID format. Please provide a valid Ethereum DID.');
+      }
+
+      // Check if holder is a valid user account (2-7)
+      const allowedUserAccounts = [
+        '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC', // Account 2
+        '0x90F79bf6EB2c4f870365E785982E1f101E93b906', // Account 3
+        '0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65', // Account 4
+        '0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc', // Account 5
+        '0x976EA74026E726554dB657fA54763abd0C3a0aa9', // Account 6
+        '0x14dC79964da2C08b23698B3D3cc7Ca32193d9955'  // Account 7
+      ];
+
+      const isValidHolder = allowedUserAccounts.some(addr => 
+        addr.toLowerCase() === holderAddress.toLowerCase()
+      );
+
+      if (!isValidHolder) {
+        throw new Error('Verification requests can only be sent to user accounts (2-7).');
+      }
+
+      console.log('🔐 Sending verification request on blockchain...');
+      console.log('📋 Request details:', {
+        verifier: this.account,
+        holder: holderAddress,
+        credentialType,
+        message: message.substring(0, 100) + (message.length > 100 ? '...' : '')
+      });
+
+      // Create verification request data
+      const requestData = {
+        verifierAddress: this.account,
+        holderAddress: holderAddress,
+        credentialType: credentialType,
+        message: message,
+        timestamp: Date.now(),
+        status: 'pending'
+      };
+
+      // Sign the verification request with MetaMask
+      const messageToSign = `Verification Request\n\nFrom: ${this.account}\nTo: ${holderAddress}\nCredential Type: ${credentialType}\nMessage: ${message}\nTimestamp: ${requestData.timestamp}`;
+      
+      console.log('📝 Signing verification request message...');
+      const signature = await this.signer.signMessage(messageToSign);
+      
+      console.log('✅ Verification request signed successfully');
+      console.log('🔑 Signature:', signature.substring(0, 20) + '...');
+
+      return {
+        success: true,
+        signature,
+        messageToSign,
+        requestData: {
+          ...requestData,
+          signature,
+          verifierDID: `did:ethr:${this.account}`,
+          holderDID: holderDID
+        },
+        transactionHash: signature, // Use signature as transaction identifier
+        blockNumber: null // No actual blockchain transaction for now
+      };
+    } catch (error) {
+      console.error('❌ Verification request failed:', error);
+      throw error;
+    }
+  }
+
+  // Get verification requests for a verifier
+  async getVerifierRequests(verifierAddress = null) {
+    try {
+      const targetAddress = verifierAddress || this.account;
+      if (!targetAddress) {
+        return [];
+      }
+
+      // For now, return empty array as we'll handle this through backend
+      // In future, this could query blockchain events
+      console.log('📋 Getting verification requests for verifier:', targetAddress);
+      return [];
+    } catch (error) {
+      console.error('Failed to get verifier requests:', error);
+      return [];
+    }
+  }
+
+  // Get verification requests for a user (holder)
+  async getUserVerificationRequests(userAddress = null) {
+    try {
+      const targetAddress = userAddress || this.account;
+      if (!targetAddress) {
+        return [];
+      }
+
+      // For now, return empty array as we'll handle this through backend
+      // In future, this could query blockchain events
+      console.log('📋 Getting verification requests for user:', targetAddress);
+      return [];
+    } catch (error) {
+      console.error('Failed to get user verification requests:', error);
+      return [];
+    }
+  }
+
   async checkVerifierRegistrationStatus(address = null) {
     try {
       const targetAddress = address || this.account;

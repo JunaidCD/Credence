@@ -33,6 +33,10 @@ export const verificationRequests = pgTable("verification_requests", {
   credentialType: text("credential_type").notNull(),
   message: text("message"),
   status: text("status").notNull().default("pending"), // pending, approved, rejected
+  signature: text("signature"), // MetaMask signature for Web3 verification
+  verifierDID: text("verifier_did"), // Verifier's DID
+  holderDID: text("holder_did"), // Holder's DID
+  blockchainData: jsonb("blockchain_data"), // Additional blockchain verification data
   requestedAt: timestamp("requested_at").defaultNow(),
   respondedAt: timestamp("responded_at"),
 });

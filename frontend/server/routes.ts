@@ -64,12 +64,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/users/did/:did", async (req, res) => {
     try {
-      const user = await storage.getUserByDID(req.params.did);
+      console.log('=== DID LOOKUP DEBUG ===');
+      console.log('Requested DID:', req.params.did);
+      console.log('Decoded DID:', decodeURIComponent(req.params.did));
+      
+      // Debug: Check all users in storage
+      const allUsers = Array.from((storage as any).users.values());
+      console.log('All users in storage:', allUsers.map(u => ({ id: u.id, address: u.address, did: u.did, name: u.name })));
+      
+      let user = await storage.getUserByDID(decodeURIComponent(req.params.did));
+      console.log('Found user by DID:', user);
+      
+      // If not found by DID, try to extract address and find by address
+      if (!user) {
+        const didParam = decodeURIComponent(req.params.did);
+        if (didParam.startsWith('did:ethr:')) {
+          const extractedAddress = didParam.replace('did:ethr:', '').toLowerCase();
+          console.log('Trying to find user by extracted address:', extractedAddress);
+          user = await storage.getUserByAddress(extractedAddress);
+          console.log('Found user by address:', user);
+        }
+      }
+      
+      console.log('=== END DID LOOKUP DEBUG ===');
+      
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
       res.json(user);
     } catch (error) {
+      console.error('DID lookup error:', error);
       res.status(500).json({ message: error.message });
     }
   });
@@ -250,10 +274,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/verification-requests", async (req, res) => {
     try {
+      console.log('=== VERIFICATION REQUEST API DEBUG ===');
+      console.log('Received verification request:', req.body);
+      
       const requestData = insertVerificationRequestSchema.parse(req.body);
+      console.log('Parsed request data:', requestData);
+      console.log('User ID from request:', requestData.userId);
+      
       const request = await storage.createVerificationRequest(requestData);
+      console.log('Created verification request:', request.id);
+      
+      // Create notification for the user about the verification request
+      if (requestData.userId) {
+        console.log('🔔 Creating verification request notification for user:', requestData.userId);
+        
+        // Get verifier information for better notification
+        const verifier = await storage.getUser(requestData.verifierId);
+        const verifierName = verifier?.name || 'Unknown Verifier';
+        console.log('Found verifier:', verifierName);
+        
+        const notificationData = {
+          userId: requestData.userId,
+          type: 'verification_request',
+          title: 'Share Credential Request',
+          message: `You have received a request to share your ${requestData.credentialType} credential from ${verifierName}.`,
+          data: {
+            requestId: request.id,
+            verifierId: requestData.verifierId,
+            credentialType: requestData.credentialType,
+            message: requestData.message,
+            verifierDID: requestData.verifierDID || 'Unknown',
+            holderDID: requestData.holderDID || 'Unknown',
+            signature: requestData.signature || null,
+            blockchainData: requestData.blockchainData || null,
+            timestamp: new Date().toISOString(),
+            verifierName: verifierName
+          },
+          read: false,
+          priority: 'high'
+        };
+        
+        console.log('Notification data to create:', notificationData);
+        const createdNotification = await storage.createNotification(notificationData);
+        console.log('✅ Verification request notification created:', createdNotification.id);
+        
+        // Verify notification was stored
+        const userNotifications = await storage.getNotificationsByUserId(requestData.userId);
+        console.log(`User now has ${userNotifications.length} total notifications`);
+        console.log('Latest notifications:', userNotifications.slice(0, 3).map(n => ({
+          id: n.id,
+          type: n.type,
+          title: n.title,
+          read: n.read
+        })));
+      } else {
+        console.log('❌ No userId provided - notification not created');
+        console.log('Request data keys:', Object.keys(requestData));
+      }
+      
+      console.log('=== END VERIFICATION REQUEST API DEBUG ===');
       res.json(request);
     } catch (error) {
+      console.error('Error creating verification request:', error);
       res.status(400).json({ message: error.message });
     }
   });
