@@ -689,7 +689,7 @@ const VerifierDashboard = () => {
       setSearchForm({ did: '', credentialType: '', message: '' });
       toast({
         title: "Request Sent Successfully!",
-        description: `Verification request signed with MetaMask and sent to user. Transaction: ${result.blockchainResult.signature.substring(0, 20)}...`,
+        description: "Verification request has been sent to the user",
       });
     },
     onError: (error) => {
