@@ -1854,44 +1854,6 @@ const UserDashboard = () => {
                 </Card>
               )}
 
-              {/* Blockchain Information */}
-              {(requestData.signature || requestData.blockchainData) && (
-                <Card className="bg-gray-800/50 border-gray-700/50">
-                  <CardHeader>
-                    <CardTitle className="text-lg text-white flex items-center space-x-2">
-                      <Zap className="h-5 w-5 text-yellow-400" />
-                      <span>Blockchain Verification</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {requestData.signature && (
-                      <div>
-                        <Label className="text-gray-400">Digital Signature</Label>
-                        <div className="flex items-center space-x-2 mt-1">
-                          <code className="text-yellow-300 font-mono text-xs bg-gray-900/50 px-3 py-2 rounded border border-gray-700 flex-1 break-all">
-                            {requestData.signature}
-                          </code>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => {
-                              navigator.clipboard.writeText(requestData.signature);
-                              toast({ title: "Copied to clipboard", description: "Signature copied" });
-                            }}
-                            className="text-gray-400 hover:text-white"
-                          >
-                            <Copy className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                    <div className="flex items-center space-x-2 text-sm">
-                      <CheckCircle className="h-4 w-4 text-green-400" />
-                      <span className="text-green-300">Cryptographically verified request</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
 
               {/* Action Buttons */}
               <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-700">
