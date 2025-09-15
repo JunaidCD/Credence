@@ -1339,7 +1339,7 @@ const VerifierDashboard = () => {
                     ) : (
                       <>
                         <Send className="h-4 w-4" />
-                        <span>Send Verification Request</span>
+                        <span>Ask for credential</span>
                       </>
                     )}
                   </div>
