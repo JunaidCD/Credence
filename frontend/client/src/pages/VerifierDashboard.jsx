@@ -500,6 +500,15 @@ const VerifierDashboard = () => {
 
         // Update backend with approval and blockchain signature
         console.log('💾 Updating backend with approval...');
+        console.log('💾 API URL:', `/api/credentials/shared/${credentialId}`);
+        console.log('💾 Request body:', {
+          status: 'approved',
+          signature: blockchainResult.signature,
+          verifierDID: blockchainResult.approvalData.verifierDID,
+          blockchainData: blockchainResult.approvalData,
+          transactionHash: blockchainResult.transactionHash
+        });
+        
         const response = await fetch(`/api/credentials/shared/${credentialId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -511,6 +520,9 @@ const VerifierDashboard = () => {
             transactionHash: blockchainResult.transactionHash
           })
         });
+        
+        console.log('💾 Backend response status:', response.status);
+        console.log('💾 Backend response ok:', response.ok);
         
         if (!response.ok) {
           const errorText = await response.text();
@@ -577,6 +589,15 @@ const VerifierDashboard = () => {
 
         // Update backend with rejection and blockchain signature
         console.log('💾 Updating backend with rejection...');
+        console.log('💾 API URL:', `/api/credentials/shared/${credentialId}`);
+        console.log('💾 Request body:', {
+          status: 'rejected',
+          signature: blockchainResult.signature,
+          verifierDID: blockchainResult.rejectionData.verifierDID,
+          blockchainData: blockchainResult.rejectionData,
+          transactionHash: blockchainResult.transactionHash
+        });
+        
         const response = await fetch(`/api/credentials/shared/${credentialId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -588,6 +609,9 @@ const VerifierDashboard = () => {
             transactionHash: blockchainResult.transactionHash
           })
         });
+        
+        console.log('💾 Backend response status:', response.status);
+        console.log('💾 Backend response ok:', response.ok);
         
         if (!response.ok) {
           const errorText = await response.text();
@@ -1757,7 +1781,7 @@ const VerifierDashboard = () => {
                               {approveCredentialMutation.isPending ? (
                                 <>
                                   <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
-                                  <span>Approving...</span>
+                                  <span>Signing Transaction...</span>
                                 </>
                               ) : (
                                 <>
@@ -1778,7 +1802,7 @@ const VerifierDashboard = () => {
                               {rejectCredentialMutation.isPending ? (
                                 <>
                                   <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
-                                  <span>Rejecting...</span>
+                                  <span>Signing Transaction...</span>
                                 </>
                               ) : (
                                 <>

@@ -417,6 +417,11 @@ class Web3Service {
         throw new Error('Wallet not connected. Please connect your MetaMask wallet first.');
       }
 
+      // Validate name parameter
+      if (!name || name.trim() === '') {
+        throw new Error('Name cannot be empty. Please provide a valid name for registration.');
+      }
+
       // Validate user account eligibility
       const isEligible = await this.validateUserRegistration();
       if (!isEligible) {
@@ -448,6 +453,11 @@ class Web3Service {
       }
       if (!this.userRegistry) {
         throw new Error('User Registry contract not loaded. Please ensure contracts are deployed.');
+      }
+
+      // Validate name parameter
+      if (!name || name.trim() === '') {
+        throw new Error('Name cannot be empty. Please provide a valid name for registration.');
       }
 
       // Validate user account eligibility

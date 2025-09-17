@@ -694,8 +694,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update shared credential status (approve/reject)
   app.patch("/api/credentials/shared/:id", async (req, res) => {
     try {
-      const { status } = req.body;
+      console.log('=== CREDENTIAL VERIFICATION STATUS UPDATE DEBUG ===');
+      const { status, signature, verifierDID, blockchainData, transactionHash } = req.body;
       const sharedCredentialId = req.params.id;
+      
+      console.log('🔍 VERIFIER ACTION RECEIVED:');
+      console.log('  - Shared Credential ID:', sharedCredentialId);
+      console.log('  - New Status:', status);
+      console.log('  - Verifier DID:', verifierDID);
+      console.log('  - Has Signature:', !!signature);
+      console.log('  - Transaction Hash:', transactionHash);
+      console.log('  - Request Body:', req.body);
       
       if (!(storage as any).sharedCredentials) {
         return res.status(404).json({ message: "Shared credential not found" });
@@ -706,20 +715,108 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Shared credential not found" });
       }
 
-      // Update status
+      // Update status and blockchain data
       sharedCredential.status = status;
       sharedCredential.updatedAt = new Date().toISOString();
+      sharedCredential.signature = signature;
+      sharedCredential.verifierDID = verifierDID;
+      sharedCredential.blockchainData = blockchainData;
+      sharedCredential.transactionHash = transactionHash;
       
       (storage as any).sharedCredentials.set(sharedCredentialId, sharedCredential);
 
       console.log(`✅ Updated shared credential ${sharedCredentialId} status to ${status}`);
       
+      // Create notification for the user about the verification result
+      try {
+        console.log('🔍 Debug: Looking for holder with address:', sharedCredential.holderAddress);
+        console.log('🔍 Debug: Shared credential data:', {
+          id: sharedCredential.id,
+          holderAddress: sharedCredential.holderAddress,
+          verifierAddress: sharedCredential.verifierAddress,
+          credentialType: sharedCredential.credentialType
+        });
+        
+        // Find the holder user to send notification to
+        let holder = await storage.getUserByAddress(sharedCredential.holderAddress);
+        console.log('🔍 Debug: Found holder user:', holder ? { id: holder.id, address: holder.address, name: holder.name } : 'null');
+        
+        if (holder) {
+          console.log('🔔 Creating verification result notification for user:', holder.id);
+          
+          // Create appropriate notification based on status
+          const isApproved = status === 'approved';
+          const notificationTitle = isApproved 
+            ? 'Your Credential Got Approved' 
+            : 'Your Credential Got Rejected';
+          
+          const verifierInfo = verifierDID || sharedCredential.verifierDID || 'Unknown Verifier';
+          const notificationMessage = isApproved
+            ? `Your ${sharedCredential.credentialType} credential has been verified and approved by verifier ${verifierInfo}.`
+            : `Your ${sharedCredential.credentialType} credential verification was rejected by verifier ${verifierInfo}. Please contact the verifier for more details.`;
+          
+          const notificationData = {
+            userId: holder.id,
+            type: 'credential_verification',
+            title: notificationTitle,
+            message: notificationMessage,
+            data: {
+              credentialId: sharedCredential.credentialId,
+              credentialType: sharedCredential.credentialType,
+              credentialTitle: sharedCredential.credentialTitle,
+              verifierDID: verifierDID || sharedCredential.verifierDID,
+              verifierAddress: sharedCredential.verifierAddress,
+              status: status,
+              signature: signature,
+              transactionHash: transactionHash,
+              blockchainData: blockchainData,
+              verificationDate: new Date().toISOString(),
+              sharedCredentialId: sharedCredentialId,
+              message: sharedCredential.message
+            },
+            read: false,
+            priority: 'high'
+          };
+          
+          console.log('Creating notification with data:', notificationData);
+          const createdNotification = await storage.createNotification(notificationData);
+          console.log('✅ Verification result notification created:', createdNotification.id);
+          
+          // Verify notification was stored
+          const userNotifications = await storage.getNotificationsByUserId(holder.id);
+          console.log(`User now has ${userNotifications.length} total notifications`);
+          console.log('Latest notifications:', userNotifications.slice(0, 3).map(n => ({
+            id: n.id,
+            type: n.type,
+            title: n.title,
+            read: n.read,
+            createdAt: n.createdAt
+          })));
+          
+          // Also log all users for debugging
+          const allUsers = Array.from((storage as any).users.values());
+          console.log('All registered users:', allUsers.map(u => ({ 
+            id: (u as any).id, 
+            address: (u as any).address, 
+            name: (u as any).name 
+          })));
+        } else {
+          console.log('❌ Holder user not found for address:', sharedCredential.holderAddress);
+          console.log('Available users:', Array.from((storage as any).users.values()).map(u => ({ id: u.id, address: u.address })));
+        }
+      } catch (notificationError) {
+        console.error('❌ Failed to create verification result notification:', notificationError);
+        // Don't fail the main request if notification creation fails
+      }
+      
+      console.log('=== END CREDENTIAL VERIFICATION STATUS UPDATE DEBUG ===');
       res.json(sharedCredential);
     } catch (error) {
       console.error('Error updating shared credential:', error);
       res.status(500).json({ message: error.message });
     }
   });
+
 
 
   // Test endpoint to create a notification manually

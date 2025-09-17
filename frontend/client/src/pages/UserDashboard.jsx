@@ -84,10 +84,23 @@ const UserDashboard = () => {
         return [];
       }
       console.log('🔍 Fetching notifications for userId:', userId);
+      console.log('🔍 Current walletAddress:', walletAddress);
+      console.log('🔍 Is registered user:', isRegisteredUser);
+      
       const response = await fetch(`/api/notifications/user/${userId}`);
-      if (!response.ok) throw new Error('Failed to fetch notifications');
+      if (!response.ok) {
+        console.error('🔍 Notification fetch failed:', response.status, response.statusText);
+        throw new Error('Failed to fetch notifications');
+      }
       const notifications = await response.json();
-      console.log('🔍 Fetched backend notifications:', notifications);
+      console.log('🔍 Fetched backend notifications count:', notifications.length);
+      console.log('🔍 Notification details:', notifications.map(n => ({
+        id: n.id,
+        type: n.type,
+        title: n.title,
+        read: n.read,
+        createdAt: n.createdAt
+      })));
       return notifications;
     },
     enabled: !!userId,
@@ -127,8 +140,12 @@ const UserDashboard = () => {
     if (userId) {
       console.log('🔄 Force refreshing backend notifications for userId:', userId);
       queryClient.invalidateQueries({ queryKey: [`/api/notifications/user/${userId}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/credentials/wallet/${walletAddress}`] });
     }
   };
+
+
+
 
   // Fetch and create notifications from past blockchain events
   const fetchPastEventsAndCreateNotifications = async (userAddress) => {
@@ -461,14 +478,18 @@ const UserDashboard = () => {
       await web3Service.init();
       await web3Service.connectWallet();
 
+      // Generate a default name if userName is empty
+      const defaultName = userName || `User ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`;
+      console.log('🔍 Registering user with name:', defaultName);
+
       // First register on blockchain and fetch existing credentials
       let blockchainResult;
       try {
-        blockchainResult = await web3Service.registerUserOnBlockchain(userName, '');
+        blockchainResult = await web3Service.registerUserOnBlockchain(defaultName, '');
       } catch (blockchainError) {
         console.error('Blockchain registration failed:', blockchainError);
         // Try alternative registration method
-        blockchainResult = await web3Service.registerUser(userName, '');
+        blockchainResult = await web3Service.registerUser(defaultName, '');
         blockchainResult.credentials = [];
       }
       
@@ -480,7 +501,7 @@ const UserDashboard = () => {
           body: JSON.stringify({
             address: blockchainResult.address,
             userType: 'user',
-            name: userName,
+            name: defaultName,
             email: '',
             transactionHash: blockchainResult.transactionHash
           })
@@ -492,7 +513,11 @@ const UserDashboard = () => {
           setIsRegisteredUser(true);
           setUserDID(`did:ethr:${blockchainResult.address}`);
           setUserId(userData.user.id); // Store user ID for backend notifications
+          setUserName(defaultName); // Update the userName state for UI display
           console.log('🔍 Set userId to:', userData.user.id);
+          console.log('🔍 User registration complete - userData:', userData);
+          console.log('🔍 User address stored in backend:', userData.user.address);
+          console.log('🔍 Current wallet address:', walletAddress);
           
           // Immediately invalidate and refetch notifications for the new user
           queryClient.invalidateQueries({ queryKey: [`/api/notifications/user/${userData.user.id}`] });
@@ -707,7 +732,7 @@ const UserDashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 via-blue-400 to-cyan-400 bg-clip-text text-transparent mb-2" data-testid="dashboard-welcome">
-                Welcome back, {userName}!
+                Welcome back, {userName || `User ${walletAddress?.slice(0, 6)}...${walletAddress?.slice(-4)}` || 'User'}!
               </h1>
               <p className="text-gray-300 text-lg">Manage your digital identity and verifiable credentials</p>
               {walletAddress && (
@@ -719,8 +744,8 @@ const UserDashboard = () => {
             <div className="hidden md:flex items-center space-x-2">
               <Sparkles className="h-8 w-8 text-yellow-400" />
               <div className="text-right">
-                <p className="text-sm text-gray-400">Current Time</p>
-                <p className="text-white font-semibold">{currentTime.toLocaleTimeString()}</p>
+                <p className="text-sm text-gray-400">Digital Identity</p>
+                <p className="text-lg font-semibold text-white">Verified User</p>
               </div>
             </div>
           </div>
@@ -1210,8 +1235,8 @@ const UserDashboard = () => {
           // Store the shared credential data in backend for verifier access
           try {
             const sharePayload = {
-              holderAddress: walletAddress,
-              verifierAddress: verifierDid.replace('did:ethr:', ''),
+              holderAddress: walletAddress.toLowerCase(), // Normalize to lowercase
+              verifierAddress: verifierDid.replace('did:ethr:', '').toLowerCase(), // Normalize to lowercase
               credentialId: credential.id || credential.uniqueId,
               credentialType: credential.credentialType || credential.type,
               credentialTitle: credential.title || credential.data?.title || 'Untitled Credential',
@@ -1560,6 +1585,8 @@ const UserDashboard = () => {
           return Award;
         case 'verification_request':
           return Shield;
+        case 'credential_verification':
+          return CheckCircle;
         case 'credential_shared':
           return Share2;
         case 'system':
@@ -1765,6 +1792,45 @@ const UserDashboard = () => {
                           >
                             View Details
                           </Button>
+                          {!notification.read && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-xs text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 px-3 py-1.5 rounded-lg transition-colors duration-200"
+                              onClick={() => markNotificationAsRead(notification.id)}
+                            >
+                              Mark Read
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              }
+              
+              // Credential verification notification with consistent styling
+              if (notification.type === 'credential_verification') {
+                return (
+                  <Card 
+                    key={notification.id} 
+                    className={`bg-gradient-to-r from-slate-800/90 to-slate-700/90 border border-slate-600/50 backdrop-blur-sm hover:shadow-xl hover:shadow-green-500/10 transition-all duration-300 transform hover:-translate-y-0.5 ${!notification.read ? 'ring-2 ring-green-400/30 shadow-lg shadow-green-500/20' : 'hover:border-slate-500/70'}`}
+                  >
+                    <CardContent className="p-5">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                          <div className="p-2.5 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-xl border border-green-400/30">
+                            <CheckCircle className="h-5 w-5 text-green-400" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-white text-sm leading-tight">{notification.title}</p>
+                            <p className="text-sm text-slate-300 mt-0.5">{notification.message}</p>
+                            <p className="text-xs text-slate-400 mt-1">
+                              {new Date(notification.createdAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
                           {!notification.read && (
                             <Button
                               size="sm"
