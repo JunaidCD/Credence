@@ -531,7 +531,7 @@ const VerifierDashboard = () => {
     },
     onSuccess: (result) => {
       toast({
-        title: "Credential Approved ✅",
+        title: "Credential Approved",
         description: `Transaction signed: ${result.blockchainResult.transactionHash.slice(0, 10)}...`,
         variant: "success",
       });
