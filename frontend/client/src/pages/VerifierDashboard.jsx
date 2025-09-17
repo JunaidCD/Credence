@@ -834,6 +834,7 @@ const VerifierDashboard = () => {
     approved: credentials.filter(c => c.status === 'approved').length,
     pending: credentials.filter(c => c.status === 'pending').length,
     rejected: credentials.filter(c => c.status === 'rejected').length,
+    active: credentials.filter(c => c.status === 'pending').length, // Active verifications = pending requests
   };
 
   const renderDashboard = () => (
@@ -944,14 +945,14 @@ const VerifierDashboard = () => {
               <Shield className="h-5 w-5 text-green-400 mr-2" />
               <span className="text-green-300 font-medium">Total Verified</span>
             </div>
-            <div className="text-2xl font-bold text-white mt-1">{stats.total}</div>
+            <div className="text-2xl font-bold text-white mt-1">{stats.approved}</div>
           </div>
           <div className="bg-purple-500 bg-opacity-20 rounded-lg p-4 border border-purple-500 border-opacity-30">
             <div className="flex items-center">
               <Clock className="h-5 w-5 text-purple-400 mr-2" />
               <span className="text-purple-300 font-medium">Pending Verification</span>
             </div>
-            <div className="text-2xl font-bold text-white mt-1">0</div>
+            <div className="text-2xl font-bold text-white mt-1">{stats.pending}</div>
           </div>
         </div>
       </div>
