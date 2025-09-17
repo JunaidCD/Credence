@@ -468,29 +468,79 @@ const VerifierDashboard = () => {
     return matchesDID && matchesStatus;
   });
 
-  // Approve/Reject credential mutations
+  // Approve/Reject credential mutations with MetaMask signing
   const approveCredentialMutation = useMutation({
     mutationFn: async (credentialId) => {
-      const response = await fetch(`/api/credentials/shared/${credentialId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'approved' })
-      });
-      if (!response.ok) throw new Error('Failed to approve credential');
-      return response.json();
+      try {
+        // Find the credential data
+        const credential = credentials.find(c => c.id === credentialId);
+        if (!credential) {
+          throw new Error('Credential not found');
+        }
+
+        console.log('🔍 Starting credential approval process...');
+        
+        // Show MetaMask notification
+        toast({
+          title: "MetaMask Transaction Required",
+          description: "Please sign the approval transaction in MetaMask",
+          duration: 3000,
+        });
+
+        // Initialize and connect Web3Service
+        console.log('🔧 Initializing Web3Service...');
+        await web3Service.init();
+        console.log('🔗 Connecting wallet...');
+        await web3Service.connectWallet();
+
+        // Sign approval with MetaMask
+        console.log('📝 Signing credential approval...');
+        const blockchainResult = await web3Service.approveCredentialVerification(credential, 'Credential verification approved');
+        console.log('✅ Blockchain approval completed:', blockchainResult);
+
+        // Update backend with approval and blockchain signature
+        console.log('💾 Updating backend with approval...');
+        const response = await fetch(`/api/credentials/shared/${credentialId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            status: 'approved',
+            signature: blockchainResult.signature,
+            verifierDID: blockchainResult.approvalData.verifierDID,
+            blockchainData: blockchainResult.approvalData,
+            transactionHash: blockchainResult.transactionHash
+          })
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Backend update failed: ${errorText}`);
+        }
+        
+        const backendResult = await response.json();
+        console.log('✅ Backend approval completed:', backendResult);
+        
+        return {
+          ...backendResult,
+          blockchainResult
+        };
+      } catch (error) {
+        console.error('❌ Credential approval failed:', error);
+        throw error;
+      }
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       toast({
         title: "Credential Approved ✅",
-        description: "The shared credential has been successfully approved.",
+        description: `Transaction signed: ${result.blockchainResult.transactionHash.slice(0, 10)}...`,
         variant: "success",
       });
       queryClient.invalidateQueries(['shared-credentials', walletAddress]);
     },
-    onError: () => {
+    onError: (error) => {
       toast({
-        title: "Error",
-        description: "Failed to approve credential. Please try again.",
+        title: "Approval Failed",
+        description: error.message,
         variant: "destructive",
       });
     }
@@ -498,26 +548,76 @@ const VerifierDashboard = () => {
 
   const rejectCredentialMutation = useMutation({
     mutationFn: async (credentialId) => {
-      const response = await fetch(`/api/credentials/shared/${credentialId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'rejected' })
-      });
-      if (!response.ok) throw new Error('Failed to reject credential');
-      return response.json();
+      try {
+        // Find the credential data
+        const credential = credentials.find(c => c.id === credentialId);
+        if (!credential) {
+          throw new Error('Credential not found');
+        }
+
+        console.log('🔍 Starting credential rejection process...');
+        
+        // Show MetaMask notification
+        toast({
+          title: "MetaMask Transaction Required",
+          description: "Please sign the rejection transaction in MetaMask",
+          duration: 3000,
+        });
+
+        // Initialize and connect Web3Service
+        console.log('🔧 Initializing Web3Service...');
+        await web3Service.init();
+        console.log('🔗 Connecting wallet...');
+        await web3Service.connectWallet();
+
+        // Sign rejection with MetaMask
+        console.log('📝 Signing credential rejection...');
+        const blockchainResult = await web3Service.rejectCredentialVerification(credential, 'Credential verification rejected');
+        console.log('✅ Blockchain rejection completed:', blockchainResult);
+
+        // Update backend with rejection and blockchain signature
+        console.log('💾 Updating backend with rejection...');
+        const response = await fetch(`/api/credentials/shared/${credentialId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            status: 'rejected',
+            signature: blockchainResult.signature,
+            verifierDID: blockchainResult.rejectionData.verifierDID,
+            blockchainData: blockchainResult.rejectionData,
+            transactionHash: blockchainResult.transactionHash
+          })
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Backend update failed: ${errorText}`);
+        }
+        
+        const backendResult = await response.json();
+        console.log('✅ Backend rejection completed:', backendResult);
+        
+        return {
+          ...backendResult,
+          blockchainResult
+        };
+      } catch (error) {
+        console.error('❌ Credential rejection failed:', error);
+        throw error;
+      }
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       toast({
         title: "Credential Rejected ❌",
-        description: "The shared credential has been rejected.",
+        description: `Transaction signed: ${result.blockchainResult.transactionHash.slice(0, 10)}...`,
         variant: "success",
       });
       queryClient.invalidateQueries(['shared-credentials', walletAddress]);
     },
-    onError: () => {
+    onError: (error) => {
       toast({
-        title: "Error",
-        description: "Failed to reject credential. Please try again.",
+        title: "Rejection Failed",
+        description: error.message,
         variant: "destructive",
       });
     }

@@ -1370,6 +1370,130 @@ class Web3Service {
     }
   }
 
+  // MetaMask signing for credential verification approval
+  async approveCredentialVerification(credentialData, message = '') {
+    try {
+      if (!this.signer) {
+        throw new Error('Wallet not connected. Please connect your MetaMask wallet first.');
+      }
+
+      // Validate verifier eligibility
+      const eligibility = await this.checkVerifierEligibility();
+      if (!eligibility.isAllowed || !eligibility.isRegistered) {
+        throw new Error('Only registered verifiers (accounts 8-9) can approve credential verifications.');
+      }
+
+      console.log('🔐 Approving credential verification with MetaMask...');
+      console.log('📋 Credential details:', {
+        credentialId: credentialData.id,
+        credentialType: credentialData.credentialType,
+        recipientDID: credentialData.recipientDID,
+        verifier: this.account
+      });
+
+      // Create approval data
+      const approvalData = {
+        action: 'APPROVE',
+        verifierAddress: this.account,
+        verifierDID: `did:ethr:${this.account}`,
+        credentialId: credentialData.id,
+        credentialType: credentialData.credentialType,
+        recipientDID: credentialData.recipientDID,
+        recipientName: credentialData.recipientName,
+        message: message,
+        timestamp: Date.now(),
+        status: 'approved'
+      };
+
+      // Create message to sign with MetaMask
+      const messageToSign = `Approve Credential Verification\n\nAction: APPROVE\nCredential ID: ${approvalData.credentialId}\nCredential Type: ${approvalData.credentialType}\nRecipient: ${approvalData.recipientDID}\n\nVerifier: ${this.account}\nMessage: ${message}\n\nTimestamp: ${approvalData.timestamp}`;
+      
+      console.log('📝 Signing credential approval with MetaMask...');
+      const signature = await this.signer.signMessage(messageToSign);
+      
+      console.log('✅ Credential approval signed successfully');
+      console.log('🔑 Signature:', signature.substring(0, 20) + '...');
+
+      return {
+        success: true,
+        signature,
+        messageToSign,
+        approvalData: {
+          ...approvalData,
+          signature,
+          signedAt: new Date().toISOString()
+        },
+        transactionHash: signature, // Use signature as transaction identifier
+        message: `Credential verification approved by ${approvalData.verifierDID}`
+      };
+    } catch (error) {
+      console.error('❌ Credential approval failed:', error);
+      throw error;
+    }
+  }
+
+  // MetaMask signing for credential verification rejection
+  async rejectCredentialVerification(credentialData, message = '') {
+    try {
+      if (!this.signer) {
+        throw new Error('Wallet not connected. Please connect your MetaMask wallet first.');
+      }
+
+      // Validate verifier eligibility
+      const eligibility = await this.checkVerifierEligibility();
+      if (!eligibility.isAllowed || !eligibility.isRegistered) {
+        throw new Error('Only registered verifiers (accounts 8-9) can reject credential verifications.');
+      }
+
+      console.log('🔐 Rejecting credential verification with MetaMask...');
+      console.log('📋 Credential details:', {
+        credentialId: credentialData.id,
+        credentialType: credentialData.credentialType,
+        recipientDID: credentialData.recipientDID,
+        verifier: this.account
+      });
+
+      // Create rejection data
+      const rejectionData = {
+        action: 'REJECT',
+        verifierAddress: this.account,
+        verifierDID: `did:ethr:${this.account}`,
+        credentialId: credentialData.id,
+        credentialType: credentialData.credentialType,
+        recipientDID: credentialData.recipientDID,
+        recipientName: credentialData.recipientName,
+        message: message,
+        timestamp: Date.now(),
+        status: 'rejected'
+      };
+
+      // Create message to sign with MetaMask
+      const messageToSign = `Reject Credential Verification\n\nAction: REJECT\nCredential ID: ${rejectionData.credentialId}\nCredential Type: ${rejectionData.credentialType}\nRecipient: ${rejectionData.recipientDID}\n\nVerifier: ${this.account}\nMessage: ${message}\n\nTimestamp: ${rejectionData.timestamp}`;
+      
+      console.log('📝 Signing credential rejection with MetaMask...');
+      const signature = await this.signer.signMessage(messageToSign);
+      
+      console.log('✅ Credential rejection signed successfully');
+      console.log('🔑 Signature:', signature.substring(0, 20) + '...');
+
+      return {
+        success: true,
+        signature,
+        messageToSign,
+        rejectionData: {
+          ...rejectionData,
+          signature,
+          signedAt: new Date().toISOString()
+        },
+        transactionHash: signature, // Use signature as transaction identifier
+        message: `Credential verification rejected by ${rejectionData.verifierDID}`
+      };
+    } catch (error) {
+      console.error('❌ Credential rejection failed:', error);
+      throw error;
+    }
+  }
+
   debugAccountInfo() {
     const currentAccount = this.getAccount();
     const hardhatAccounts = {
