@@ -412,12 +412,50 @@ const VerifierDashboard = () => {
   // Empty credentials array - no mock data
   const mockCredentials = [];
 
-  // Queries - Fetch submitted credentials for verification
-  const { data: credentials = mockCredentials, isLoading: credentialsLoading } = useQuery({
-    queryKey: ['/api/credentials/submitted', user?.id],
-    enabled: !!user?.id,
-    initialData: mockCredentials,
+  // Queries - Fetch shared credentials for verification
+  const { data: credentials = [], isLoading: credentialsLoading, refetch: refetchCredentials } = useQuery({
+    queryKey: ['shared-credentials', walletAddress],
+    queryFn: async () => {
+      if (!walletAddress) {
+        console.log('❌ No wallet address available for fetching shared credentials');
+        return [];
+      }
+      
+      try {
+        console.log('🔍 Fetching shared credentials for verifier:', walletAddress);
+        
+        const response = await fetch(`/api/credentials/shared/${walletAddress}`);
+        console.log('📡 API Response status:', response.status);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.log('❌ API error response:', errorText);
+          return [];
+        }
+        
+        const sharedCredentials = await response.json();
+        console.log('✅ Fetched shared credentials:', sharedCredentials);
+        console.log('📊 Number of credentials found:', sharedCredentials.length);
+        
+        return Array.isArray(sharedCredentials) ? sharedCredentials : [];
+      } catch (error) {
+        console.error('❌ Error fetching shared credentials:', error);
+        return [];
+      }
+    },
+    enabled: !!walletAddress,
+    refetchInterval: 3000, // Refetch every 3 seconds for real-time updates
+    refetchOnWindowFocus: true,
+    staleTime: 0, // Always consider data stale to force refetch
   });
+
+  // Force refetch when wallet address changes
+  useEffect(() => {
+    if (walletAddress) {
+      console.log('🔄 Wallet address changed, forcing credential refetch for:', walletAddress);
+      refetchCredentials();
+    }
+  }, [walletAddress, refetchCredentials]);
 
   // Search and filter state
   const [searchDID, setSearchDID] = useState('');
@@ -433,17 +471,21 @@ const VerifierDashboard = () => {
   // Approve/Reject credential mutations
   const approveCredentialMutation = useMutation({
     mutationFn: async (credentialId) => {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      return { success: true };
+      const response = await fetch(`/api/credentials/shared/${credentialId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'approved' })
+      });
+      if (!response.ok) throw new Error('Failed to approve credential');
+      return response.json();
     },
     onSuccess: () => {
       toast({
-        title: "Credential Approved",
-        description: "The credential has been successfully approved.",
+        title: "Credential Approved ✅",
+        description: "The shared credential has been successfully approved.",
         variant: "success",
       });
-      queryClient.invalidateQueries(['/api/credentials/submitted']);
+      queryClient.invalidateQueries(['shared-credentials', walletAddress]);
     },
     onError: () => {
       toast({
@@ -456,17 +498,21 @@ const VerifierDashboard = () => {
 
   const rejectCredentialMutation = useMutation({
     mutationFn: async (credentialId) => {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      return { success: true };
+      const response = await fetch(`/api/credentials/shared/${credentialId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'rejected' })
+      });
+      if (!response.ok) throw new Error('Failed to reject credential');
+      return response.json();
     },
     onSuccess: () => {
       toast({
-        title: "Credential Rejected",
-        description: "The credential has been rejected.",
+        title: "Credential Rejected ❌",
+        description: "The shared credential has been rejected.",
         variant: "success",
       });
-      queryClient.invalidateQueries(['/api/credentials/submitted']);
+      queryClient.invalidateQueries(['shared-credentials', walletAddress]);
     },
     onError: () => {
       toast({
@@ -1394,6 +1440,7 @@ const VerifierDashboard = () => {
         </Card>
       </div>
 
+
       {/* Filter Tabs */}
       <div className="flex space-x-4 mb-6">
         <Button 
@@ -1588,7 +1635,7 @@ const VerifierDashboard = () => {
                             <Activity className="h-4 w-4 text-orange-400" />
                             <div>
                               <p className="text-gray-400">Submitted</p>
-                              <p className="text-white">{credential.submittedAt.toLocaleDateString()}</p>
+                              <p className="text-white">{new Date(credential.submittedAt).toLocaleDateString()}</p>
                             </div>
                           </div>
                         </div>

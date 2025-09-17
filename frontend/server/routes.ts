@@ -185,19 +185,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const allUsers = Array.from((storage as any).users.values());
       const allCredentials = Array.from((storage as any).credentials.values());
       
+      // Also get shared credentials for debugging
+      const allSharedCredentials = (storage as any).sharedCredentials ? 
+        Array.from((storage as any).sharedCredentials.values()) : [];
+      
       // Log to server console for debugging
       console.log('=== DEBUG DATA ENDPOINT ===');
       console.log('Total users:', allUsers.length);
       console.log('Users:', allUsers.map(u => ({ id: u.id, address: u.address, did: u.did, name: u.name })));
       console.log('Total credentials:', allCredentials.length);
       console.log('Credentials:', allCredentials.map(c => ({ id: c.id, userId: c.userId, issuerId: c.issuerId, title: c.title })));
+      console.log('Total shared credentials:', allSharedCredentials.length);
+      console.log('Shared credentials:', allSharedCredentials.map(sc => ({ 
+        id: sc.id, 
+        holderAddress: sc.holderAddress, 
+        verifierAddress: sc.verifierAddress,
+        credentialType: sc.credentialType,
+        status: sc.status 
+      })));
       console.log('=== END DEBUG DATA ===');
       
       res.json({
         users: allUsers.map(u => ({ id: u.id, address: u.address, did: u.did, name: u.name })),
         credentials: allCredentials.map(c => ({ id: c.id, userId: c.userId, issuerId: c.issuerId, title: c.title, status: c.status })),
+        sharedCredentials: allSharedCredentials.map(sc => ({ 
+          id: sc.id, 
+          holderAddress: sc.holderAddress, 
+          verifierAddress: sc.verifierAddress,
+          credentialType: sc.credentialType,
+          status: sc.status,
+          sharedAt: sc.sharedAt
+        })),
         totalUsers: allUsers.length,
-        totalCredentials: allCredentials.length
+        totalCredentials: allCredentials.length,
+        totalSharedCredentials: allSharedCredentials.length
       });
     } catch (error) {
       res.status(500).json({ message: error.message });
@@ -516,6 +537,190 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: error.message });
     }
   });
+
+  // Shared credentials endpoints for verifiers
+  app.post("/api/credentials/share", async (req, res) => {
+    try {
+      console.log('=== CREDENTIAL SHARING API DEBUG ===');
+      console.log('Received credential sharing request:', req.body);
+      console.log('Request body keys:', Object.keys(req.body));
+      
+      const { 
+        holderAddress, 
+        verifierAddress, 
+        credentialId, 
+        credentialType, 
+        credentialTitle, 
+        message, 
+        signature, 
+        holderDID, 
+        verifierDID,
+        credentialData 
+      } = req.body;
+      
+      // Validate required fields
+      if (!holderAddress || !verifierAddress || !credentialId || !signature) {
+        return res.status(400).json({ message: "Missing required fields for credential sharing" });
+      }
+
+      // Find holder and verifier users (optional - create placeholder if not found)
+      let holder = await storage.getUserByAddress(holderAddress.toLowerCase());
+      let verifier = await storage.getUserByAddress(verifierAddress.toLowerCase());
+      
+      // Create placeholder holder if not found
+      if (!holder) {
+        holder = {
+          id: `holder-${holderAddress.toLowerCase()}`,
+          did: holderDID || `did:ethr:${holderAddress}`,
+          address: holderAddress.toLowerCase(),
+          name: `User ${holderAddress.slice(0, 6)}...${holderAddress.slice(-4)}`,
+          userType: 'user',
+          email: null,
+          createdAt: new Date()
+        } as any;
+        console.log('Created placeholder holder:', holder);
+      }
+      
+      // Create placeholder verifier if not found
+      if (!verifier) {
+        verifier = {
+          id: `verifier-${verifierAddress.toLowerCase()}`,
+          did: verifierDID || `did:ethr:${verifierAddress}`,
+          address: verifierAddress.toLowerCase(),
+          name: `Verifier ${verifierAddress.slice(0, 6)}...${verifierAddress.slice(-4)}`,
+          userType: 'verifier',
+          email: null,
+          createdAt: new Date()
+        } as any;
+        console.log('Created placeholder verifier:', verifier);
+      }
+
+      // Create shared credential record
+      const sharedCredential = {
+        id: `shared-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        holderId: holder.id,
+        verifierId: verifier.id,
+        credentialId: credentialId,
+        credentialType: credentialType,
+        credentialTitle: credentialTitle || `${credentialType} Credential`,
+        message: message || '',
+        signature: signature,
+        holderDID: holderDID,
+        verifierDID: verifierDID,
+        holderAddress: holderAddress.toLowerCase(),
+        verifierAddress: verifierAddress.toLowerCase(),
+        credentialData: credentialData || {},
+        status: 'pending',
+        sharedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      };
+
+      // Store in memory (you could extend storage to handle shared credentials)
+      if (!(storage as any).sharedCredentials) {
+        (storage as any).sharedCredentials = new Map();
+      }
+      (storage as any).sharedCredentials.set(sharedCredential.id, sharedCredential);
+
+      console.log('✅ Created shared credential record:', sharedCredential.id);
+      
+      res.json({ 
+        success: true,
+        sharedCredential,
+        message: `Credential shared successfully with ${verifierDID}`
+      });
+    } catch (error) {
+      console.error('Credential sharing API error:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Get shared credentials for a verifier
+  app.get("/api/credentials/shared/:verifierAddress", async (req, res) => {
+    try {
+      console.log('=== SHARED CREDENTIALS FETCH DEBUG ===');
+      const verifierAddress = req.params.verifierAddress.toLowerCase();
+      console.log('Fetching shared credentials for verifier:', verifierAddress);
+      console.log('Original verifier address from params:', req.params.verifierAddress);
+      
+      // Initialize shared credentials map if it doesn't exist
+      if (!(storage as any).sharedCredentials) {
+        (storage as any).sharedCredentials = new Map();
+      }
+
+      // Get all shared credentials for this verifier
+      const allSharedCredentials = Array.from((storage as any).sharedCredentials.values());
+      const verifierSharedCredentials = allSharedCredentials.filter(
+        cred => cred.verifierAddress === verifierAddress
+      );
+
+      console.log(`Found ${verifierSharedCredentials.length} shared credentials for verifier`);
+      console.log('Shared credentials:', verifierSharedCredentials.map(c => ({
+        id: c.id,
+        credentialType: c.credentialType,
+        holderDID: c.holderDID,
+        status: c.status,
+        sharedAt: c.sharedAt
+      })));
+
+      // Transform to match the expected format for the verifier dashboard
+      const formattedCredentials = verifierSharedCredentials.map(cred => ({
+        id: cred.id,
+        title: cred.credentialTitle,
+        subtitle: `Shared by ${cred.holderDID}`,
+        credentialType: cred.credentialType,
+        status: cred.status,
+        holderDID: cred.holderDID,
+        verifierDID: cred.verifierDID,
+        issuerDID: cred.credentialData?.issuer ? `did:ethr:${cred.credentialData.issuer}` : 'Unknown',
+        recipientName: cred.credentialData?.title || 'Unknown User',
+        recipientDID: cred.holderDID,
+        issueDate: cred.credentialData?.issueDate || cred.sharedAt.split('T')[0],
+        submittedAt: new Date(cred.sharedAt),
+        message: cred.message,
+        signature: cred.signature,
+        icon: cred.credentialType.includes('Degree') ? '🎓' : 
+              cred.credentialType.includes('Certificate') ? '📜' : 
+              cred.credentialType.includes('License') ? '🪪' : '📋'
+      }));
+
+      console.log('=== END SHARED CREDENTIALS FETCH DEBUG ===');
+      res.json(formattedCredentials);
+    } catch (error) {
+      console.error('Error fetching shared credentials:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Update shared credential status (approve/reject)
+  app.patch("/api/credentials/shared/:id", async (req, res) => {
+    try {
+      const { status } = req.body;
+      const sharedCredentialId = req.params.id;
+      
+      if (!(storage as any).sharedCredentials) {
+        return res.status(404).json({ message: "Shared credential not found" });
+      }
+
+      const sharedCredential = (storage as any).sharedCredentials.get(sharedCredentialId);
+      if (!sharedCredential) {
+        return res.status(404).json({ message: "Shared credential not found" });
+      }
+
+      // Update status
+      sharedCredential.status = status;
+      sharedCredential.updatedAt = new Date().toISOString();
+      
+      (storage as any).sharedCredentials.set(sharedCredentialId, sharedCredential);
+
+      console.log(`✅ Updated shared credential ${sharedCredentialId} status to ${status}`);
+      
+      res.json(sharedCredential);
+    } catch (error) {
+      console.error('Error updating shared credential:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
 
   // Test endpoint to create a notification manually
   app.post("/api/test/notification", async (req, res) => {

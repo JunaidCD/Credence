@@ -1207,11 +1207,51 @@ const UserDashboard = () => {
         const result = await web3Service.shareCredential(credential, verifierDid, 'Credential shared via Credence platform');
         
         if (result.success) {
-          toast({
-            title: "Credential Shared Successfully! 🎉",
-            description: `${result.message}. Transaction signature: ${result.signature.substring(0, 20)}...`,
-            duration: 5000
-          });
+          // Store the shared credential data in backend for verifier access
+          try {
+            const sharePayload = {
+              holderAddress: walletAddress,
+              verifierAddress: verifierDid.replace('did:ethr:', ''),
+              credentialId: credential.id || credential.uniqueId,
+              credentialType: credential.credentialType || credential.type,
+              credentialTitle: credential.title || credential.data?.title || 'Untitled Credential',
+              message: 'Credential shared via Credence platform',
+              signature: result.signature,
+              holderDID: `did:ethr:${walletAddress}`,
+              verifierDID: verifierDid,
+              credentialData: credential
+            };
+            
+            console.log('📤 Sending credential share payload to backend:', sharePayload);
+            console.log('📤 Holder address (user):', sharePayload.holderAddress);
+            console.log('📤 Verifier address (extracted from DID):', sharePayload.verifierAddress);
+            console.log('📤 Verifier DID (original):', sharePayload.verifierDID);
+            
+            const backendResponse = await fetch('/api/credentials/share', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(sharePayload)
+            });
+            
+            console.log('📡 Backend response status:', backendResponse.status);
+
+            if (!backendResponse.ok) {
+              throw new Error('Failed to store shared credential data');
+            }
+
+            const backendResult = await backendResponse.json();
+            console.log('✅ Shared credential stored in backend:', backendResult);
+
+            toast({
+              title: "Credential Shared with the Verifier",
+              description: `${result.message}. The verifier can now review your credential.`,
+              duration: 5000
+            });
+          } catch (backendError) {
+            console.error('Backend storage failed:', backendError);
+            // Show error and don't proceed since backend storage is required
+            throw new Error('Failed to store credential sharing data. Please try again.');
+          }
           
           // Reset form
           setSelectedCredential(null);
@@ -1385,7 +1425,7 @@ const UserDashboard = () => {
                         ) : (
                           <>
                             <Share2 className="h-4 w-4 mr-2" />
-                            Share On-Chain
+                            Share
                           </>
                         )}
                       </Button>
