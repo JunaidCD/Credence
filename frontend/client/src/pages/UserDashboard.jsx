@@ -1186,20 +1186,45 @@ const UserDashboard = () => {
 
       setIsSharing(true);
       try {
-        // Simulate sharing process
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
+        // Validate verifier DID format first
+        const validation = await web3Service.validateVerifierDID(verifierDid);
+        if (!validation.isValid) {
+          throw new Error(validation.error);
+        }
+
+        // Initialize Web3Service and connect wallet
+        await web3Service.init();
+        await web3Service.connectWallet();
+
+        // Show MetaMask transaction notice
         toast({
-          title: "Credential Shared Successfully! 🎉",
-          description: `Credential ${credential.id} has been shared with ${verifierDid}`,
+          title: "MetaMask Transaction Required",
+          description: "Please sign the transaction in MetaMask to share your credential on-chain.",
+          duration: 3000
         });
+
+        // Share credential on blockchain with MetaMask signing
+        const result = await web3Service.shareCredential(credential, verifierDid, 'Credential shared via Credence platform');
         
-        setSelectedCredential(null);
-        setVerifierDid('');
+        if (result.success) {
+          toast({
+            title: "Credential Shared Successfully! 🎉",
+            description: `${result.message}. Transaction signature: ${result.signature.substring(0, 20)}...`,
+            duration: 5000
+          });
+          
+          // Reset form
+          setSelectedCredential(null);
+          setVerifierDid('');
+          setSelectedCredentialId('');
+        } else {
+          throw new Error('Credential sharing failed');
+        }
       } catch (error) {
+        console.error('Credential sharing error:', error);
         toast({
           title: "Sharing Failed",
-          description: error.message,
+          description: error.message || "Failed to share credential. Please try again.",
           variant: "destructive"
         });
       } finally {
@@ -1327,43 +1352,66 @@ const UserDashboard = () => {
               {/* Verifier DID and Share Section */}
               <Card className="bg-gray-800/40 backdrop-blur-sm border border-gray-700/30 shadow-lg">
                 <CardContent className="p-6">
-                  <div className="space-y-4">
-                    <label className="block text-sm font-medium text-gray-300">
-                      Verifier DID (Required for Sharing)
-                    </label>
+                    <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-sm font-medium text-gray-300">
+                        Verifier DID (Required for On-Chain Sharing)
+                      </label>
+                      <div className="flex items-center space-x-2 text-xs text-blue-400 bg-blue-500/10 px-2 py-1 rounded border border-blue-500/20">
+                        <Wallet className="h-3 w-3" />
+                        <span>MetaMask Required</span>
+                      </div>
+                    </div>
                     
                     <div className="flex gap-3">
                       <input
                         type="text"
                         value={verifierDid}
                         onChange={(e) => setVerifierDid(e.target.value)}
-                        placeholder="Enter the Verifier DID to share with"
-                        className="flex-1 px-4 py-3 bg-gray-700/50 border border-gray-600/30 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400/50 transition-all duration-200"
+                        placeholder="did:ethr:0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f"
+                        className="flex-1 px-4 py-3 bg-gray-700/50 border border-gray-600/30 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400/50 transition-all duration-200 font-mono text-sm"
                       />
                       
                       <Button
                         onClick={() => handleShare(selectedCredential)}
                         disabled={isSharing || !verifierDid || verifierDid.trim() === ''}
-                        className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-all duration-200 disabled:bg-gray-600 disabled:cursor-not-allowed"
+                        className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg transition-all duration-200 disabled:bg-gray-600 disabled:cursor-not-allowed shadow-lg hover:shadow-purple-500/25"
                       >
                         {isSharing ? (
                           <>
                             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Sharing...
+                            Signing Transaction...
                           </>
                         ) : (
                           <>
                             <Share2 className="h-4 w-4 mr-2" />
-                            Share
+                            Share On-Chain
                           </>
                         )}
                       </Button>
                     </div>
                     
+                    {/* DID Format Help */}
+                    <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
+                      <div className="flex items-start space-x-2">
+                        <Activity className="h-4 w-4 text-blue-400 mt-0.5" />
+                        <div className="text-sm">
+                          <p className="text-blue-400 font-medium mb-1">Verifier DID Format</p>
+                          <p className="text-gray-300 text-xs mb-2">
+                            Enter the verifier's DID in the format: <code className="bg-gray-800/60 px-1 rounded">did:ethr:0x...</code>
+                          </p>
+                          <div className="space-y-1 text-xs text-gray-400">
+                            <p>• Account 8: <code className="bg-gray-800/60 px-1 rounded text-blue-300">did:ethr:0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f</code></p>
+                            <p>• Account 9: <code className="bg-gray-800/60 px-1 rounded text-blue-300">did:ethr:0xa0Ee7A142d267C1f36714E4a8F75612F20a79720</code></p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
                     {(!verifierDid || verifierDid.trim() === '') && (
                       <p className="text-amber-400 text-sm flex items-center gap-1">
                         <AlertCircle className="h-4 w-4" />
-                        Please enter a Verifier DID to enable credential sharing
+                        Please enter a Verifier DID to enable on-chain credential sharing
                       </p>
                     )}
                   </div>

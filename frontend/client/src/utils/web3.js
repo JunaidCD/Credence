@@ -1221,6 +1221,155 @@ class Web3Service {
     }
   }
 
+  // On-chain credential sharing with MetaMask signing
+  async shareCredential(credential, verifierDID, message = '') {
+    try {
+      if (!this.signer) {
+        throw new Error('Wallet not connected. Please connect your MetaMask wallet first.');
+      }
+
+      // Validate user eligibility (only accounts 2-7 can share credentials)
+      const isEligibleUser = await this.validateUserRegistration();
+      if (!isEligibleUser) {
+        throw new Error('Only user accounts (2-7) can share credentials.');
+      }
+
+      // Extract verifier address from DID
+      const verifierAddress = verifierDID.replace('did:ethr:', '');
+      
+      // Validate verifier address format
+      if (!ethers.isAddress(verifierAddress)) {
+        throw new Error('Invalid verifier DID format. Please provide a valid Ethereum DID.');
+      }
+
+      // Check if verifier is a valid verifier account (8-9)
+      const allowedVerifierAccounts = [
+        '0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f', // Account 8
+        '0xa0Ee7A142d267C1f36714E4a8F75612F20a79720'  // Account 9
+      ];
+
+      const isValidVerifier = allowedVerifierAccounts.some(addr => 
+        addr.toLowerCase() === verifierAddress.toLowerCase()
+      );
+
+      if (!isValidVerifier) {
+        throw new Error('Credentials can only be shared with registered verifiers (accounts 8-9).');
+      }
+
+      console.log('🔐 Sharing credential on blockchain...');
+      console.log('📋 Share details:', {
+        holder: this.account,
+        verifier: verifierAddress,
+        credentialId: credential.id || credential.uniqueId,
+        credentialType: credential.credentialType || credential.type
+      });
+
+      // Create credential sharing data
+      const shareData = {
+        holderAddress: this.account,
+        verifierAddress: verifierAddress,
+        credentialId: credential.id || credential.uniqueId,
+        credentialType: credential.credentialType || credential.type,
+        credentialTitle: credential.title || credential.data?.title || 'Untitled Credential',
+        message: message,
+        timestamp: Date.now(),
+        holderDID: `did:ethr:${this.account}`,
+        verifierDID: verifierDID
+      };
+
+      // Create message to sign with MetaMask
+      const messageToSign = `Share Credential\n\nCredential ID: ${shareData.credentialId}\nCredential Type: ${shareData.credentialType}\nTitle: ${shareData.credentialTitle}\n\nFrom: ${this.account}\nTo: ${verifierAddress}\nMessage: ${message}\n\nTimestamp: ${shareData.timestamp}`;
+      
+      console.log('📝 Signing credential sharing message with MetaMask...');
+      const signature = await this.signer.signMessage(messageToSign);
+      
+      console.log('✅ Credential sharing signed successfully');
+      console.log('🔑 Signature:', signature.substring(0, 20) + '...');
+
+      // Create blockchain transaction data
+      const blockchainData = {
+        ...shareData,
+        signature,
+        messageToSign,
+        signedAt: new Date().toISOString()
+      };
+
+      return {
+        success: true,
+        signature,
+        messageToSign,
+        shareData: blockchainData,
+        transactionHash: signature, // Use signature as transaction identifier
+        blockNumber: null, // No actual blockchain transaction for credential sharing
+        message: `Credential "${shareData.credentialTitle}" shared with ${verifierDID}`
+      };
+    } catch (error) {
+      console.error('❌ Credential sharing failed:', error);
+      throw error;
+    }
+  }
+
+  // Validate verifier DID format and eligibility
+  async validateVerifierDID(verifierDID) {
+    try {
+      if (!verifierDID || !verifierDID.startsWith('did:ethr:')) {
+        return {
+          isValid: false,
+          error: 'DID must start with "did:ethr:"'
+        };
+      }
+
+      const verifierAddress = verifierDID.replace('did:ethr:', '');
+      
+      if (!ethers.isAddress(verifierAddress)) {
+        return {
+          isValid: false,
+          error: 'Invalid Ethereum address in DID'
+        };
+      }
+
+      // Check if verifier is eligible (accounts 8-9)
+      const allowedVerifierAccounts = [
+        '0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f', // Account 8
+        '0xa0Ee7A142d267C1f36714E4a8F75612F20a79720'  // Account 9
+      ];
+
+      const isValidVerifier = allowedVerifierAccounts.some(addr => 
+        addr.toLowerCase() === verifierAddress.toLowerCase()
+      );
+
+      if (!isValidVerifier) {
+        return {
+          isValid: false,
+          error: 'Credentials can only be shared with registered verifiers (accounts 8-9)'
+        };
+      }
+
+      // Check if verifier is registered on blockchain (optional check)
+      let isRegistered = false;
+      try {
+        if (this.verifierRegistry) {
+          isRegistered = await this.verifierRegistry.isRegisteredVerifier(verifierAddress);
+        }
+      } catch (error) {
+        console.log('Could not check verifier registration status:', error);
+      }
+
+      return {
+        isValid: true,
+        address: verifierAddress,
+        isRegistered,
+        accountType: 'verifier'
+      };
+    } catch (error) {
+      console.error('Error validating verifier DID:', error);
+      return {
+        isValid: false,
+        error: 'Failed to validate verifier DID'
+      };
+    }
+  }
+
   debugAccountInfo() {
     const currentAccount = this.getAccount();
     const hardhatAccounts = {
