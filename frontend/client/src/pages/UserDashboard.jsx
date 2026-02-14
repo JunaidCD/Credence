@@ -41,7 +41,9 @@ import {
   Globe,
   Layers,
   Calendar,
-  AlertCircle
+  AlertCircle,
+  XCircle,
+  AlertTriangle
 } from 'lucide-react';
 
 const UserDashboard = () => {
@@ -1209,6 +1211,16 @@ const UserDashboard = () => {
         return;
       }
 
+      // Check if credential is revoked
+      if (credential.status === 'revoked' || credential.isRevoked) {
+        toast({
+          title: "Cannot Share Revoked Certificate",
+          description: "You Can not share Revoked Certificate",
+          variant: "destructive"
+        });
+        return;
+      }
+
       setIsSharing(true);
       try {
         // Validate verifier DID format first
@@ -1399,13 +1411,40 @@ const UserDashboard = () => {
           {selectedCredential && (
             <div className="space-y-6 mt-12">
               <div className="flex items-center space-x-3">
-                <div className="p-2 rounded-xl bg-gradient-to-br from-green-600/20 to-emerald-600/20 backdrop-blur-sm">
-                  <CheckCircle className="h-5 w-5 text-green-400" />
+                <div className={`p-2 rounded-xl backdrop-blur-sm ${
+                  selectedCredential.status === 'revoked' || selectedCredential.isRevoked
+                    ? 'bg-gradient-to-br from-red-600/20 to-orange-600/20'
+                    : 'bg-gradient-to-br from-green-600/20 to-emerald-600/20'
+                }`}>
+                  {selectedCredential.status === 'revoked' || selectedCredential.isRevoked ? (
+                    <XCircle className="h-5 w-5 text-red-400" />
+                  ) : (
+                    <CheckCircle className="h-5 w-5 text-green-400" />
+                  )}
                 </div>
-                <h2 className="text-2xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
-                  ✅ Selected Credential
+                <h2 className={`text-2xl font-bold bg-gradient-to-r bg-clip-text text-transparent ${
+                  selectedCredential.status === 'revoked' || selectedCredential.isRevoked
+                    ? 'from-red-400 to-orange-400'
+                    : 'from-green-400 to-emerald-400'
+                }`}>
+                  {selectedCredential.status === 'revoked' || selectedCredential.isRevoked
+                    ? '⚠️ Revoked Credential'
+                    : '✅ Selected Credential'
+                  }
                 </h2>
               </div>
+              
+              {/* Warning message for revoked credentials */}
+              {(selectedCredential.status === 'revoked' || selectedCredential.isRevoked) && (
+                <div className="p-4 bg-red-600/10 border border-red-500/30 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <AlertTriangle className="h-5 w-5 text-red-400" />
+                    <p className="text-red-400 font-medium">
+                      This certificate has been revoked and cannot be shared with verifiers.
+                    </p>
+                  </div>
+                </div>
+              )}
               
               {/* Use the same CredentialCard component from My Credentials */}
               <CredentialCard 
@@ -1439,7 +1478,7 @@ const UserDashboard = () => {
                       
                       <Button
                         onClick={() => handleShare(selectedCredential)}
-                        disabled={isSharing || !verifierDid || verifierDid.trim() === ''}
+                        disabled={isSharing || !verifierDid || verifierDid.trim() === '' || selectedCredential?.status === 'revoked' || selectedCredential?.isRevoked}
                         className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg transition-all duration-200 disabled:bg-gray-600 disabled:cursor-not-allowed shadow-lg hover:shadow-purple-500/25"
                       >
                         {isSharing ? (
@@ -1450,7 +1489,7 @@ const UserDashboard = () => {
                         ) : (
                           <>
                             <Share2 className="h-4 w-4 mr-2" />
-                            Share
+                            {selectedCredential?.status === 'revoked' || selectedCredential?.isRevoked ? 'Cannot Share' : 'Share'}
                           </>
                         )}
                       </Button>
