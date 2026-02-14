@@ -2,8 +2,8 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "C:\\Users\\ASUS\\OneDrive\\Desktop\\Credence\\backend\\contracts\\CredentialRegistry.sol": {
-      "lastModificationDate": 1756430016922,
-      "contentHash": "7b5dfab275ccdd8b04d7776cfe89ec36",
+      "lastModificationDate": 1771082867159,
+      "contentHash": "03030580e430aa726fc8439ab7af9f18",
       "sourceName": "contracts/CredentialRegistry.sol",
       "solcConfig": {
         "version": "0.8.19",
@@ -316,6 +316,146 @@
       ],
       "artifacts": [
         "SignatureVerifier"
+      ]
+    },
+    "C:\\Users\\ASUS\\OneDrive\\Desktop\\Credence\\backend\\contracts\\MultiSigWallet.sol": {
+      "lastModificationDate": 1771080837050,
+      "contentHash": "c99c21c7746bafadc94b7972dc6e9168",
+      "sourceName": "contracts/MultiSigWallet.sol",
+      "solcConfig": {
+        "version": "0.8.19",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.19"
+      ],
+      "artifacts": [
+        "MultiSigWallet"
+      ]
+    },
+    "C:\\Users\\ASUS\\OneDrive\\Desktop\\Credence\\backend\\contracts\\OracleAggregator.sol": {
+      "lastModificationDate": 1771081135512,
+      "contentHash": "ff76d3a529d4abae626d34cc2085f238",
+      "sourceName": "contracts/OracleAggregator.sol",
+      "solcConfig": {
+        "version": "0.8.19",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.19"
+      ],
+      "artifacts": [
+        "OracleAggregator"
+      ]
+    },
+    "C:\\Users\\ASUS\\OneDrive\\Desktop\\Credence\\backend\\contracts\\PaymentProcessor.sol": {
+      "lastModificationDate": 1771081567139,
+      "contentHash": "790ee36b9ee6e7474dc9c2029c87b2e0",
+      "sourceName": "contracts/PaymentProcessor.sol",
+      "solcConfig": {
+        "version": "0.8.19",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.19"
+      ],
+      "artifacts": [
+        "PaymentProcessor"
+      ]
+    },
+    "C:\\Users\\ASUS\\OneDrive\\Desktop\\Credence\\backend\\contracts\\RateLimiter.sol": {
+      "lastModificationDate": 1771080969281,
+      "contentHash": "1bf62967fdcb89247372817ecfc85183",
+      "sourceName": "contracts/RateLimiter.sol",
+      "solcConfig": {
+        "version": "0.8.19",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.19"
+      ],
+      "artifacts": [
+        "RateLimiter"
       ]
     }
   }
