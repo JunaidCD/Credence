@@ -1,9 +1,8 @@
-import type { Express } from "express";
-import { createServer, type Server } from "http";
-import { storage } from "./storage";
-import { insertUserSchema, insertCredentialSchema, insertVerificationRequestSchema, insertNotificationSchema } from "@shared/schema";
+import { createServer } from "http";
+import { storage } from "./storage.js";
+import { insertUserSchema, insertCredentialSchema, insertVerificationRequestSchema, insertNotificationSchema } from "../shared/schema.js";
 
-export async function registerRoutes(app: Express): Promise<Server> {
+export async function registerRoutes(app) {
   // Auth routes
   app.post("/api/auth/connect", async (req, res) => {
     try {
@@ -69,7 +68,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Decoded DID:', decodeURIComponent(req.params.did));
       
       // Debug: Check all users in storage
-      const allUsers = Array.from((storage as any).users.values());
+      const allUsers = Array.from(storage.users.values());
       console.log('All users in storage:', allUsers.map(u => ({ id: u.id, address: u.address, did: u.did, name: u.name })));
       
       let user = await storage.getUserByDID(decodeURIComponent(req.params.did));
@@ -138,11 +137,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Lowercase wallet address:', walletAddress);
       
       // Debug: Check all users in storage
-      const allUsers = Array.from((storage as any).users.values());
+      const allUsers = Array.from(storage.users.values());
       console.log('All users in storage:', allUsers.map(u => ({ id: u.id, address: u.address, name: u.name })));
       
       // Debug: Check all credentials in storage
-      const allCredentials = Array.from((storage as any).credentials.values());
+      const allCredentials = Array.from(storage.credentials.values());
       console.log('All credentials in storage:', allCredentials.length);
       console.log('Credentials details:', allCredentials.map(c => ({ 
         id: c.id, 
@@ -182,12 +181,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Debug endpoint to check all users and credentials
   app.get("/api/debug/data", async (req, res) => {
     try {
-      const allUsers = Array.from((storage as any).users.values());
-      const allCredentials = Array.from((storage as any).credentials.values());
+      const allUsers = Array.from(storage.users.values());
+      const allCredentials = Array.from(storage.credentials.values());
       
       // Also get shared credentials for debugging
-      const allSharedCredentials = (storage as any).sharedCredentials ? 
-        Array.from((storage as any).sharedCredentials.values()) : [];
+      const allSharedCredentials = storage.sharedCredentials ? 
+        Array.from(storage.sharedCredentials.values()) : [];
       
       // Log to server console for debugging
       console.log('=== DEBUG DATA ENDPOINT ===');
@@ -240,7 +239,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(credential);
     } catch (error) {
       console.error('Error creating credential:', error);
-      res.status(400).json({ message: (error as Error).message });
+      res.status(400).json({ message: error.message });
     }
   });
 
@@ -390,7 +389,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       })));
       
       // Debug: Check all notifications in storage
-      const allNotifications = Array.from((storage as any).notifications.values());
+      const allNotifications = Array.from(storage.notifications.values());
       console.log(`Total notifications in storage: ${allNotifications.length}`);
       console.log('All notifications by userId:', allNotifications.reduce((acc, n) => {
         acc[n.userId] = (acc[n.userId] || 0) + 1;
@@ -460,8 +459,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         user = await storage.createUser(userData);
       }
 
-      const syncedCredentials: any[] = [];
-      const newCredentials: any[] = [];
+      const syncedCredentials = [];
+      const newCredentials = [];
       
       // Process each blockchain credential
       for (const blockchainCred of credentials) {
@@ -577,7 +576,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userType: 'user',
           email: null,
           createdAt: new Date()
-        } as any;
+        };
         console.log('Created placeholder holder:', holder);
       }
       
@@ -591,7 +590,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userType: 'verifier',
           email: null,
           createdAt: new Date()
-        } as any;
+        };
         console.log('Created placeholder verifier:', verifier);
       }
 
@@ -616,10 +615,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       // Store in memory (you could extend storage to handle shared credentials)
-      if (!(storage as any).sharedCredentials) {
-        (storage as any).sharedCredentials = new Map();
+      if (!storage.sharedCredentials) {
+        storage.sharedCredentials = new Map();
       }
-      (storage as any).sharedCredentials.set(sharedCredential.id, sharedCredential);
+      storage.sharedCredentials.set(sharedCredential.id, sharedCredential);
 
       console.log('✅ Created shared credential record:', sharedCredential.id);
       
@@ -643,12 +642,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Original verifier address from params:', req.params.verifierAddress);
       
       // Initialize shared credentials map if it doesn't exist
-      if (!(storage as any).sharedCredentials) {
-        (storage as any).sharedCredentials = new Map();
+      if (!storage.sharedCredentials) {
+        storage.sharedCredentials = new Map();
       }
 
       // Get all shared credentials for this verifier
-      const allSharedCredentials = Array.from((storage as any).sharedCredentials.values());
+      const allSharedCredentials = Array.from(storage.sharedCredentials.values());
       const verifierSharedCredentials = allSharedCredentials.filter(
         cred => cred.verifierAddress === verifierAddress
       );
@@ -706,11 +705,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('  - Transaction Hash:', transactionHash);
       console.log('  - Request Body:', req.body);
       
-      if (!(storage as any).sharedCredentials) {
+      if (!storage.sharedCredentials) {
         return res.status(404).json({ message: "Shared credential not found" });
       }
 
-      const sharedCredential = (storage as any).sharedCredentials.get(sharedCredentialId);
+      const sharedCredential = storage.sharedCredentials.get(sharedCredentialId);
       if (!sharedCredential) {
         return res.status(404).json({ message: "Shared credential not found" });
       }
@@ -723,7 +722,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       sharedCredential.blockchainData = blockchainData;
       sharedCredential.transactionHash = transactionHash;
       
-      (storage as any).sharedCredentials.set(sharedCredentialId, sharedCredential);
+      storage.sharedCredentials.set(sharedCredentialId, sharedCredential);
 
       console.log(`✅ Updated shared credential ${sharedCredentialId} status to ${status}`);
       
@@ -794,15 +793,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           })));
           
           // Also log all users for debugging
-          const allUsers = Array.from((storage as any).users.values());
+          const allUsers = Array.from(storage.users.values());
           console.log('All registered users:', allUsers.map(u => ({ 
-            id: (u as any).id, 
-            address: (u as any).address, 
-            name: (u as any).name 
+            id: u.id, 
+            address: u.address, 
+            name: u.name 
           })));
         } else {
           console.log('❌ Holder user not found for address:', sharedCredential.holderAddress);
-          console.log('Available users:', Array.from((storage as any).users.values()).map(u => ({ id: u.id, address: u.address })));
+          console.log('Available users:', Array.from(storage.users.values()).map(u => ({ id: u.id, address: u.address })));
         }
       } catch (notificationError) {
         console.error('❌ Failed to create verification result notification:', notificationError);
@@ -816,8 +815,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: error.message });
     }
   });
-
-
 
   // Test endpoint to create a notification manually
   app.post("/api/test/notification", async (req, res) => {

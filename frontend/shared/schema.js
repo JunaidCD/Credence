@@ -74,11 +74,12 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
   createdAt: true,
 });
 
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
-export type InsertCredential = z.infer<typeof insertCredentialSchema>;
-export type Credential = typeof credentials.$inferSelect;
-export type InsertVerificationRequest = z.infer<typeof insertVerificationRequestSchema>;
-export type VerificationRequest = typeof verificationRequests.$inferSelect;
-export type InsertNotification = z.infer<typeof insertNotificationSchema>;
-export type Notification = typeof notifications.$inferSelect;
+// Export as plain objects for JavaScript
+export const User = {};
+export const InsertUser = {};
+export const Credential = {};
+export const InsertCredential = {};
+export const VerificationRequest = {};
+export const InsertVerificationRequest = {};
+export const Notification = {};
+export const InsertNotification = {};

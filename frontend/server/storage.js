@@ -1,44 +1,6 @@
-import { type User, type InsertUser, type Credential, type InsertCredential, type VerificationRequest, type InsertVerificationRequest, type Notification, type InsertNotification } from "@shared/schema";
 import { randomUUID } from "crypto";
 
-export interface IStorage {
-  // Users
-  getUser(id: string): Promise<User | undefined>;
-  getUserByAddress(address: string): Promise<User | undefined>;
-  getUserByDID(did: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
-  updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
-
-  // Credentials
-  getCredential(id: string): Promise<Credential | undefined>;
-  getCredentialsByUserId(userId: string): Promise<Credential[]>;
-  getCredentialsByIssuerId(issuerId: string): Promise<Credential[]>;
-  createCredential(credential: InsertCredential): Promise<Credential>;
-  updateCredential(id: string, updates: Partial<Credential>): Promise<Credential | undefined>;
-  linkCredentialsToUser(userId: string, walletAddress: string): Promise<void>;
-
-  // Verification Requests
-  getVerificationRequest(id: string): Promise<VerificationRequest | undefined>;
-  getVerificationRequestsByUserId(userId: string): Promise<VerificationRequest[]>;
-  getVerificationRequestsByVerifierId(verifierId: string): Promise<VerificationRequest[]>;
-  createVerificationRequest(request: InsertVerificationRequest): Promise<VerificationRequest>;
-  updateVerificationRequest(id: string, updates: Partial<VerificationRequest>): Promise<VerificationRequest | undefined>;
-
-  // Notifications
-  getNotification(id: string): Promise<Notification | undefined>;
-  getNotificationsByUserId(userId: string): Promise<Notification[]>;
-  createNotification(notification: InsertNotification): Promise<Notification>;
-  updateNotification(id: string, updates: Partial<Notification>): Promise<Notification | undefined>;
-  markNotificationAsRead(id: string): Promise<Notification | undefined>;
-  markAllNotificationsAsRead(userId: string): Promise<void>;
-}
-
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-  private credentials: Map<string, Credential>;
-  private verificationRequests: Map<string, VerificationRequest>;
-  private notifications: Map<string, Notification>;
-
+export class MemStorage {
   constructor() {
     this.users = new Map();
     this.credentials = new Map();
@@ -52,9 +14,9 @@ export class MemStorage implements IStorage {
     console.log(`🔧 MemStorage initialized at ${timestamp} - all data will persist until server restart`);
   }
 
-  private initializeTestData() {
+  initializeTestData() {
     // Create test issuer (account 0)
-    const testIssuer: User = {
+    const testIssuer = {
       id: "test-issuer-1",
       address: "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
       did: "did:ethr:0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
@@ -62,12 +24,12 @@ export class MemStorage implements IStorage {
       email: "issuer@example.com",
       userType: "issuer", 
       createdAt: new Date()
-    } as User;
+    };
 
     this.users.set(testIssuer.id, testIssuer);
 
     // Create test user (account 2) - the one from the error
-    const testUser: User = {
+    const testUser = {
       id: "test-user-1",
       address: "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc",
       did: "did:ethr:0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc",
@@ -75,7 +37,7 @@ export class MemStorage implements IStorage {
       email: "user@example.com",
       userType: "user", 
       createdAt: new Date()
-    } as User;
+    };
 
     this.users.set(testUser.id, testUser);
 
@@ -91,33 +53,33 @@ export class MemStorage implements IStorage {
   }
 
   // Users
-  async getUser(id: string): Promise<User | undefined> {
+  async getUser(id) {
     return this.users.get(id);
   }
 
-  async getUserByAddress(address: string): Promise<User | undefined> {
+  async getUserByAddress(address) {
     return Array.from(this.users.values()).find(user => user.address === address);
   }
 
-  async getUserByDID(did: string): Promise<User | undefined> {
+  async getUserByDID(did) {
     // Normalize DID to lowercase for case-insensitive lookup
     const normalizedDID = did.toLowerCase();
     return Array.from(this.users.values()).find(user => user.did?.toLowerCase() === normalizedDID);
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
+  async createUser(insertUser) {
     const id = randomUUID();
-    const user: User = { 
+    const user = { 
       ...insertUser, 
       id, 
       createdAt: new Date()
-    } as User;
+    };
     this.users.set(id, user);
     console.log('Created user:', { id: user.id, address: user.address, name: user.name });
     return user;
   }
 
-  async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
+  async updateUser(id, updates) {
     const user = this.users.get(id);
     if (!user) return undefined;
     
@@ -127,28 +89,28 @@ export class MemStorage implements IStorage {
   }
 
   // Credentials
-  async getCredential(id: string): Promise<Credential | undefined> {
+  async getCredential(id) {
     return this.credentials.get(id);
   }
 
-  async getCredentialsByUserId(userId: string): Promise<Credential[]> {
+  async getCredentialsByUserId(userId) {
     return Array.from(this.credentials.values()).filter(cred => cred.userId === userId);
   }
 
-  async getCredentialsByIssuerId(issuerId: string): Promise<Credential[]> {
+  async getCredentialsByIssuerId(issuerId) {
     return Array.from(this.credentials.values()).filter(cred => cred.issuerId === issuerId);
   }
 
-  async createCredential(insertCredential: InsertCredential): Promise<Credential> {
+  async createCredential(insertCredential) {
     console.log('=== CREATE CREDENTIAL DEBUG ===');
     console.log('Input credential data:', insertCredential);
     
     const id = randomUUID();
-    const credential: Credential = { 
+    const credential = { 
       ...insertCredential, 
       id, 
       createdAt: new Date()
-    } as Credential;
+    };
     this.credentials.set(id, credential);
     console.log('✅ Created credential in storage:', { 
       id: credential.id, 
@@ -167,7 +129,7 @@ export class MemStorage implements IStorage {
     return credential;
   }
 
-  async updateCredential(id: string, updates: Partial<Credential>): Promise<Credential | undefined> {
+  async updateCredential(id, updates) {
     const credential = this.credentials.get(id);
     if (!credential) return undefined;
     
@@ -177,31 +139,31 @@ export class MemStorage implements IStorage {
   }
 
   // Verification Requests
-  async getVerificationRequest(id: string): Promise<VerificationRequest | undefined> {
+  async getVerificationRequest(id) {
     return this.verificationRequests.get(id);
   }
 
-  async getVerificationRequestsByUserId(userId: string): Promise<VerificationRequest[]> {
+  async getVerificationRequestsByUserId(userId) {
     return Array.from(this.verificationRequests.values()).filter(req => req.userId === userId);
   }
 
-  async getVerificationRequestsByVerifierId(verifierId: string): Promise<VerificationRequest[]> {
+  async getVerificationRequestsByVerifierId(verifierId) {
     return Array.from(this.verificationRequests.values()).filter(req => req.verifierId === verifierId);
   }
 
-  async createVerificationRequest(insertRequest: InsertVerificationRequest): Promise<VerificationRequest> {
+  async createVerificationRequest(insertRequest) {
     const id = randomUUID();
-    const request: VerificationRequest = { 
+    const request = { 
       ...insertRequest, 
       id, 
       requestedAt: new Date(),
       respondedAt: null
-    } as VerificationRequest;
+    };
     this.verificationRequests.set(id, request);
     return request;
   }
 
-  async updateVerificationRequest(id: string, updates: Partial<VerificationRequest>): Promise<VerificationRequest | undefined> {
+  async updateVerificationRequest(id, updates) {
     const request = this.verificationRequests.get(id);
     if (!request) return undefined;
     
@@ -214,7 +176,7 @@ export class MemStorage implements IStorage {
   }
 
   // Link existing credentials to a newly registered user
-  async linkCredentialsToUser(userId: string, walletAddress: string): Promise<void> {
+  async linkCredentialsToUser(userId, walletAddress) {
     console.log(`=== LINKING CREDENTIALS ===`);
     console.log(`User ID: ${userId}`);
     console.log(`Wallet Address: ${walletAddress}`);
@@ -224,7 +186,7 @@ export class MemStorage implements IStorage {
     
     // Find credentials that were issued to this wallet address but don't have a userId yet
     const credentialsToLink = allCredentials.filter(credential => {
-      const studentDid = (credential.metadata as any)?.studentDid?.toLowerCase();
+      const studentDid = credential.metadata?.studentDid?.toLowerCase();
       const hasNoUser = !credential.userId || credential.userId === "";
       const matchesWallet = studentDid === walletAddress.toLowerCase();
       
@@ -258,11 +220,11 @@ export class MemStorage implements IStorage {
   }
 
   // Notifications
-  async getNotification(id: string): Promise<Notification | undefined> {
+  async getNotification(id) {
     return this.notifications.get(id);
   }
 
-  async getNotificationsByUserId(userId: string): Promise<Notification[]> {
+  async getNotificationsByUserId(userId) {
     const notifications = Array.from(this.notifications.values()).filter(notification => notification.userId === userId);
     console.log(`🔍 Storage: Found ${notifications.length} notifications for userId: ${userId}`);
     console.log('🔍 Storage: All notifications in memory:', Array.from(this.notifications.values()).map(n => ({ id: n.id, userId: n.userId, type: n.type, title: n.title })));
@@ -273,19 +235,19 @@ export class MemStorage implements IStorage {
       });
   }
 
-  async createNotification(insertNotification: InsertNotification): Promise<Notification> {
+  async createNotification(insertNotification) {
     const id = randomUUID();
-    const notification: Notification = { 
+    const notification = { 
       ...insertNotification, 
       id, 
       createdAt: new Date()
-    } as Notification;
+    };
     this.notifications.set(id, notification);
     console.log('Created notification:', { id: notification.id, userId: notification.userId, type: notification.type });
     return notification;
   }
 
-  async updateNotification(id: string, updates: Partial<Notification>): Promise<Notification | undefined> {
+  async updateNotification(id, updates) {
     const notification = this.notifications.get(id);
     if (!notification) return undefined;
     
@@ -294,11 +256,11 @@ export class MemStorage implements IStorage {
     return updatedNotification;
   }
 
-  async markNotificationAsRead(id: string): Promise<Notification | undefined> {
+  async markNotificationAsRead(id) {
     return this.updateNotification(id, { read: true });
   }
 
-  async markAllNotificationsAsRead(userId: string): Promise<void> {
+  async markAllNotificationsAsRead(userId) {
     const userNotifications = await this.getNotificationsByUserId(userId);
     for (const notification of userNotifications) {
       if (!notification.read) {
@@ -308,7 +270,7 @@ export class MemStorage implements IStorage {
   }
 
   // Helper method to create credential notification
-  private async createCredentialNotification(credential: Credential): Promise<void> {
+  async createCredentialNotification(credential) {
     console.log('=== CREATE CREDENTIAL NOTIFICATION DEBUG ===');
     console.log('Credential received:', {
       id: credential.id,
@@ -383,7 +345,7 @@ export class MemStorage implements IStorage {
   }
 
   // Helper method to create notifications for newly linked credentials during registration
-  private async createNotificationsForLinkedCredentials(userId: string, credentials: Credential[]): Promise<void> {
+  async createNotificationsForLinkedCredentials(userId, credentials) {
     console.log(`=== CREATING REGISTRATION NOTIFICATIONS ===`);
     console.log(`Creating notifications for ${credentials.length} credentials for user ${userId}`);
     
@@ -392,7 +354,7 @@ export class MemStorage implements IStorage {
         // Get issuer information
         const issuer = await this.getUser(credential.issuerId);
         const issuerName = issuer?.name || 'Unknown Issuer';
-        const metadata = credential.metadata as any;
+        const metadata = credential.metadata;
         const issuerDID = issuer?.did || (metadata?.issuerAddress ? `did:ethr:${metadata.issuerAddress}` : 'Unknown DID');
         
         console.log(`Creating notification for credential ${credential.id}:`);
@@ -414,7 +376,7 @@ export class MemStorage implements IStorage {
             credentialTitle: credential.title,
             issuerName,
             issuerDID,
-            issuerAddress: issuer?.address || (credential.metadata as any)?.issuerAddress,
+            issuerAddress: issuer?.address || metadata?.issuerAddress,
             issueDate: credential.issueDate,
             expiryDate: credential.expiryDate,
             status: credential.status,
@@ -435,7 +397,7 @@ export class MemStorage implements IStorage {
   }
 
   // New method to create notifications for blockchain credentials during registration
-  async createNotificationsForBlockchainCredentials(userId: string, blockchainCredentials: any[]): Promise<void> {
+  async createNotificationsForBlockchainCredentials(userId, blockchainCredentials) {
     console.log(`=== CREATING BLOCKCHAIN CREDENTIAL NOTIFICATIONS ===`);
     console.log(`Processing ${blockchainCredentials.length} blockchain credentials for user ${userId}`);
     
@@ -494,11 +456,11 @@ export class MemStorage implements IStorage {
   }
 
   // Check if notification already exists for a specific blockchain event
-  async notificationExistsForBlockchainEvent(userId: string, credentialId: string, transactionHash: string): Promise<boolean> {
+  async notificationExistsForBlockchainEvent(userId, credentialId, transactionHash) {
     const userNotifications = await this.getNotificationsByUserId(userId);
     
     return userNotifications.some(notification => {
-      const data = notification.data as any;
+      const data = notification.data;
       return data?.credentialId === credentialId || 
              data?.metadata?.transactionHash === transactionHash ||
              data?.metadata?.blockchainId === credentialId;
@@ -506,7 +468,7 @@ export class MemStorage implements IStorage {
   }
 
   // Link existing verification requests to a newly registered user
-  async linkVerificationRequestsToUser(userId: string, walletAddress: string): Promise<void> {
+  async linkVerificationRequestsToUser(userId, walletAddress) {
     console.log(`=== LINKING VERIFICATION REQUESTS ===`);
     console.log(`User ID: ${userId}`);
     console.log(`Wallet Address: ${walletAddress}`);
