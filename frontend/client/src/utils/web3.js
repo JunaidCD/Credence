@@ -127,6 +127,41 @@ class Web3Service {
         await this.init();
       }
 
+      // First, try to switch to Hardhat network
+      try {
+        await window.ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: '0x7a69' }], // 31337 in hex
+        });
+      } catch (switchError) {
+        // This error code indicates that the chain has not been added to MetaMask
+        if (switchError.code === 4902) {
+          try {
+            await window.ethereum.request({
+              method: 'wallet_addEthereumChain',
+              params: [
+                {
+                  chainId: '0x7a69', // 31337 in hex
+                  chainName: 'Hardhat Localhost',
+                  nativeCurrency: {
+                    name: 'ETH',
+                    symbol: 'ETH',
+                    decimals: 18,
+                  },
+                  rpcUrls: ['http://127.0.0.1:8545'],
+                },
+              ],
+            });
+          } catch (addError) {
+            console.error('Failed to add Hardhat network:', addError);
+            throw new Error('Failed to add Hardhat network to MetaMask');
+          }
+        } else {
+          console.error('Failed to switch to Hardhat network:', switchError);
+          throw new Error('Failed to switch to Hardhat network');
+        }
+      }
+
       const accounts = await window.ethereum.request({
         method: 'eth_requestAccounts'
       });
@@ -134,12 +169,11 @@ class Web3Service {
       this.account = accounts[0];
       this.signer = await this.provider.getSigner();
       
-      // Check network
+      // Verify network after switching
       const network = await this.provider.getNetwork();
       if (Number(network.chainId) !== 31337) {
         throw new Error('Please connect to Hardhat localhost network (Chain ID: 31337)');
       }
-
 
       return {
         account: this.account,
