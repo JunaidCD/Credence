@@ -142,6 +142,181 @@
       "artifacts": [
         "VerifierRegistry"
       ]
+    },
+    "C:\\Users\\ASUS\\OneDrive\\Desktop\\Credence\\backend\\contracts\\AccessControl.sol": {
+      "lastModificationDate": 1771079522736,
+      "contentHash": "b861f75117e8873e4a6021a63be1ddf4",
+      "sourceName": "contracts/AccessControl.sol",
+      "solcConfig": {
+        "version": "0.8.19",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.19"
+      ],
+      "artifacts": [
+        "AccessControl"
+      ]
+    },
+    "C:\\Users\\ASUS\\OneDrive\\Desktop\\Credence\\backend\\contracts\\CredentialNFT.sol": {
+      "lastModificationDate": 1771079686297,
+      "contentHash": "3a9e4538a84a66a978083701ed1a10b2",
+      "sourceName": "contracts/CredentialNFT.sol",
+      "solcConfig": {
+        "version": "0.8.19",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.19"
+      ],
+      "artifacts": [
+        "CredentialNFT"
+      ]
+    },
+    "C:\\Users\\ASUS\\OneDrive\\Desktop\\Credence\\backend\\contracts\\CredentialTreasury.sol": {
+      "lastModificationDate": 1771079727441,
+      "contentHash": "77cdd49c3af7a718bf118200e9e66d78",
+      "sourceName": "contracts/CredentialTreasury.sol",
+      "solcConfig": {
+        "version": "0.8.19",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.19"
+      ],
+      "artifacts": [
+        "CredentialTreasury"
+      ]
+    },
+    "C:\\Users\\ASUS\\OneDrive\\Desktop\\Credence\\backend\\contracts\\CredentialVerifierLib.sol": {
+      "lastModificationDate": 1771079769054,
+      "contentHash": "989196fc2aafa971a9137567c98e8cf4",
+      "sourceName": "contracts/CredentialVerifierLib.sol",
+      "solcConfig": {
+        "version": "0.8.19",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.19"
+      ],
+      "artifacts": [
+        "CredentialVerifier"
+      ]
+    },
+    "C:\\Users\\ASUS\\OneDrive\\Desktop\\Credence\\backend\\contracts\\SignatureVerifier.sol": {
+      "lastModificationDate": 1771079637962,
+      "contentHash": "fea9143daa46c86184a8d4170fe09daa",
+      "sourceName": "contracts/SignatureVerifier.sol",
+      "solcConfig": {
+        "version": "0.8.19",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.19"
+      ],
+      "artifacts": [
+        "SignatureVerifier"
+      ]
     }
   }
 }
