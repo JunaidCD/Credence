@@ -804,18 +804,40 @@ class Web3Service {
       const filter = this.credentialRegistry.filters.CredentialIssued(null, null, userAddress);
       
       // Event handler function
-      const eventHandler = async (credentialId, issuer, holder, credentialType, event) => {
+      const eventHandler = async (...args) => {
+        // Extract parameters safely - ethers.js v6 might pass them differently
+        let credentialId, issuer, holder, credentialType, event = null;
+        
+        if (args.length >= 4) {
+          [credentialId, issuer, holder, credentialType] = args;
+          event = args[4] || null;
+        } else if (args.length === 1 && args[0].args) {
+          // If event object is passed directly
+          const eventObj = args[0];
+          credentialId = eventObj.args?.credentialId;
+          issuer = eventObj.args?.issuer;
+          holder = eventObj.args?.holder;
+          credentialType = eventObj.args?.credentialType;
+          event = eventObj;
+        }
+        
         console.log('🔔 CredentialIssued event detected!', {
           credentialId: Number(credentialId),
           issuer,
           holder,
           credentialType,
-          blockNumber: event.blockNumber,
-          transactionHash: event.transactionHash
+          blockNumber: event?.blockNumber || null,
+          transactionHash: event?.transactionHash || null
         });
 
         try {
-          // Get full credential details from blockchain
+        // Validate required parameters
+        if (!credentialId || !issuer || !holder || !credentialType) {
+          console.error('❌ Missing required event parameters:', { credentialId, issuer, holder, credentialType });
+          return;
+        }
+
+        // Get full credential details from blockchain
           const credential = await this.credentialRegistry.getCredential(Number(credentialId));
           
           // Parse credential data
@@ -837,8 +859,8 @@ class Web3Service {
             issueDate: new Date(Number(credential.issuedAt) * 1000).toISOString(),
             expiryDate: new Date(Number(credential.expiresAt) * 1000).toISOString(),
             data: parsedData,
-            blockNumber: event.blockNumber,
-            transactionHash: event.transactionHash,
+            blockNumber: event?.blockNumber || null,
+            transactionHash: event?.transactionHash || null,
             timestamp: new Date().toISOString()
           };
 
@@ -1244,8 +1266,8 @@ class Web3Service {
             issueDate: new Date(Number(credential.issuedAt) * 1000).toISOString(),
             expiryDate: new Date(Number(credential.expiresAt) * 1000).toISOString(),
             data: parsedData,
-            blockNumber: event.blockNumber,
-            transactionHash: event.transactionHash,
+            blockNumber: event?.blockNumber || null,
+            transactionHash: event?.transactionHash || null,
             timestamp: new Date(Number(credential.issuedAt) * 1000).toISOString(),
             isPastEvent: true
           };
