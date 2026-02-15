@@ -457,6 +457,41 @@
       "artifacts": [
         "RateLimiter"
       ]
+    },
+    "C:\\Users\\ASUS\\OneDrive\\Desktop\\Credence\\backend\\contracts\\ZKCredentialVerifier.sol": {
+      "lastModificationDate": 1771163256652,
+      "contentHash": "b96a65d466b0cc8841b1468c8ffca758",
+      "sourceName": "contracts/ZKCredentialVerifier.sol",
+      "solcConfig": {
+        "version": "0.8.19",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.19"
+      ],
+      "artifacts": [
+        "ZKCredentialVerifier"
+      ]
     }
   }
 }

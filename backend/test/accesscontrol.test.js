@@ -38,9 +38,12 @@ describe("AccessControl Tests", function () {
     it("should fail to grant role from non-owner", async function () {
       const USER_ROLE = ethers.keccak256(ethers.toUtf8Bytes("USER_ROLE"));
       
-      await expect(
-        accessControl.connect(user1).grantRole(user2.address, USER_ROLE)
-      ).to.be.reverted;
+      try {
+        await accessControl.connect(user1).grantRole(user2.address, USER_ROLE);
+        throw new Error("Transaction should have reverted");
+      } catch (error) {
+        expect(error.message).to.include("revert");
+      }
       console.log("✓ Test 1b: Non-owner cannot grant roles");
     });
   });
@@ -62,7 +65,12 @@ describe("AccessControl Tests", function () {
 
     it("should fail to pause when already paused", async function () {
       await accessControl.pause();
-      await expect(accessControl.pause()).to.be.reverted;
+      try {
+        await accessControl.pause();
+        throw new Error("Transaction should have reverted");
+      } catch (error) {
+        expect(error.message).to.include("revert");
+      }
       await accessControl.unpause();
       console.log("✓ Test 2b: Cannot pause when already paused");
     });
