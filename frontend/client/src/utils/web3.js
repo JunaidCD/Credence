@@ -8,6 +8,32 @@ const CONTRACT_ADDRESSES = {
   VERIFIER_REGISTRY: ''
 };
 
+// Network Configuration - Arbitrum Sepolia
+const NETWORK_CONFIG = {
+  // Arbitrum Sepolia (L2 Testnet)
+  arbitrumSepolia: {
+    chainId: '0x' + BigInt(421614).toString(16), // 421614 in hex
+    chainName: 'Arbitrum Sepolia',
+    rpcUrls: ['https://sepolia-rollup.arbitrum.io/rpc'],
+    blockExplorerUrls: ['https://sepolia.arbiscan.io'],
+    iconUrls: ['https://assets.coingecko.com/coins/images/16547/small/photo_2023-03-29_21.47.00.jpeg']
+  },
+  // Arbitrum One (L1 Mainnet)
+  arbitrum: {
+    chainId: '0x' + BigInt(42161).toString(16), // 42161 in hex
+    chainName: 'Arbitrum One',
+    rpcUrls: ['https://arb1.arbitrum.io/rpc'],
+    blockExplorerUrls: ['https://arbiscan.io']
+  },
+  // Localhost (for development)
+  localhost: {
+    chainId: '0x' + BigInt(31337).toString(16),
+    chainName: 'Hardhat Localhost',
+    rpcUrls: ['http://127.0.0.1:8545'],
+    blockExplorerUrls: []
+  }
+};
+
 // Contract ABIs - simplified for frontend use
 const ISSUER_REGISTRY_ABI = [
   "function registerIssuer(string memory _name, string memory _organization, string memory _email) external",
@@ -78,6 +104,47 @@ class Web3Service {
       console.error('Web3 initialization failed:', error);
       return false;
     }
+  }
+
+  // Switch to Arbitrum Sepolia network
+  async switchToArbitrumSepolia() {
+    if (typeof window.ethereum === 'undefined') {
+      throw new Error('MetaMask is not installed');
+    }
+    
+    const chainId = NETWORK_CONFIG.arbitrumSepolia.chainId;
+    
+    try {
+      // Try to switch network
+      await window.ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId }]
+      });
+    } catch (switchError) {
+      // If network doesn't exist, add it
+      if (switchError.code === 4902) {
+        try {
+          await window.ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [NETWORK_CONFIG.arbitrumSepolia]
+          });
+        } catch (addError) {
+          throw new Error('Failed to add Arbitrum Sepolia network');
+        }
+      } else {
+        throw switchError;
+      }
+    }
+  }
+
+  // Check current network
+  async getNetwork() {
+    if (!this.provider) return null;
+    const network = await this.provider.getNetwork();
+    return {
+      chainId: network.chainId.toString(),
+      name: network.name
+    };
   }
 
 

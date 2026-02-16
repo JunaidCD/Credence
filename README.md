@@ -1,6 +1,23 @@
 # 🛡️ Credence - Decentralized Identity & Credential Verification System
 
+[![Arbitrum Sepolia](https://img.shields.io/badge/Network-Arbitrum%20Sepolia-28a0f0?style=flat-square)](https://sepolia.arbiscan.io/)
+[![Solidity](https://img.shields.io/badge/Solidity-0.8.19-363636?style=flat-square)](https://docs.soliditylang.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+
 **Credence** is a comprehensive blockchain-based platform for issuing, managing, and verifying digital credentials using Ethereum smart contracts and MetaMask integration. Built with modern web technologies, it provides a secure, transparent, and decentralized approach to credential management.
+
+---
+
+## 🔗 Smart Contracts (Live on Arbitrum Sepolia)
+
+| Contract | Etherscan | Description |
+|----------|-----------|-------------|
+| **CredentialRegistry** | [View on Arbiscan](https://sepolia.arbiscan.io/address/YOUR_CONTRACT_ADDRESS) | Main credential contract |
+| **IssuerRegistry** | [View on Arbiscan](https://sepolia.arbiscan.io/address/YOUR_CONTRACT_ADDRESS) | Issuer management |
+| **UserRegistry** | [View on Arbiscan](https://sepolia.arbiscan.io/address/YOUR_CONTRACT_ADDRESS) | User management |
+| **VerifierRegistry** | [View on Arbiscan](https://sepolia.arbiscan.io/address/YOUR_CONTRACT_ADDRESS) | Verifier management |
+
+> 📝 **Note:** Replace `YOUR_CONTRACT_ADDRESS` with actual deployed contract addresses after deployment.
 
 ---
 
@@ -180,6 +197,61 @@ Account 9: 0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6
 2. **Review Credentials**: View credentials shared by users
 3. **Verify Credentials**: Use EIP-712 or Merkle Proof verification
 4. **Dashboard Analytics**: Track verification statistics
+
+---
+
+## ⛓️ How to Interact with Live Contracts
+
+### Prerequisites
+1. **MetaMask** browser extension installed
+2. **ARB Sepolia** testnet added to MetaMask
+3. **Test ETH** from Arbitrum Sepolia faucet
+
+### Add Arbitrum Sepolia to MetaMask
+| Setting | Value |
+|---------|-------|
+| Network Name | Arbitrum Sepolia |
+| RPC URL | `https://sepolia-rollup.arbitrum.io/rpc` |
+| Chain ID | `421614` |
+| Currency Symbol | `ETH` |
+| Block Explorer | `https://sepolia.arbiscan.io` |
+
+### Get Test ETH
+1. Go to [Arbitrum Sepolia Faucet](https://faucet.arbiscan.io/)
+2. Enter your wallet address
+3. Wait for test ETH to arrive
+
+### Deploy Contracts to Arbitrum Sepolia
+```bash
+cd backend
+
+# Compile contracts
+npm run compile
+
+# Deploy to Arbitrum Sepolia
+npx hardhat run scripts/deploy.js --network arbitrumSepolia
+```
+
+### Update Frontend Configuration
+After deployment, update the frontend with the new contract addresses:
+
+```javascript
+// frontend/client/src/utils/web3.js
+const CONTRACT_ADDRESS = "0xYOUR_DEPLOYED_CONTRACT_ADDRESS";
+const NETWORK_ID = 421614; // Arbitrum Sepolia
+const RPC_URL = "https://sepolia-rollup.arbitrum.io/rpc";
+```
+
+### View Contracts on Arbiscan
+- **CredentialRegistry**: `https://sepolia.arbiscan.io/address/YOUR_CONTRACT_ADDRESS`
+- **Verify Contract**: Search your address on [Arbiscan](https://sepolia.arbiscan.io/)
+
+### Interact via Remix (Optional)
+1. Go to [Remix IDE](https://remix.ethereum.org/)
+2. Connect to "Injected Provider - MetaMask"
+3. Select Arbitrum Sepolia network
+4. Load contract ABI (from `backend/artifacts/`)
+5. Interact with deployed contracts
 
 ---
 
