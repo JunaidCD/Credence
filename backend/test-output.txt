@@ -1,0 +1,648 @@
+2026-02-16T04:34:00.215Z hardhat:core:vars:varsManager Creating a new instance of VarsManager
+2026-02-16T04:34:00.220Z hardhat:core:vars:varsManager Loading ENV variables if any
+2026-02-16T04:34:00.280Z hardhat:core:config Loading Hardhat config from c:\Users\ASUS\OneDrive\Desktop\Credence\backend\hardhat.config.js
+2026-02-16T04:34:01.663Z hardhat:core:hre Creating HardhatRuntimeEnvironment
+2026-02-16T04:34:01.667Z hardhat:core:global-dir Looking up Client Id at C:\Users\ASUS\AppData\Local\hardhat-nodejs\Data\analytics.json
+2026-02-16T04:34:01.669Z hardhat:core:global-dir Client Id found: 7cdcd8dc-dfe5-4a91-8347-eebc09453042
+2026-02-16T04:34:01.844Z hardhat:core:analytics Sending hit for task
+2026-02-16T04:34:01.844Z hardhat:core:analytics Hit payload: {"client_id":"7cdcd8dc-dfe5-4a91-8347-eebc09453042","user_id":"7cdcd8dc-dfe5-4a91-8347-eebc09453042","user_properties":{"projectId":{"value":"hardhat-project"},"userType":{"value":"Developer"},"hardhatVersion":{"value":"Hardhat 2.26.3"},"operatingSystem":{"value":"win32"},"nodeVersion":{"value":"v22.13.1"}},"events":[{"name":"task","params":{"engagement_time_msec":"10000","session_id":"0.009322622937875336"}}]}
+2026-02-16T04:34:01.940Z hardhat:core:hre Running task test
+2026-02-16T04:34:01.942Z hardhat:core:hre Running task hhgas:start
+2026-02-16T04:34:02.158Z hardhat:core:hre Running task compile
+2026-02-16T04:34:02.158Z hardhat:core:hre Running compile's super
+2026-02-16T04:34:02.158Z hardhat:core:hre Running task compile:get-compilation-tasks
+2026-02-16T04:34:02.158Z hardhat:core:hre Running task compile:solidity
+2026-02-16T04:34:02.159Z hardhat:core:hre Running task compile:solidity:get-source-paths
+2026-02-16T04:34:02.170Z hardhat:core:hre Running task compile:solidity:get-source-names
+2026-02-16T04:34:02.179Z hardhat:core:hre Running task compile:solidity:get-dependency-graph
+2026-02-16T04:34:02.179Z hardhat:core:hre Running task compile:solidity:get-remappings
+2026-02-16T04:34:02.185Z hardhat:core:hre Running task compile:solidity:read-file
+2026-02-16T04:34:02.185Z hardhat:core:hre Running task compile:solidity:read-file
+2026-02-16T04:34:02.186Z hardhat:core:hre Running task compile:solidity:read-file
+2026-02-16T04:34:02.186Z hardhat:core:hre Running task compile:solidity:read-file
+2026-02-16T04:34:02.187Z hardhat:core:hre Running task compile:solidity:read-file
+2026-02-16T04:34:02.187Z hardhat:core:hre Running task compile:solidity:read-file
+2026-02-16T04:34:02.187Z hardhat:core:hre Running task compile:solidity:read-file
+2026-02-16T04:34:02.188Z hardhat:core:hre Running task compile:solidity:read-file
+2026-02-16T04:34:02.188Z hardhat:core:hre Running task compile:solidity:read-file
+2026-02-16T04:34:02.189Z hardhat:core:hre Running task compile:solidity:read-file
+2026-02-16T04:34:02.189Z hardhat:core:hre Running task compile:solidity:read-file
+2026-02-16T04:34:02.189Z hardhat:core:hre Running task compile:solidity:read-file
+2026-02-16T04:34:02.189Z hardhat:core:hre Running task compile:solidity:read-file
+2026-02-16T04:34:02.190Z hardhat:core:hre Running task compile:solidity:read-file
+2026-02-16T04:34:02.190Z hardhat:core:hre Running task compile:solidity:read-file
+2026-02-16T04:34:02.190Z hardhat:core:hre Running task compile:solidity:read-file
+2026-02-16T04:34:02.196Z hardhat:core:hre Running task compile:solidity:transform-import-name
+2026-02-16T04:34:02.204Z hardhat:core:hre Running task compile:solidity:get-compilation-jobs
+2026-02-16T04:34:02.205Z hardhat:core:tasks:compile The dependency graph was divided in '15' connected components
+2026-02-16T04:34:02.205Z hardhat:core:hre Running task compile:solidity:get-compilation-job-for-file
+2026-02-16T04:34:02.206Z hardhat:core:hre Running compile:solidity:get-compilation-job-for-file's super
+2026-02-16T04:34:02.207Z hardhat:core:compilation-job File 'C:\Users\ASUS\OneDrive\Desktop\Credence\backend\contracts\AccessControl.sol' will be compiled with version '0.8.19'
+2026-02-16T04:34:02.208Z hardhat:core:hre Running task compile:solidity:get-compilation-job-for-file
+2026-02-16T04:34:02.208Z hardhat:core:hre Running compile:solidity:get-compilation-job-for-file's super
+2026-02-16T04:34:02.208Z hardhat:core:compilation-job File 'C:\Users\ASUS\OneDrive\Desktop\Credence\backend\contracts\CredentialNFT.sol' will be compiled with version '0.8.19'
+2026-02-16T04:34:02.209Z hardhat:core:hre Running task compile:solidity:get-compilation-job-for-file
+2026-02-16T04:34:02.209Z hardhat:core:hre Running compile:solidity:get-compilation-job-for-file's super
+2026-02-16T04:34:02.209Z hardhat:core:compilation-job File 'C:\Users\ASUS\OneDrive\Desktop\Credence\backend\contracts\CredentialRegistry.sol' will be compiled with version '0.8.19'
+2026-02-16T04:34:02.209Z hardhat:core:compilation-job File 'C:\Users\ASUS\OneDrive\Desktop\Credence\backend\contracts\IssuerRegistry.sol' added as dependency of 'C:\Users\ASUS\OneDrive\Desktop\Credence\backend\contracts\CredentialRegistry.sol'
+2026-02-16T04:34:02.209Z hardhat:core:hre Running task compile:solidity:get-compilation-job-for-file
+2026-02-16T04:34:02.209Z hardhat:core:hre Running compile:solidity:get-compilation-job-for-file's super
+2026-02-16T04:34:02.210Z hardhat:core:compilation-job File 'C:\Users\ASUS\OneDrive\Desktop\Credence\backend\contracts\CredentialTreasury.sol' will be compiled with version '0.8.19'
+2026-02-16T04:34:02.210Z hardhat:core:hre Running task compile:solidity:get-compilation-job-for-file
+2026-02-16T04:34:02.210Z hardhat:core:hre Running compile:solidity:get-compilation-job-for-file's super
+2026-02-16T04:34:02.210Z hardhat:core:compilation-job File 'C:\Users\ASUS\OneDrive\Desktop\Credence\backend\contracts\CredentialVerifierLib.sol' will be compiled with version '0.8.19'
+2026-02-16T04:34:02.210Z hardhat:core:hre Running task compile:solidity:get-compilation-job-for-file
+2026-02-16T04:34:02.210Z hardhat:core:hre Running compile:solidity:get-compilation-job-for-file's super
+2026-02-16T04:34:02.211Z hardhat:core:compilation-job File 'C:\Users\ASUS\OneDrive\Desktop\Credence\backend\contracts\MultiSigWallet.sol' will be compiled with version '0.8.19'
+2026-02-16T04:34:02.211Z hardhat:core:hre Running task compile:solidity:get-compilation-job-for-file
+2026-02-16T04:34:02.211Z hardhat:core:hre Running compile:solidity:get-compilation-job-for-file's super
+2026-02-16T04:34:02.211Z hardhat:core:compilation-job File 'C:\Users\ASUS\OneDrive\Desktop\Credence\backend\contracts\OracleAggregator.sol' will be compiled with version '0.8.19'
+2026-02-16T04:34:02.211Z hardhat:core:hre Running task compile:solidity:get-compilation-job-for-file
+2026-02-16T04:34:02.211Z hardhat:core:hre Running compile:solidity:get-compilation-job-for-file's super
+2026-02-16T04:34:02.212Z hardhat:core:compilation-job File 'C:\Users\ASUS\OneDrive\Desktop\Credence\backend\contracts\Pausable.sol' will be compiled with version '0.8.19'
+2026-02-16T04:34:02.212Z hardhat:core:hre Running task compile:solidity:get-compilation-job-for-file
+2026-02-16T04:34:02.212Z hardhat:core:hre Running compile:solidity:get-compilation-job-for-file's super
+2026-02-16T04:34:02.212Z hardhat:core:compilation-job File 'C:\Users\ASUS\OneDrive\Desktop\Credence\backend\contracts\PaymentProcessor.sol' will be compiled with version '0.8.19'
+2026-02-16T04:34:02.212Z hardhat:core:hre Running task compile:solidity:get-compilation-job-for-file
+2026-02-16T04:34:02.212Z hardhat:core:hre Running compile:solidity:get-compilation-job-for-file's super
+2026-02-16T04:34:02.212Z hardhat:core:compilation-job File 'C:\Users\ASUS\OneDrive\Desktop\Credence\backend\contracts\RateLimiter.sol' will be compiled with version '0.8.19'
+2026-02-16T04:34:02.212Z hardhat:core:hre Running task compile:solidity:get-compilation-job-for-file
+2026-02-16T04:34:02.212Z hardhat:core:hre Running compile:solidity:get-compilation-job-for-file's super
+2026-02-16T04:34:02.213Z hardhat:core:compilation-job File 'C:\Users\ASUS\OneDrive\Desktop\Credence\backend\contracts\SignatureVerifier.sol' will be compiled with version '0.8.19'
+2026-02-16T04:34:02.213Z hardhat:core:hre Running task compile:solidity:get-compilation-job-for-file
+2026-02-16T04:34:02.213Z hardhat:core:hre Running compile:solidity:get-compilation-job-for-file's super
+2026-02-16T04:34:02.213Z hardhat:core:compilation-job File 'C:\Users\ASUS\OneDrive\Desktop\Credence\backend\contracts\TimelockController.sol' will be compiled with version '0.8.19'
+2026-02-16T04:34:02.213Z hardhat:core:hre Running task compile:solidity:get-compilation-job-for-file
+2026-02-16T04:34:02.213Z hardhat:core:hre Running compile:solidity:get-compilation-job-for-file's super
+2026-02-16T04:34:02.213Z hardhat:core:compilation-job File 'C:\Users\ASUS\OneDrive\Desktop\Credence\backend\contracts\UserRegistry.sol' will be compiled with version '0.8.19'
+2026-02-16T04:34:02.213Z hardhat:core:hre Running task compile:solidity:get-compilation-job-for-file
+2026-02-16T04:34:02.213Z hardhat:core:hre Running compile:solidity:get-compilation-job-for-file's super
+2026-02-16T04:34:02.213Z hardhat:core:compilation-job File 'C:\Users\ASUS\OneDrive\Desktop\Credence\backend\contracts\VerifierRegistry.sol' will be compiled with version '0.8.19'
+2026-02-16T04:34:02.213Z hardhat:core:hre Running task compile:solidity:get-compilation-job-for-file
+2026-02-16T04:34:02.213Z hardhat:core:hre Running compile:solidity:get-compilation-job-for-file's super
+2026-02-16T04:34:02.213Z hardhat:core:compilation-job File 'C:\Users\ASUS\OneDrive\Desktop\Credence\backend\contracts\ZKCredentialVerifier.sol' will be compiled with version '0.8.19'
+2026-02-16T04:34:02.215Z hardhat:core:hre Running task compile:solidity:get-compilation-job-for-file
+2026-02-16T04:34:02.215Z hardhat:core:hre Running compile:solidity:get-compilation-job-for-file's super
+2026-02-16T04:34:02.215Z hardhat:core:compilation-job File 'C:\Users\ASUS\OneDrive\Desktop\Credence\backend\contracts\IssuerRegistry.sol' will be compiled with version '0.8.19'
+2026-02-16T04:34:02.216Z hardhat:core:hre Running task compile:solidity:handle-compilation-jobs-failures
+2026-02-16T04:34:02.216Z hardhat:core:hre Running task compile:solidity:filter-compilation-jobs
+2026-02-16T04:34:02.228Z hardhat:core:tasks:compile '16' jobs were filtered out
+2026-02-16T04:34:02.228Z hardhat:core:hre Running task compile:solidity:merge-compilation-jobs
+2026-02-16T04:34:02.228Z hardhat:core:hre Running task compile:solidity:compile-jobs
+2026-02-16T04:34:02.229Z hardhat:core:hre Running compile:solidity:compile-jobs's super
+2026-02-16T04:34:02.229Z hardhat:core:tasks:compile No compilation jobs to compile
+2026-02-16T04:34:02.229Z hardhat:core:hre Running task compile:solidity:log:nothing-to-compile
+2026-02-16T04:34:02.229Z hardhat:core:hre Running task typechain:generate-types
+2026-02-16T04:34:02.235Z hardhat:core:hre Running task compile:solidity:log:compilation-result
+2026-02-16T04:34:02.236Z hardhat:core:hre Running task compile:remove-obsolete-artifacts
+2026-02-16T04:34:02.387Z hardhat:core:hre Creating provider for network hardhat
+2026-02-16T04:34:03.097Z hardhat:core:hardhat-network:provider Making tracing config
+2026-02-16T04:34:03.112Z hardhat:core:analytics Hit for task sent successfully
+2026-02-16T04:34:03.128Z hardhat:core:hardhat-network:provider Creating EDR provider
+2026-02-16T04:34:03.263Z hardhat:core:hardhat-network:provider EDR provider created
+2026-02-16T04:34:03.359Z hardhat:core:hre Running test's super
+2026-02-16T04:34:03.360Z hardhat:core:hre Running task compile
+2026-02-16T04:34:03.360Z hardhat:core:hre Running compile's super
+2026-02-16T04:34:03.360Z hardhat:core:hre Running task compile:get-compilation-tasks
+2026-02-16T04:34:03.361Z hardhat:core:hre Running task compile:solidity
+2026-02-16T04:34:03.361Z hardhat:core:hre Running task compile:solidity:get-source-paths
+2026-02-16T04:34:03.366Z hardhat:core:hre Running task compile:solidity:get-source-names
+2026-02-16T04:34:03.378Z hardhat:core:hre Running task compile:solidity:get-dependency-graph
+2026-02-16T04:34:03.378Z hardhat:core:hre Running task compile:solidity:get-remappings
+2026-02-16T04:34:03.387Z hardhat:core:hre Running task compile:solidity:read-file
+2026-02-16T04:34:03.388Z hardhat:core:hre Running task compile:solidity:read-file
+2026-02-16T04:34:03.389Z hardhat:core:hre Running task compile:solidity:read-file
+2026-02-16T04:34:03.389Z hardhat:core:hre Running task compile:solidity:read-file
+2026-02-16T04:34:03.391Z hardhat:core:hre Running task compile:solidity:read-file
+2026-02-16T04:34:03.391Z hardhat:core:hre Running task compile:solidity:read-file
+2026-02-16T04:34:03.392Z hardhat:core:hre Running task compile:solidity:read-file
+2026-02-16T04:34:03.392Z hardhat:core:hre Running task compile:solidity:read-file
+2026-02-16T04:34:03.392Z hardhat:core:hre Running task compile:solidity:read-file
+2026-02-16T04:34:03.394Z hardhat:core:hre Running task compile:solidity:read-file
+2026-02-16T04:34:03.394Z hardhat:core:hre Running task compile:solidity:read-file
+2026-02-16T04:34:03.395Z hardhat:core:hre Running task compile:solidity:read-file
+2026-02-16T04:34:03.396Z hardhat:core:hre Running task compile:solidity:read-file
+2026-02-16T04:34:03.397Z hardhat:core:hre Running task compile:solidity:read-file
+2026-02-16T04:34:03.397Z hardhat:core:hre Running task compile:solidity:read-file
+2026-02-16T04:34:03.398Z hardhat:core:hre Running task compile:solidity:read-file
+2026-02-16T04:34:03.404Z hardhat:core:hre Running task compile:solidity:transform-import-name
+2026-02-16T04:34:03.407Z hardhat:core:hre Running task compile:solidity:get-compilation-jobs
+2026-02-16T04:34:03.408Z hardhat:core:tasks:compile The dependency graph was divided in '15' connected components
+2026-02-16T04:34:03.408Z hardhat:core:hre Running task compile:solidity:get-compilation-job-for-file
+2026-02-16T04:34:03.408Z hardhat:core:hre Running compile:solidity:get-compilation-job-for-file's super
+2026-02-16T04:34:03.409Z hardhat:core:compilation-job File 'C:\Users\ASUS\OneDrive\Desktop\Credence\backend\contracts\AccessControl.sol' will be compiled with version '0.8.19'
+2026-02-16T04:34:03.409Z hardhat:core:hre Running task compile:solidity:get-compilation-job-for-file
+2026-02-16T04:34:03.410Z hardhat:core:hre Running compile:solidity:get-compilation-job-for-file's super
+2026-02-16T04:34:03.410Z hardhat:core:compilation-job File 'C:\Users\ASUS\OneDrive\Desktop\Credence\backend\contracts\CredentialNFT.sol' will be compiled with version '0.8.19'
+2026-02-16T04:34:03.411Z hardhat:core:hre Running task compile:solidity:get-compilation-job-for-file
+2026-02-16T04:34:03.411Z hardhat:core:hre Running compile:solidity:get-compilation-job-for-file's super
+2026-02-16T04:34:03.412Z hardhat:core:compilation-job File 'C:\Users\ASUS\OneDrive\Desktop\Credence\backend\contracts\CredentialRegistry.sol' will be compiled with version '0.8.19'
+2026-02-16T04:34:03.412Z hardhat:core:compilation-job File 'C:\Users\ASUS\OneDrive\Desktop\Credence\backend\contracts\IssuerRegistry.sol' added as dependency of 'C:\Users\ASUS\OneDrive\Desktop\Credence\backend\contracts\CredentialRegistry.sol'
+2026-02-16T04:34:03.412Z hardhat:core:hre Running task compile:solidity:get-compilation-job-for-file
+2026-02-16T04:34:03.412Z hardhat:core:hre Running compile:solidity:get-compilation-job-for-file's super
+2026-02-16T04:34:03.413Z hardhat:core:compilation-job File 'C:\Users\ASUS\OneDrive\Desktop\Credence\backend\contracts\CredentialTreasury.sol' will be compiled with version '0.8.19'
+2026-02-16T04:34:03.413Z hardhat:core:hre Running task compile:solidity:get-compilation-job-for-file
+2026-02-16T04:34:03.414Z hardhat:core:hre Running compile:solidity:get-compilation-job-for-file's super
+2026-02-16T04:34:03.414Z hardhat:core:compilation-job File 'C:\Users\ASUS\OneDrive\Desktop\Credence\backend\contracts\CredentialVerifierLib.sol' will be compiled with version '0.8.19'
+2026-02-16T04:34:03.414Z hardhat:core:hre Running task compile:solidity:get-compilation-job-for-file
+2026-02-16T04:34:03.414Z hardhat:core:hre Running compile:solidity:get-compilation-job-for-file's super
+2026-02-16T04:34:03.415Z hardhat:core:compilation-job File 'C:\Users\ASUS\OneDrive\Desktop\Credence\backend\contracts\MultiSigWallet.sol' will be compiled with version '0.8.19'
+2026-02-16T04:34:03.415Z hardhat:core:hre Running task compile:solidity:get-compilation-job-for-file
+2026-02-16T04:34:03.415Z hardhat:core:hre Running compile:solidity:get-compilation-job-for-file's super
+2026-02-16T04:34:03.416Z hardhat:core:compilation-job File 'C:\Users\ASUS\OneDrive\Desktop\Credence\backend\contracts\OracleAggregator.sol' will be compiled with version '0.8.19'
+2026-02-16T04:34:03.416Z hardhat:core:hre Running task compile:solidity:get-compilation-job-for-file
+2026-02-16T04:34:03.416Z hardhat:core:hre Running compile:solidity:get-compilation-job-for-file's super
+2026-02-16T04:34:03.416Z hardhat:core:compilation-job File 'C:\Users\ASUS\OneDrive\Desktop\Credence\backend\contracts\Pausable.sol' will be compiled with version '0.8.19'
+2026-02-16T04:34:03.417Z hardhat:core:hre Running task compile:solidity:get-compilation-job-for-file
+2026-02-16T04:34:03.418Z hardhat:core:hre Running compile:solidity:get-compilation-job-for-file's super
+2026-02-16T04:34:03.418Z hardhat:core:compilation-job File 'C:\Users\ASUS\OneDrive\Desktop\Credence\backend\contracts\PaymentProcessor.sol' will be compiled with version '0.8.19'
+2026-02-16T04:34:03.418Z hardhat:core:hre Running task compile:solidity:get-compilation-job-for-file
+2026-02-16T04:34:03.418Z hardhat:core:hre Running compile:solidity:get-compilation-job-for-file's super
+2026-02-16T04:34:03.419Z hardhat:core:compilation-job File 'C:\Users\ASUS\OneDrive\Desktop\Credence\backend\contracts\RateLimiter.sol' will be compiled with version '0.8.19'
+2026-02-16T04:34:03.419Z hardhat:core:hre Running task compile:solidity:get-compilation-job-for-file
+2026-02-16T04:34:03.419Z hardhat:core:hre Running compile:solidity:get-compilation-job-for-file's super
+2026-02-16T04:34:03.419Z hardhat:core:compilation-job File 'C:\Users\ASUS\OneDrive\Desktop\Credence\backend\contracts\SignatureVerifier.sol' will be compiled with version '0.8.19'
+2026-02-16T04:34:03.419Z hardhat:core:hre Running task compile:solidity:get-compilation-job-for-file
+2026-02-16T04:34:03.419Z hardhat:core:hre Running compile:solidity:get-compilation-job-for-file's super
+2026-02-16T04:34:03.420Z hardhat:core:compilation-job File 'C:\Users\ASUS\OneDrive\Desktop\Credence\backend\contracts\TimelockController.sol' will be compiled with version '0.8.19'
+2026-02-16T04:34:03.420Z hardhat:core:hre Running task compile:solidity:get-compilation-job-for-file
+2026-02-16T04:34:03.420Z hardhat:core:hre Running compile:solidity:get-compilation-job-for-file's super
+2026-02-16T04:34:03.420Z hardhat:core:compilation-job File 'C:\Users\ASUS\OneDrive\Desktop\Credence\backend\contracts\UserRegistry.sol' will be compiled with version '0.8.19'
+2026-02-16T04:34:03.420Z hardhat:core:hre Running task compile:solidity:get-compilation-job-for-file
+2026-02-16T04:34:03.421Z hardhat:core:hre Running compile:solidity:get-compilation-job-for-file's super
+2026-02-16T04:34:03.421Z hardhat:core:compilation-job File 'C:\Users\ASUS\OneDrive\Desktop\Credence\backend\contracts\VerifierRegistry.sol' will be compiled with version '0.8.19'
+2026-02-16T04:34:03.421Z hardhat:core:hre Running task compile:solidity:get-compilation-job-for-file
+2026-02-16T04:34:03.421Z hardhat:core:hre Running compile:solidity:get-compilation-job-for-file's super
+2026-02-16T04:34:03.422Z hardhat:core:compilation-job File 'C:\Users\ASUS\OneDrive\Desktop\Credence\backend\contracts\ZKCredentialVerifier.sol' will be compiled with version '0.8.19'
+2026-02-16T04:34:03.425Z hardhat:core:hre Running task compile:solidity:get-compilation-job-for-file
+2026-02-16T04:34:03.425Z hardhat:core:hre Running compile:solidity:get-compilation-job-for-file's super
+2026-02-16T04:34:03.425Z hardhat:core:compilation-job File 'C:\Users\ASUS\OneDrive\Desktop\Credence\backend\contracts\IssuerRegistry.sol' will be compiled with version '0.8.19'
+2026-02-16T04:34:03.427Z hardhat:core:hre Running task compile:solidity:handle-compilation-jobs-failures
+2026-02-16T04:34:03.427Z hardhat:core:hre Running task compile:solidity:filter-compilation-jobs
+2026-02-16T04:34:03.430Z hardhat:core:tasks:compile '16' jobs were filtered out
+2026-02-16T04:34:03.430Z hardhat:core:hre Running task compile:solidity:merge-compilation-jobs
+2026-02-16T04:34:03.431Z hardhat:core:hre Running task compile:solidity:compile-jobs
+2026-02-16T04:34:03.431Z hardhat:core:hre Running compile:solidity:compile-jobs's super
+2026-02-16T04:34:03.431Z hardhat:core:tasks:compile No compilation jobs to compile
+2026-02-16T04:34:03.431Z hardhat:core:hre Running task compile:solidity:log:nothing-to-compile
+2026-02-16T04:34:03.432Z hardhat:core:hre Running task typechain:generate-types
+2026-02-16T04:34:03.437Z hardhat:core:hre Running task compile:solidity:log:compilation-result
+2026-02-16T04:34:03.438Z hardhat:core:hre Running task compile:remove-obsolete-artifacts
+2026-02-16T04:34:03.482Z hardhat:core:hre Running task test:get-test-files
+2026-02-16T04:34:03.486Z hardhat:core:hre Running task test:setup-test-environment
+2026-02-16T04:34:03.486Z hardhat:core:hre Running task test:show-fork-recommendations
+2026-02-16T04:34:03.487Z hardhat:core:hre Running task test:run-mocha-tests
+
+
+  AccessControl Tests
+    Role Management
+✓ Test 1: Role granted successfully
+      √ should grant roles correctly
+✓ Test 1a: Role revoked successfully
+      √ should revoke roles correctly
+✓ Test 1b: Non-owner cannot grant roles
+      √ should fail to grant role from non-owner
+    Pause Functionality
+✓ Test 2: Contract paused successfully
+      √ should pause contract
+✓ Test 2a: Contract unpaused successfully
+      √ should unpause contract
+✓ Test 2b: Cannot pause when already paused
+      √ should fail to pause when already paused
+    Ownership
+✓ Test 3: Ownership transferred
+      √ should transfer ownership
+
+  CredentialRegistry - Comprehensive Tests
+    Credential Issuance
+✓ Test 1: Credential issued successfully
+      √ should successfully issue a credential
+✓ Test 1a: Rejected zero holder address
+      √ should fail to issue credential with zero holder address
+      1) should fail to issue credential with empty credential type
+      2) should fail to issue credential with empty data
+      3) should fail to issue credential with past expiration date
+    Credential Verification
+✓ Test 2: Verification requested successfully
+      √ should request verification successfully
+      4) should fail to request verification with wrong holder
+✓ Test 2b: Verification processed successfully
+      √ should process verification request
+✓ Test 2c: Credential validity check passed
+      √ should check credential validity
+    Credential Revocation
+✓ Test 3: Credential revoked successfully
+      √ should revoke credential successfully
+      5) should fail to revoke already revoked credential
+      6) should fail to revoke credential from non-issuer
+✓ Test 3c: Revoked credential shows as invalid
+      √ should show credential as invalid after revocation
+    Edge Cases - Invalid Signatures
+      7) should fail with invalid signature length
+      8) should fail with used nonce
+      9) should fail with signature from non-registered issuer
+      10) should fail with expired credential
+    Edge Cases - Role Failures
+      11) should fail to issue credential by non-registered issuer
+      12) should fail to process verification from non-holder
+    Merkle Proof Selective Disclosure
+✓ Test 6: Merkle credential created successfully
+      √ should create merkle credential
+✓ Test 6a: Merkle proof verified successfully
+      √ should verify merkle proof
+    View Functions
+✓ Test 7: View function returns correct credential details
+      √ should get credential details
+✓ Test 7a: Retrieved holder credentials
+      √ should get holder credentials
+✓ Test 7b: Total credentials count:  5
+      √ should get total credentials count
+    Duplicate Prevention
+      13) should prevent duplicate merkle roots
+    End-to-End Credential Workflow
+✓ Test 10: Full E2E credential lifecycle completed
+      √ should complete full credential lifecycle
+
+  IssuerRegistry & UserRegistry Tests
+    IssuerRegistry
+✓ Test IR1: Issuer registered successfully
+      √ should register issuer correctly
+      14) should fail to register same issuer twice
+✓ Test IR2: Issuer details retrieved
+      √ should get issuer details
+✓ Test IR3: All issuers retrieved
+      √ should get all issuers
+✓ Test IR4: Credentials count incremented
+      √ should increment credentials issued
+✓ Test IR5: Issuer activation/deactivation works
+      √ should deactivate and reactivate issuer
+      15) should fail to register with empty name
+✓ Test IR7: Allowed account check works
+      √ should check allowed accounts
+✓ Test IR8: Active issuers count retrieved
+      √ should get active issuers count
+    UserRegistry
+✓ Test UR1: User registered successfully
+      √ should register user correctly
+      16) should fail to register same user twice
+✓ Test UR2: User details retrieved
+      √ should get user details
+✓ Test UR3: All users retrieved
+      √ should get all users
+✓ Test UR4: Total users count retrieved
+      √ should get total users count
+✓ Test UR5: Credentials received incremented
+      √ should increment credentials received
+✓ Test UR6: User deactivated
+      √ should deactivate user
+✓ Test UR7: User addresses retrieved
+      √ should get user addresses
+✓ Test UR8: Allowed account check works
+      √ should check allowed accounts
+    Edge Cases
+      17) should fail to get non-existent user
+
+  VerifierRegistry Tests
+    Verifier Registration
+✓ Test VR1: Verifier registered successfully
+      √ should register verifier correctly
+      18) should fail to register same verifier twice
+      19) should fail to register with empty name
+      20) should fail to register with empty organization
+✓ Test VR1d: Second verifier registered
+      √ should register second verifier
+    Verifier Details
+✓ Test VR2: Verifier details retrieved
+      √ should get verifier details
+✓ Test VR3: All verifiers retrieved
+      √ should get all verifiers
+✓ Test VR4: Active verifiers retrieved
+      √ should get active verifiers
+✓ Test VR5: Total verifiers count
+      √ should get total verifiers count
+✓ Test VR6: Active verifier count
+      √ should get active verifier count
+    Verifier Deactivation
+✓ Test VR7: Verifier deactivated
+      √ should deactivate verifier
+      21) should fail to deactivate already deactivated
+      22) should fail to deactivate another verifier
+✓ Test VR8: Verifier reactivated
+      √ should reactivate verifier
+      23) should fail to reactivate already active
+✓ Test VR9: Active count updated correctly
+      √ should update active verifier count after deactivation
+    Verification Count
+✓ Test VR10: Verifications count incremented
+      √ should increment verifications count
+✓ Test VR10a: Multiple increments work
+      √ should increment multiple times
+    Edge Cases
+      24) should fail to get non-existent verifier
+✓ Test VR12: Empty registry handled correctly
+      √ should handle empty verifier list
+
+  ZKCredentialVerifier Tests
+    ZK Proof Submission
+✓ Test ZK1: ZK proof submitted successfully
+      √ should submit a ZK proof
+✓ Test ZK2: ZK proof verified successfully
+      √ should verify a ZK proof
+✓ Test ZK3: Credential ownership verified
+      √ should verify credential ownership
+✓ Test ZK4: Commitment created
+      √ should create commitment
+✓ Test ZK5: Criteria verified
+      √ should verify criteria
+✓ Test ZK6: Verification count retrieved
+      √ should get verification count
+✓ Test ZK7: Verifier key updated
+      √ should update verifier key
+✓ Test ZK8: Holder proofs retrieved
+      √ should get holder proofs
+
+
+  56 passing (1s)
+  24 failing
+
+  1) CredentialRegistry - Comprehensive Tests
+       Credential Issuance
+         should fail to issue credential with empty credential type:
+     Error: Invalid Chai property: reverted
+      at Object.proxyGetter [as get] (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\node_modules\chai\lib\chai\utils\proxify.js:78:17)
+      at Context.<anonymous> (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\test\credentials.test.js:82:14)
+
+  2) CredentialRegistry - Comprehensive Tests
+       Credential Issuance
+         should fail to issue credential with empty data:
+     Error: Invalid Chai property: reverted
+      at Object.proxyGetter [as get] (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\node_modules\chai\lib\chai\utils\proxify.js:78:17)
+      at Context.<anonymous> (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\test\credentials.test.js:99:14)
+
+  3) CredentialRegistry - Comprehensive Tests
+       Credential Issuance
+         should fail to issue credential with past expiration date:
+     Error: Invalid Chai property: reverted
+      at Object.proxyGetter [as get] (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\node_modules\chai\lib\chai\utils\proxify.js:78:17)
+      at Context.<anonymous> (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\test\credentials.test.js:116:14)
+
+  4) CredentialRegistry - Comprehensive Tests
+       Credential Verification
+         should fail to request verification with wrong holder:
+     Error: Invalid Chai property: reverted
+      at Object.proxyGetter [as get] (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\node_modules\chai\lib\chai\utils\proxify.js:78:17)
+      at Context.<anonymous> (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\test\credentials.test.js:163:14)
+
+  5) CredentialRegistry - Comprehensive Tests
+       Credential Revocation
+         should fail to revoke already revoked credential:
+     Error: Invalid Chai property: reverted
+      at Object.proxyGetter [as get] (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\node_modules\chai\lib\chai\utils\proxify.js:78:17)
+      at Context.<anonymous> (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\test\credentials.test.js:235:14)
+
+  6) CredentialRegistry - Comprehensive Tests
+       Credential Revocation
+         should fail to revoke credential from non-issuer:
+     Error: Invalid Chai property: reverted
+      at Object.proxyGetter [as get] (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\node_modules\chai\lib\chai\utils\proxify.js:78:17)
+      at Context.<anonymous> (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\test\credentials.test.js:252:14)
+
+  7) CredentialRegistry - Comprehensive Tests
+       Edge Cases - Invalid Signatures
+         should fail with invalid signature length:
+     Error: Invalid Chai property: reverted
+      at Object.proxyGetter [as get] (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\node_modules\chai\lib\chai\utils\proxify.js:78:17)
+      at Context.<anonymous> (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\test\credentials.test.js:281:14)
+
+  8) CredentialRegistry - Comprehensive Tests
+       Edge Cases - Invalid Signatures
+         should fail with used nonce:
+     Error: Invalid Chai property: reverted
+      at Object.proxyGetter [as get] (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\node_modules\chai\lib\chai\utils\proxify.js:78:17)
+      at Context.<anonymous> (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\test\credentials.test.js:341:14)
+
+  9) CredentialRegistry - Comprehensive Tests
+       Edge Cases - Invalid Signatures
+         should fail with signature from non-registered issuer:
+     Error: Invalid Chai property: reverted
+      at Object.proxyGetter [as get] (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\node_modules\chai\lib\chai\utils\proxify.js:78:17)
+      at Context.<anonymous> (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\test\credentials.test.js:387:14)
+
+  10) CredentialRegistry - Comprehensive Tests
+       Edge Cases - Invalid Signatures
+         should fail with expired credential:
+     Error: Invalid Chai property: reverted
+      at Object.proxyGetter [as get] (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\node_modules\chai\lib\chai\utils\proxify.js:78:17)
+      at Context.<anonymous> (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\test\credentials.test.js:433:14)
+
+  11) CredentialRegistry - Comprehensive Tests
+       Edge Cases - Role Failures
+         should fail to issue credential by non-registered issuer:
+     Error: Invalid Chai property: reverted
+      at Object.proxyGetter [as get] (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\node_modules\chai\lib\chai\utils\proxify.js:78:17)
+      at Context.<anonymous> (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\test\credentials.test.js:455:14)
+
+  12) CredentialRegistry - Comprehensive Tests
+       Edge Cases - Role Failures
+         should fail to process verification from non-holder:
+     Error: Invalid Chai property: reverted
+      at Object.proxyGetter [as get] (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\node_modules\chai\lib\chai\utils\proxify.js:78:17)
+      at Context.<anonymous> (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\test\credentials.test.js:463:14)
+
+  13) CredentialRegistry - Comprehensive Tests
+       Duplicate Prevention
+         should prevent duplicate merkle roots:
+     Error: Invalid Chai property: reverted
+      at Object.proxyGetter [as get] (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\node_modules\chai\lib\chai\utils\proxify.js:78:17)
+      at Context.<anonymous> (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\test\credentials.test.js:552:14)
+
+  14) IssuerRegistry & UserRegistry Tests
+       IssuerRegistry
+         should fail to register same issuer twice:
+     Error: Invalid Chai property: reverted
+      at Object.proxyGetter [as get] (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\node_modules\chai\lib\chai\utils\proxify.js:78:17)
+      at Context.<anonymous> (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\test\registry.test.js:40:14)
+
+  15) IssuerRegistry & UserRegistry Tests
+       IssuerRegistry
+         should fail to register with empty name:
+     Error: Invalid Chai property: reverted
+      at Object.proxyGetter [as get] (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\node_modules\chai\lib\chai\utils\proxify.js:78:17)
+      at Context.<anonymous> (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\test\registry.test.js:83:14)
+
+  16) IssuerRegistry & UserRegistry Tests
+       UserRegistry
+         should fail to register same user twice:
+     Error: Invalid Chai property: reverted
+      at Object.proxyGetter [as get] (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\node_modules\chai\lib\chai\utils\proxify.js:78:17)
+      at Context.<anonymous> (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\test\registry.test.js:119:14)
+
+  17) IssuerRegistry & UserRegistry Tests
+       Edge Cases
+         should fail to get non-existent user:
+     Error: Invalid Chai property: reverted
+      at Object.proxyGetter [as get] (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\node_modules\chai\lib\chai\utils\proxify.js:78:17)
+      at Context.<anonymous> (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\test\registry.test.js:175:14)
+
+  18) VerifierRegistry Tests
+       Verifier Registration
+         should fail to register same verifier twice:
+     Error: Invalid Chai property: reverted
+      at Object.proxyGetter [as get] (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\node_modules\chai\lib\chai\utils\proxify.js:78:17)
+      at Context.<anonymous> (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\test\verifier.test.js:36:14)
+
+  19) VerifierRegistry Tests
+       Verifier Registration
+         should fail to register with empty name:
+     Error: Invalid Chai property: reverted
+      at Object.proxyGetter [as get] (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\node_modules\chai\lib\chai\utils\proxify.js:78:17)
+      at Context.<anonymous> (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\test\verifier.test.js:47:14)
+
+  20) VerifierRegistry Tests
+       Verifier Registration
+         should fail to register with empty organization:
+     Error: Invalid Chai property: reverted
+      at Object.proxyGetter [as get] (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\node_modules\chai\lib\chai\utils\proxify.js:78:17)
+      at Context.<anonymous> (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\test\verifier.test.js:58:14)
+
+  21) VerifierRegistry Tests
+       Verifier Deactivation
+         should fail to deactivate already deactivated:
+     Error: Invalid Chai property: reverted
+      at Object.proxyGetter [as get] (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\node_modules\chai\lib\chai\utils\proxify.js:78:17)
+      at Context.<anonymous> (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\test\verifier.test.js:121:14)
+
+  22) VerifierRegistry Tests
+       Verifier Deactivation
+         should fail to deactivate another verifier:
+     Error: Invalid Chai property: reverted
+      at Object.proxyGetter [as get] (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\node_modules\chai\lib\chai\utils\proxify.js:78:17)
+      at Context.<anonymous> (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\test\verifier.test.js:128:14)
+
+  23) VerifierRegistry Tests
+       Verifier Deactivation
+         should fail to reactivate already active:
+     Error: Invalid Chai property: reverted
+      at Object.proxyGetter [as get] (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\node_modules\chai\lib\chai\utils\proxify.js:78:17)
+      at Context.<anonymous> (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\test\verifier.test.js:143:14)
+
+  24) VerifierRegistry Tests
+       Edge Cases
+         should fail to get non-existent verifier:
+     Error: Invalid Chai property: reverted
+      at Object.proxyGetter [as get] (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\node_modules\chai\lib\chai\utils\proxify.js:78:17)
+      at Context.<anonymous> (C:\Users\ASUS\OneDrive\Desktop\Credence\backend\test\verifier.test.js:180:14)
+
+
+
+2026-02-16T04:34:05.206Z hardhat:core:hre Running task hhgas:stop
+··························································································································
+|  [32m[1mSolidity and Network Configuration[22m[39m                                                                                    │
+·····································|·················|···············|·················|································
+|  [36mSolidity: 0.8.19[39m                  ·  [36mOptim: true[39m    ·  [36mRuns: 200[39m    ·  [36mviaIR: false[39m   ·     [36mBlock: 30,000,000 gas[39m     │
+·····································|·················|···············|·················|································
+|  [32m[1mMethods[22m[39m                                                                                                               │
+·····································|·················|···············|·················|················|···············
+|  [32m[1mContracts / Methods[22m[39m               ·  [1mMin[22m            ·  [1mMax[22m          ·  [1mAvg[22m            ·  [1m# calls[22m       ·  [1musd (avg)[22m   │
+·····································|·················|···············|·················|················|···············
+|  [1mAccessControl[22m                     ·                                                                                   │
+·····································|·················|···············|·················|················|···············
+|      grantRole                     ·        [36m142,764[39m  ·      [31m142,776[39m  ·        142,770  ·             2  ·           [32m[90m-[39m[32m[39m  │
+·····································|·················|···············|·················|················|···············
+|      pause                         ·              [90m-[39m  ·            [90m-[39m  ·         27,747  ·             2  ·           [32m[90m-[39m[32m[39m  │
+·····································|·················|···············|·················|················|···············
+|      revokeRole                    ·              [90m-[39m  ·            [90m-[39m  ·         49,278  ·             1  ·           [32m[90m-[39m[32m[39m  │
+·····································|·················|···············|·················|················|···············
+|      transferOwnership             ·              [90m-[39m  ·            [90m-[39m  ·        120,591  ·             1  ·           [32m[90m-[39m[32m[39m  │
+·····································|·················|···············|·················|················|···············
+|      unpause                       ·              [90m-[39m  ·            [90m-[39m  ·         27,716  ·             2  ·           [32m[90m-[39m[32m[39m  │
+·····································|·················|···············|·················|················|···············
+|  [1mCredentialRegistry[22m                ·                                                                                   │
+·····································|·················|···············|·················|················|···············
+|      createMerkleCredential        ·        [36m307,510[39m  ·      [31m324,742[39m  ·        314,427  ·             5  ·           [32m[90m-[39m[32m[39m  │
+·····································|·················|···············|·················|················|···············
+|      issueCredential               ·        [36m319,525[39m  ·      [31m415,988[39m  ·        343,265  ·            12  ·           [32m[90m-[39m[32m[39m  │
+·····································|·················|···············|·················|················|···············
+|      issueCredentialWithSignature  ·              [90m-[39m  ·            [90m-[39m  ·        106,982  ·             1  ·           [32m[90m-[39m[32m[39m  │
+·····································|·················|···············|·················|················|···············
+|      processVerificationRequest    ·              [90m-[39m  ·            [90m-[39m  ·         70,265  ·             3  ·           [32m[90m-[39m[32m[39m  │
+·····································|·················|···············|·················|················|···············
+|      requestVerification           ·        [36m229,829[39m  ·      [31m264,137[39m  ·        241,269  ·             6  ·           [32m[90m-[39m[32m[39m  │
+·····································|·················|···············|·················|················|···············
+|      revokeCredential              ·              [90m-[39m  ·            [90m-[39m  ·         30,792  ·             3  ·           [32m[90m-[39m[32m[39m  │
+·····································|·················|···············|·················|················|···············
+|  [1mIssuerRegistry[22m                    ·                                                                                   │
+·····································|·················|···············|·················|················|···············
+|      deactivateIssuer              ·              [90m-[39m  ·            [90m-[39m  ·         24,901  ·             1  ·           [32m[90m-[39m[32m[39m  │
+·····································|·················|···············|·················|················|···············
+|      incrementCredentialsIssued    ·              [90m-[39m  ·            [90m-[39m  ·         46,235  ·             1  ·           [32m[90m-[39m[32m[39m  │
+·····································|·················|···············|·················|················|···············
+|      reactivateIssuer              ·              [90m-[39m  ·            [90m-[39m  ·         46,762  ·             1  ·           [32m[90m-[39m[32m[39m  │
+·····································|·················|···············|·················|················|···············
+|      registerIssuer                ·        [36m230,612[39m  ·      [31m230,720[39m  ·        230,666  ·             2  ·           [32m[90m-[39m[32m[39m  │
+·····································|·················|···············|·················|················|···············
+|  [1mUserRegistry[22m                      ·                                                                                   │
+·····································|·················|···············|·················|················|···············
+|      deactivateUser                ·              [90m-[39m  ·            [90m-[39m  ·         25,111  ·             1  ·           [32m[90m-[39m[32m[39m  │
+·····································|·················|···············|·················|················|···············
+|      incrementCredentialsReceived  ·              [90m-[39m  ·            [90m-[39m  ·         46,201  ·             1  ·           [32m[90m-[39m[32m[39m  │
+·····································|·················|···············|·················|················|···············
+|      registerUser                  ·              [90m-[39m  ·            [90m-[39m  ·        231,400  ·             1  ·           [32m[90m-[39m[32m[39m  │
+·····································|·················|···············|·················|················|···············
+|  [1mVerifierRegistry[22m                  ·                                                                                   │
+·····································|·················|···············|·················|················|···············
+|      deactivateVerifier            ·         [36m25,723[39m  ·       [31m25,735[39m  ·         25,729  ·             2  ·           [32m[90m-[39m[32m[39m  │
+·····································|·················|···············|·················|················|···············
+|      incrementVerificationsCount   ·         [36m29,112[39m  ·       [31m46,212[39m  ·         34,812  ·             3  ·           [32m[90m-[39m[32m[39m  │
+·····································|·················|···············|·················|················|···············
+|      reactivateVerifier            ·         [36m47,510[39m  ·       [31m47,522[39m  ·         47,516  ·             2  ·           [32m[90m-[39m[32m[39m  │
+·····································|·················|···············|·················|················|···············
+|      registerVerifier              ·        [36m218,553[39m  ·      [31m252,921[39m  ·        235,737  ·             2  ·           [32m[90m-[39m[32m[39m  │
+·····································|·················|···············|·················|················|···············
+|  [1mZKCredentialVerifier[22m              ·                                                                                   │
+·····································|·················|···············|·················|················|···············
+|      submitProof                   ·        [36m301,824[39m  ·      [31m318,936[39m  ·        305,254  ·            10  ·           [32m[90m-[39m[32m[39m  │
+·····································|·················|···············|·················|················|···············
+|      updateVerifierKey             ·              [90m-[39m  ·            [90m-[39m  ·         28,604  ·             1  ·           [32m[90m-[39m[32m[39m  │
+·····································|·················|···············|·················|················|···············
+|      verifyProofAndCount           ·              [90m-[39m  ·            [90m-[39m  ·         93,697  ·             1  ·           [32m[90m-[39m[32m[39m  │
+·····································|·················|···············|·················|················|···············
+|  [32m[1mDeployments[22m[39m                                         ·                                 ·  [1m% of limit[22m    ·              │
+·····································|·················|···············|·················|················|···············
+|  [1mAccessControl[22m                     ·              [90m-[39m  ·            [90m-[39m  ·      1,128,142  ·         3.8 %  ·           [32m[90m-[39m[32m[39m  │
+·····································|·················|···············|·················|················|···············
+|  [1mCredentialRegistry[22m                ·              [90m-[39m  ·            [90m-[39m  ·      3,453,026  ·        11.5 %  ·           [32m[90m-[39m[32m[39m  │
+·····································|·················|···············|·················|················|···············
+|  [1mIssuerRegistry[22m                    ·              [90m-[39m  ·            [90m-[39m  ·      1,231,782  ·         4.1 %  ·           [32m[90m-[39m[32m[39m  │
+·····································|·················|···············|·················|················|···············
+|  [1mUserRegistry[22m                      ·              [90m-[39m  ·            [90m-[39m  ·      1,208,091  ·           4 %  ·           [32m[90m-[39m[32m[39m  │
+·····································|·················|···············|·················|················|···············
+|  [1mVerifierRegistry[22m                  ·              [90m-[39m  ·            [90m-[39m  ·      1,148,590  ·         3.8 %  ·           [32m[90m-[39m[32m[39m  │
+·····································|·················|···············|·················|················|···············
+|  [1mZKCredentialVerifier[22m              ·              [90m-[39m  ·            [90m-[39m  ·      1,603,569  ·         5.3 %  ·           [32m[90m-[39m[32m[39m  │
+·····································|·················|···············|·················|················|···············
+|  [32m[1mKey[22m[39m                                                                                                                   │
+··························································································································
+|  [35m[1m◯[22m[39m  Execution gas for this method does not include intrinsic gas overhead                                              │
+··························································································································
+|  [35m[1m△[22m[39m  Cost was non-zero but below the precision setting for the currency display (see options)                           │
+··························································································································
+|  [35mToolchain:[39m  hardhat                                                                                                   │
+··························································································································
+>>>>> WARNING (hardhat-gas-reporter plugin) <<<<<<
+Failed to get token price from https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=ETH&CMC_PRO_API_KEY=API_KEY&convert=USD
+Error was: Request failed with status code 401
+Reported price data is missing or incorrect
+* Being rate limited? See the Etherscan API key options in the docs.
+* Set the "offline" option to "true" to suppress these warnings
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+>>>>> WARNING (hardhat-gas-reporter plugin) <<<<<<
+Failed to get gas price from https://api.etherscan.io/api?module=proxy&action=eth_gasPrice
+Error was: You are using a deprecated V1 endpoint, switch to Etherscan API V2 using https://docs.etherscan.io/v2-migration
+Reported price data is missing or incorrect
+* Being rate limited? See the Etherscan API key options in the docs.
+* Set the "offline" option to "true" to suppress these warnings
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+2026-02-16T04:34:07.966Z hardhat:core:cli Killing Hardhat after successfully running task test

@@ -1,8 +1,78 @@
 {
   "_format": "hh-sol-cache-2",
   "files": {
+    "C:\\Users\\ASUS\\OneDrive\\Desktop\\Credence\\backend\\contracts\\AccessControl.sol": {
+      "lastModificationDate": 1771215174322,
+      "contentHash": "b861f75117e8873e4a6021a63be1ddf4",
+      "sourceName": "contracts/AccessControl.sol",
+      "solcConfig": {
+        "version": "0.8.19",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.19"
+      ],
+      "artifacts": [
+        "AccessControl"
+      ]
+    },
+    "C:\\Users\\ASUS\\OneDrive\\Desktop\\Credence\\backend\\contracts\\CredentialNFT.sol": {
+      "lastModificationDate": 1771215174322,
+      "contentHash": "3a9e4538a84a66a978083701ed1a10b2",
+      "sourceName": "contracts/CredentialNFT.sol",
+      "solcConfig": {
+        "version": "0.8.19",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.19"
+      ],
+      "artifacts": [
+        "CredentialNFT"
+      ]
+    },
     "C:\\Users\\ASUS\\OneDrive\\Desktop\\Credence\\backend\\contracts\\CredentialRegistry.sol": {
-      "lastModificationDate": 1771082867159,
+      "lastModificationDate": 1771215174322,
       "contentHash": "03030580e430aa726fc8439ab7af9f18",
       "sourceName": "contracts/CredentialRegistry.sol",
       "solcConfig": {
@@ -39,7 +109,7 @@
       ]
     },
     "C:\\Users\\ASUS\\OneDrive\\Desktop\\Credence\\backend\\contracts\\IssuerRegistry.sol": {
-      "lastModificationDate": 1756430016925,
+      "lastModificationDate": 1771215174338,
       "contentHash": "e7ee378b197b6423a78cc7c9885184bd",
       "sourceName": "contracts/IssuerRegistry.sol",
       "solcConfig": {
@@ -73,148 +143,8 @@
         "IssuerRegistry"
       ]
     },
-    "C:\\Users\\ASUS\\OneDrive\\Desktop\\Credence\\backend\\contracts\\UserRegistry.sol": {
-      "lastModificationDate": 1756430016925,
-      "contentHash": "667d6fbe590845ffa9ef89785c3a64c3",
-      "sourceName": "contracts/UserRegistry.sol",
-      "solcConfig": {
-        "version": "0.8.19",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [],
-      "versionPragmas": [
-        "^0.8.19"
-      ],
-      "artifacts": [
-        "UserRegistry"
-      ]
-    },
-    "C:\\Users\\ASUS\\OneDrive\\Desktop\\Credence\\backend\\contracts\\VerifierRegistry.sol": {
-      "lastModificationDate": 1757181449266,
-      "contentHash": "24aa76a7df9568bbb1608c5012100564",
-      "sourceName": "contracts/VerifierRegistry.sol",
-      "solcConfig": {
-        "version": "0.8.19",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [],
-      "versionPragmas": [
-        "^0.8.19"
-      ],
-      "artifacts": [
-        "VerifierRegistry"
-      ]
-    },
-    "C:\\Users\\ASUS\\OneDrive\\Desktop\\Credence\\backend\\contracts\\AccessControl.sol": {
-      "lastModificationDate": 1771079522736,
-      "contentHash": "b861f75117e8873e4a6021a63be1ddf4",
-      "sourceName": "contracts/AccessControl.sol",
-      "solcConfig": {
-        "version": "0.8.19",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [],
-      "versionPragmas": [
-        "^0.8.19"
-      ],
-      "artifacts": [
-        "AccessControl"
-      ]
-    },
-    "C:\\Users\\ASUS\\OneDrive\\Desktop\\Credence\\backend\\contracts\\CredentialNFT.sol": {
-      "lastModificationDate": 1771079686297,
-      "contentHash": "3a9e4538a84a66a978083701ed1a10b2",
-      "sourceName": "contracts/CredentialNFT.sol",
-      "solcConfig": {
-        "version": "0.8.19",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [],
-      "versionPragmas": [
-        "^0.8.19"
-      ],
-      "artifacts": [
-        "CredentialNFT"
-      ]
-    },
     "C:\\Users\\ASUS\\OneDrive\\Desktop\\Credence\\backend\\contracts\\CredentialTreasury.sol": {
-      "lastModificationDate": 1771079727441,
+      "lastModificationDate": 1771215174322,
       "contentHash": "77cdd49c3af7a718bf118200e9e66d78",
       "sourceName": "contracts/CredentialTreasury.sol",
       "solcConfig": {
@@ -249,7 +179,7 @@
       ]
     },
     "C:\\Users\\ASUS\\OneDrive\\Desktop\\Credence\\backend\\contracts\\CredentialVerifierLib.sol": {
-      "lastModificationDate": 1771079769054,
+      "lastModificationDate": 1771215174322,
       "contentHash": "989196fc2aafa971a9137567c98e8cf4",
       "sourceName": "contracts/CredentialVerifierLib.sol",
       "solcConfig": {
@@ -283,43 +213,8 @@
         "CredentialVerifier"
       ]
     },
-    "C:\\Users\\ASUS\\OneDrive\\Desktop\\Credence\\backend\\contracts\\SignatureVerifier.sol": {
-      "lastModificationDate": 1771079637962,
-      "contentHash": "fea9143daa46c86184a8d4170fe09daa",
-      "sourceName": "contracts/SignatureVerifier.sol",
-      "solcConfig": {
-        "version": "0.8.19",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [],
-      "versionPragmas": [
-        "^0.8.19"
-      ],
-      "artifacts": [
-        "SignatureVerifier"
-      ]
-    },
     "C:\\Users\\ASUS\\OneDrive\\Desktop\\Credence\\backend\\contracts\\MultiSigWallet.sol": {
-      "lastModificationDate": 1771080837050,
+      "lastModificationDate": 1771215174338,
       "contentHash": "c99c21c7746bafadc94b7972dc6e9168",
       "sourceName": "contracts/MultiSigWallet.sol",
       "solcConfig": {
@@ -354,7 +249,7 @@
       ]
     },
     "C:\\Users\\ASUS\\OneDrive\\Desktop\\Credence\\backend\\contracts\\OracleAggregator.sol": {
-      "lastModificationDate": 1771081135512,
+      "lastModificationDate": 1771215174338,
       "contentHash": "ff76d3a529d4abae626d34cc2085f238",
       "sourceName": "contracts/OracleAggregator.sol",
       "solcConfig": {
@@ -389,7 +284,7 @@
       ]
     },
     "C:\\Users\\ASUS\\OneDrive\\Desktop\\Credence\\backend\\contracts\\PaymentProcessor.sol": {
-      "lastModificationDate": 1771081567139,
+      "lastModificationDate": 1771215174338,
       "contentHash": "790ee36b9ee6e7474dc9c2029c87b2e0",
       "sourceName": "contracts/PaymentProcessor.sol",
       "solcConfig": {
@@ -424,7 +319,7 @@
       ]
     },
     "C:\\Users\\ASUS\\OneDrive\\Desktop\\Credence\\backend\\contracts\\RateLimiter.sol": {
-      "lastModificationDate": 1771080969281,
+      "lastModificationDate": 1771215174338,
       "contentHash": "1bf62967fdcb89247372817ecfc85183",
       "sourceName": "contracts/RateLimiter.sol",
       "solcConfig": {
@@ -458,8 +353,113 @@
         "RateLimiter"
       ]
     },
+    "C:\\Users\\ASUS\\OneDrive\\Desktop\\Credence\\backend\\contracts\\SignatureVerifier.sol": {
+      "lastModificationDate": 1771215174338,
+      "contentHash": "fea9143daa46c86184a8d4170fe09daa",
+      "sourceName": "contracts/SignatureVerifier.sol",
+      "solcConfig": {
+        "version": "0.8.19",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.19"
+      ],
+      "artifacts": [
+        "SignatureVerifier"
+      ]
+    },
+    "C:\\Users\\ASUS\\OneDrive\\Desktop\\Credence\\backend\\contracts\\UserRegistry.sol": {
+      "lastModificationDate": 1771215174338,
+      "contentHash": "667d6fbe590845ffa9ef89785c3a64c3",
+      "sourceName": "contracts/UserRegistry.sol",
+      "solcConfig": {
+        "version": "0.8.19",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.19"
+      ],
+      "artifacts": [
+        "UserRegistry"
+      ]
+    },
+    "C:\\Users\\ASUS\\OneDrive\\Desktop\\Credence\\backend\\contracts\\VerifierRegistry.sol": {
+      "lastModificationDate": 1771215174354,
+      "contentHash": "24aa76a7df9568bbb1608c5012100564",
+      "sourceName": "contracts/VerifierRegistry.sol",
+      "solcConfig": {
+        "version": "0.8.19",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.19"
+      ],
+      "artifacts": [
+        "VerifierRegistry"
+      ]
+    },
     "C:\\Users\\ASUS\\OneDrive\\Desktop\\Credence\\backend\\contracts\\ZKCredentialVerifier.sol": {
-      "lastModificationDate": 1771163256652,
+      "lastModificationDate": 1771215174354,
       "contentHash": "b96a65d466b0cc8841b1468c8ffca758",
       "sourceName": "contracts/ZKCredentialVerifier.sol",
       "solcConfig": {
@@ -491,6 +491,76 @@
       ],
       "artifacts": [
         "ZKCredentialVerifier"
+      ]
+    },
+    "C:\\Users\\ASUS\\OneDrive\\Desktop\\Credence\\backend\\contracts\\Pausable.sol": {
+      "lastModificationDate": 1771215982147,
+      "contentHash": "3f8c9abe6bded12350d6962f82923cbd",
+      "sourceName": "contracts/Pausable.sol",
+      "solcConfig": {
+        "version": "0.8.19",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.19"
+      ],
+      "artifacts": [
+        "Pausable"
+      ]
+    },
+    "C:\\Users\\ASUS\\OneDrive\\Desktop\\Credence\\backend\\contracts\\TimelockController.sol": {
+      "lastModificationDate": 1771216074109,
+      "contentHash": "8db72539bac137c7587feebc359fe491",
+      "sourceName": "contracts/TimelockController.sol",
+      "solcConfig": {
+        "version": "0.8.19",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.19"
+      ],
+      "artifacts": [
+        "TimelockController"
       ]
     }
   }

@@ -1,5 +1,6 @@
 require("@nomicfoundation/hardhat-toolbox");
 require("@nomicfoundation/hardhat-chai-matchers");
+require("hardhat-gas-reporter");
 require("dotenv").config();
 
 /** @type import('hardhat/config').HardhatUserConfig */
@@ -24,6 +25,13 @@ module.exports = {
     hardhat: {
       chainId: 31337
     }
+  },
+  gasReporter: {
+    enabled: true,
+    currency: "USD",
+    coinmarketcap: "API_KEY",
+    token: "ETH",
+    gasPriceApi: "https://api.etherscan.io/api?module=proxy&action=eth_gasPrice"
   },
   paths: {
     sources: "./contracts",
