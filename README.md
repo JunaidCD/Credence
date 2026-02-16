@@ -553,28 +553,42 @@ Zero-knowledge proofs allow a prover to verify to a verifier that they know a se
 ### How It Works
 
 1. **Circuit** ([`backend/circuits/credentialProof.circom`](backend/circuits/credentialProof.circom)): Defines the ZK proof logic
-2. **Trusted Setup**: Generates proving/verification keys (run once)
+2. **Trusted Setup**: Generates proving/verification keys (run once) - takes ~10-15 minutes
 3. **Proof Generation**: Off-chain - generates proof from secret + credential
 4. **On-chain Verification**: Smart contract verifies the proof
 
 ### Setup ZK Circuit
 
 ```bash
-# Install circom
-npm install -g circom
-
-# Install dependencies
+# Navigate to circuits folder
 cd backend/circuits
+
+# Install dependencies (includes circom & snarkjs)
 npm install
 
-# Compile circuit
+# Compile the circuit
 npm run compile
 
-# Trusted setup (generates keys)
+# Run trusted setup (Phase 1 + Phase 2)
 npm run full-setup
+```
 
-# Generate proof
-node ../scripts/generate-proof.js <secret> <credentialHash>
+**Or step by step:**
+```bash
+npm run setup         # Phase 1: Generate Powers of Tau
+npm run contribute   # Add randomness
+npm run prepare      # Prepare Phase 2
+npm run setup-keys   # Generate proving/verification keys
+npm run export-keys  # Export verification key for smart contract
+```
+
+### Generate Proof
+
+```bash
+node ../scripts/generate-proof.js <secret> <credentialHash> [nullifier]
+
+# Example:
+node ../scripts/generate-proof.js "my-secret" "0x123abc..."
 ```
 
 ### Key Files

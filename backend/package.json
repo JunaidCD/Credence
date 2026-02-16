@@ -6,7 +6,12 @@
     "compile": "npx hardhat compile",
     "deploy:local": "npx hardhat run scripts/deploy.js --network localhost",
     "node": "npx hardhat node",
-    "test": "npx hardhat test"
+    "test": "npx hardhat test",
+    "circom:compile": "cd circuits && circom credentialProof.circom -o build -r",
+    "circom:install": "cd circuits && npm install",
+    "circom:setup": "cd circuits && npm run setup",
+    "circom:full-setup": "cd circuits && npm run full-setup",
+    "circom:prove": "cd circuits && npm run prove"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.1.0",

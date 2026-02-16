@@ -562,6 +562,41 @@
       "artifacts": [
         "TimelockController"
       ]
+    },
+    "C:\\Users\\ASUS\\OneDrive\\Desktop\\Credence\\backend\\contracts\\Groth16Verifier.sol": {
+      "lastModificationDate": 1771219018680,
+      "contentHash": "39263d8c5b7f8d8f0e866cf1f03b9300",
+      "sourceName": "contracts/Groth16Verifier.sol",
+      "solcConfig": {
+        "version": "0.8.19",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.19"
+      ],
+      "artifacts": [
+        "Groth16Verifier"
+      ]
     }
   }
 }
