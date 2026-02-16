@@ -13,6 +13,7 @@
 - **Role-Based Access Control**: Separate interfaces for Users, Issuers, and Verifiers
 - **EIP-712 Signatures**: Off-chain credential issuance with typed data signatures
 - **Merkle Proofs**: Selective disclosure for privacy-preserving verification
+- **Zero-Knowledge Proofs (ZK)**: Privacy-preserving credential verification using snarkjs + Circom
 
 ### 👥 **User Roles**
 - **Users (Accounts 2-7)**: Receive, manage, and share credentials
@@ -532,6 +533,84 @@ npm run preview     # Preview production build
 REACT_APP_CONTRACT_ADDRESS=your_contract_address
 REACT_APP_NETWORK_ID=your_network_id
 REACT_APP_RPC_URL=your_rpc_url
+```
+
+---
+
+## 🔐 Zero-Knowledge Proofs (ZK)
+
+Credence implements **zero-knowledge proofs** for privacy-preserving credential verification using **snarkjs + Circom**.
+
+### What is ZK?
+
+Zero-knowledge proofs allow a prover to verify to a verifier that they know a secret **without revealing the secret itself**. For credentials, this means:
+
+- ✅ Prove you have a valid credential
+- ✅ Prove you meet certain criteria (e.g., age > 18)
+- ❌ Don't reveal your actual data
+- ❌ Don't reveal your secret key
+
+### How It Works
+
+1. **Circuit** ([`backend/circuits/credentialProof.circom`](backend/circuits/credentialProof.circom)): Defines the ZK proof logic
+2. **Trusted Setup**: Generates proving/verification keys (run once)
+3. **Proof Generation**: Off-chain - generates proof from secret + credential
+4. **On-chain Verification**: Smart contract verifies the proof
+
+### Setup ZK Circuit
+
+```bash
+# Install circom
+npm install -g circom
+
+# Install dependencies
+cd backend/circuits
+npm install
+
+# Compile circuit
+npm run compile
+
+# Trusted setup (generates keys)
+npm run full-setup
+
+# Generate proof
+node ../scripts/generate-proof.js <secret> <credentialHash>
+```
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| [`backend/circuits/credentialProof.circom`](backend/circuits/credentialProof.circom) | Circom circuit for credential proof |
+| [`backend/circuits/package.json`](backend/circuits/package.json) | Build scripts |
+| [`backend/scripts/generate-proof.js`](backend/scripts/generate-proof.js) | Proof generation utility |
+| [`backend/contracts/Groth16Verifier.sol`](backend/contracts/Groth16Verifier.sol) | On-chain verifier contract |
+| [`frontend/client/src/utils/zkProof.js`](frontend/client/src/utils/zkProof.js) | Frontend ZK component |
+
+### Usage
+
+**Generate proof (Node.js):**
+```javascript
+const { generateProof } = require('./scripts/generate-proof.js');
+const proof = await generateProof(
+  'user-secret-key',
+  '0xcredentialhash...'
+);
+
+// Submit to contract
+await credentialVerifier.verifyProof(
+  proof.a, proof.b, proof.c,
+  [proof.publicInputs.credentialHash, proof.publicInputs.nullifier]
+);
+```
+
+**Frontend component:**
+```jsx
+import { ZKProofGenerator } from './utils/zkProof';
+
+<ZKProofGenerator onProofGenerated={(proof) => {
+  // Submit proof to contract
+}} />
 ```
 
 ---

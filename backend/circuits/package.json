@@ -1,0 +1,29 @@
+{
+  "name": "credence-zk-circuits",
+  "version": "1.0.0",
+  "description": "Zero-knowledge circuits for Credence credential verification",
+  "scripts": {
+    "compile": "circom credentialProof.circom -o build -r",
+    "setup": "snarkjs powersoftau new bn128 15 pot15_0000.ptau -v",
+    " contribute": "snarkjs powersoftau contribute pot15_0000.ptau pot15_0001.ptau --name=\"First contribution\" -v -e=\"randomentropy\"",
+    " prepare": "snarkjs powersoftau prepare phase2 pot15_0001.ptau pot15_final.ptau -v",
+    " setup-keys": "snarkjs groth16 setup build/credentialProof.r1cs pot15_final.ptau credential_0000.zkey",
+    " contribute-keys": "snarkjs zkey contribute credential_0000.zkey credential_0001.zkey --name=\"Contributor 1\" -v -e=\"moreentropy\"",
+    " export-keys": "snarkjs zkey export verificationkey credential_0001.zkey verification_key.json",
+    " full-setup": "npm run compile && npm run setup && npm run contribute && npm run prepare && npm run setup-keys && npm run contribute-keys && npm run export-keys",
+    " prove": "node ../scripts/generate-proof.js",
+    " verify": "snarkjs groth16 verify verification_key.json public.json proof.json"
+  },
+  "keywords": [
+    "circom",
+    "snarkjs",
+    "zero-knowledge",
+    "ethereum"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "circomlib": "^2.0.5",
+    "snarkjs": "^0.7.4"
+  }
+}
