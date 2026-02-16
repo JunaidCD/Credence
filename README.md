@@ -629,6 +629,135 @@ import { ZKProofGenerator } from './utils/zkProof';
 
 ---
 
+## 📦 Off-Chain Storage: IPFS & Arweave
+
+Credence supports **off-chain storage** for credential metadata using **IPFS** (via Pinata) and **Arweave** for permanent, decentralized storage.
+
+### Why Off-Chain Storage?
+
+- **Reduced gas costs** - Store large credential metadata off-chain
+- **Permanent storage** - IPFS with Pinata keeps files available
+- **Decentralization** - Content-addressed storage
+- **Privacy** - Can encrypt data before uploading
+
+### Supported Storage Networks
+
+| Network | Provider | Features |
+|---------|----------|----------|
+| IPFS | Pinata | Fast, widely supported, free tier |
+| Arweave | arweave.net | Permanent storage, one-time fee |
+
+### Setup IPFS (Pinata)
+
+1. **Get Pinata API Keys:**
+   - Sign up at [Pinata.cloud](https://www.pinata.cloud)
+   - Go to API Keys -> Create New Key
+   - Copy your API Key and Secret Key
+
+2. **Set Environment Variables:**
+   ```bash
+   # Backend (.env)
+   PINATA_API_KEY=your_api_key
+   PINATA_SECRET_KEY=your_secret_key
+   
+   # Frontend
+   VITE_PINATA_API_KEY=your_api_key
+   ```
+
+3. **Install Dependencies:**
+   ```bash
+   cd backend
+   npm install axios form-data
+   ```
+
+### Backend API Endpoints
+
+```bash
+# Upload JSON to IPFS
+POST /api/ipfs/upload
+Content-Type: application/json
+{
+  "data": { "name": "Credential", "type": "Degree" },
+  "storageType": "ipfs"  // or "arweave"
+}
+
+# Upload File to IPFS  
+POST /api/ipfs/upload-file
+Content-Type: multipart/form-data
+file: <file>
+
+# Download from IPFS
+GET /api/ipfs/download/:hash
+
+# Upload Credential Metadata
+POST /api/ipfs/credential
+{
+  "credentialId": "123",
+  "credentialType": "Degree",
+  "holderAddress": "0x...",
+  "issuerAddress": "0x...",
+  "issueDate": "2024-01-01"
+}
+
+# Verify content exists
+POST /api/ipfs/verify
+{ "hash": "Qm..." }
+```
+
+### Usage Examples
+
+**Upload Credential Metadata:**
+```javascript
+const response = await fetch('/api/ipfs/credential', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    credentialId: '1',
+    credentialType: 'UniversityDegree',
+    holderAddress: '0x123...',
+    issuerAddress: '0x456...',
+    issueDate: new Date().toISOString(),
+    metadata: { degree: 'BS Computer Science', gpa: '3.8' }
+  })
+});
+
+const { storageHash } = await response.json();
+// Returns IPFS hash like: QmXyZ... 
+```
+
+**Frontend Component:**
+```jsx
+import { IPFSUploader } from './components/IPFSUploader';
+
+<IPFSUploader 
+  onUpload={(hash) => console.log('Uploaded:', hash)}
+/>
+```
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| [`backend/utils/ipfsStorage.js`](backend/utils/ipfsStorage.js) | IPFS/Pinata integration |
+| [`backend/utils/arweaveStorage.js`](backend/utils/arweaveStorage.js) | Arweave integration |
+| [`backend/routes/ipfs.js`](backend/routes/ipfs.js) | REST API routes |
+| [`frontend/client/src/components/IPFSUploader.jsx`](frontend/client/src/components/IPFSUploader.jsx) | Frontend upload UI |
+
+### Integration with Smart Contracts
+
+The smart contracts already support IPFS hashes:
+```solidity
+function issueCredential(
+    address _holder,
+    string memory _credentialType,
+    string memory _data,
+    uint256 _expiresAt,
+    string memory _ipfsHash  // Store IPFS hash on-chain
+) external;
+```
+
+---
+
 ## 🤝 Contributing
 
 1. Fork the repository
