@@ -290,15 +290,17 @@ const IssuerDashboard = () => {
   // Mutations
   const issueCredentialMutation = useMutation({
     mutationFn: async (credentialData) => {
-      // Validate recipient DID format and extract address
-      const recipientDID = credentialData.recipientDID;
-      if (!recipientDID.startsWith('did:ethr:0x')) {
-        throw new Error('Invalid DID format. Must be did:ethr:0x...');
+      // Validate recipient format - accept both plain wallet address (0x...) and DID format (did:ethr:0x...)
+      let recipientAddress = credentialData.recipientDID;
+      
+      // If DID format, extract the address
+      if (credentialData.recipientDID.startsWith('did:ethr:')) {
+        recipientAddress = credentialData.recipientDID.replace('did:ethr:', '');
       }
       
-      const recipientAddress = recipientDID.replace('did:ethr:', '');
+      // Validate it's a valid Ethereum address
       if (!/^0x[a-fA-F0-9]{40}$/.test(recipientAddress)) {
-        throw new Error('Invalid Ethereum address in DID');
+        throw new Error('Invalid Ethereum address. Please enter a valid wallet address (0x...)');
       }
 
       // Parse metadata
@@ -446,14 +448,7 @@ const IssuerDashboard = () => {
 
   // Helper function to get valid recipient DIDs
   const getValidRecipientDIDs = () => {
-    return [
-      { account: 'Account 2', did: 'did:ethr:0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC' },
-      { account: 'Account 3', did: 'did:ethr:0x90F79bf6EB2c4f870365E785982E1f101E93b906' },
-      { account: 'Account 4', did: 'did:ethr:0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65' },
-      { account: 'Account 5', did: 'did:ethr:0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc' },
-      { account: 'Account 6', did: 'did:ethr:0x976EA74026E726554dB657fA54763abd0C3a0aa9' },
-      { account: 'Account 7', did: 'did:ethr:0x14dC79964da2C08b23698B3D3cc7Ca32193d9955' }
-    ];
+    return []; // No more hardcoded accounts - any wallet address can receive credentials
   };
 
   const copyDIDToClipboard = (did) => {
@@ -561,15 +556,15 @@ const IssuerDashboard = () => {
                 <p className="text-gray-400 text-sm mb-3">Your unique decentralized identifier for credential issuance</p>
                 <div className="flex items-center space-x-3">
                   <code className="bg-gray-800/80 text-purple-300 px-4 py-2 rounded-lg font-mono text-sm border border-purple-500/20">
-                    {walletConnected && walletAddress ? `did:ethr:${walletAddress}` : 'did:ethr:0x...'}
+                    {walletConnected && walletAddress ? walletAddress : '0x...'}
                   </code>
                   <Button
                     size="sm"
                     variant="outline"
                     className="border-purple-500/30 text-purple-400 hover:bg-purple-500/10 hover:border-purple-400 transition-all duration-200"
                     onClick={() => {
-                      const didToCopy = walletConnected && walletAddress ? `did:ethr:${walletAddress}` : 'did:ethr:0x...';
-                      navigator.clipboard.writeText(didToCopy);
+                      const addressToCopy = walletConnected && walletAddress ? walletAddress : '0x...';
+                      navigator.clipboard.writeText(addressToCopy);
                       toast({
                         title: "DID Copied",
                         description: "Your DID has been copied to clipboard",
@@ -611,7 +606,7 @@ const IssuerDashboard = () => {
                       <span className="text-green-400 font-medium">Registered Issuer</span>
                     </div>
                     <div className="text-xs text-gray-400">
-                      DID: did:ethr:{walletAddress}
+                      Wallet: {walletAddress}
                     </div>
                     <div className="text-xs text-gray-400">
                       Wallet: {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
@@ -923,7 +918,7 @@ const IssuerDashboard = () => {
                           <Input
                             value={issueForm.recipientDID}
                             onChange={(e) => setIssueForm(prev => ({ ...prev, recipientDID: e.target.value }))}
-                            placeholder="did:ethr:0x..."
+                            placeholder="0x... (wallet address)"
                             className="bg-gray-800/50 border-gray-600 text-white focus:ring-purple-500 focus:border-purple-500 pl-4 pr-4 py-3 rounded-xl transition-all duration-200 group-hover:border-purple-400 font-mono text-sm"
                             required
                             data-testid="input-recipient-did"
@@ -933,37 +928,15 @@ const IssuerDashboard = () => {
                       </div>
                     </div>
                     
-                    {/* Valid Recipients Helper - Moved outside grid */}
+                    {/* Recipient Address Helper */}
                     <div className="p-4 bg-gray-800/30 rounded-xl border border-gray-600/50">
                       <div className="flex items-center mb-3">
                         <Users className="h-4 w-4 text-blue-400 mr-2" />
-                        <span className="text-sm font-medium text-gray-300">Valid Recipients (Accounts 2-7)</span>
+                        <span className="text-sm font-medium text-gray-300">Recipient Wallet Address</span>
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                        {getValidRecipientDIDs().map((recipient, index) => (
-                          <div key={index} className="flex items-center justify-between p-2 bg-gray-700/50 rounded-lg hover:bg-gray-700/70 transition-colors">
-                            <div className="flex flex-col min-w-0 flex-1">
-                              <span className="text-xs text-gray-400">{recipient.account}</span>
-                              <span className="text-xs font-mono text-gray-300 truncate">{recipient.did}</span>
-                            </div>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setIssueForm(prev => ({ ...prev, recipientDID: recipient.did }));
-                                toast({
-                                  title: "DID Selected",
-                                  description: `Selected ${recipient.account} as recipient.`,
-                                });
-                              }}
-                              className="h-8 w-8 p-0 hover:bg-blue-600/20 text-blue-400 hover:text-blue-300 flex-shrink-0 ml-2"
-                            >
-                              <Copy className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
+                      <p className="text-xs text-gray-400">
+                        Enter any valid Ethereum wallet address (0x...) to issue credentials.
+                      </p>
                       <div className="mt-3 p-2 bg-yellow-900/20 rounded-lg border border-yellow-600/30">
                         <div className="flex items-center">
                           <AlertTriangle className="h-4 w-4 text-yellow-400 mr-2 flex-shrink-0" />
@@ -1297,7 +1270,7 @@ const IssuerDashboard = () => {
               <Input
                 value={didInput}
                 onChange={(e) => setDidInput(e.target.value)}
-                placeholder="Enter recipient DID (e.g., did:ethr:0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC)"
+                placeholder="Enter wallet address (e.g., 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC)"
                 className="bg-gray-800/80 backdrop-blur-sm border-purple-500/30 text-white pl-4 pr-20 py-4 rounded-xl focus:ring-2 focus:ring-purple-500/50 focus:border-purple-400 hover:border-purple-400/50 transition-all duration-200 placeholder:text-gray-500 group-hover:bg-gray-800/90 text-sm"
                 data-testid="input-search-did"
                 onKeyPress={(e) => {
@@ -1421,7 +1394,7 @@ const IssuerDashboard = () => {
                           <div>
                             <p className="text-white">{credential.metadata?.recipientName || 'Unknown'}</p>
                             <p className="text-gray-400 text-sm font-mono">
-                              {credential.userId ? `did:ethr:${credential.userId}` : 'N/A'}
+                              {credential.userId || 'N/A'}
                             </p>
                           </div>
                         </td>

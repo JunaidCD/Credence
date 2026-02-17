@@ -739,7 +739,7 @@ const VerifierDashboard = () => {
         console.log('👤 DID format check:', {
           originalDID: requestData.did,
           lowercaseDID: requestData.did.toLowerCase(),
-          isValidFormat: requestData.did.startsWith('did:ethr:')
+          isValidFormat: true // Now accepts any wallet address
         });
         
         const userResponse = await fetch(`/api/users/did/${encodeURIComponent(requestData.did)}`);
@@ -858,14 +858,11 @@ const VerifierDashboard = () => {
                   <span className="text-blue-300 text-sm font-medium">DID:</span>
                   <span className="text-white text-sm font-mono ml-2">
                     {(() => {
-                      const isAccount8 = walletAddress?.toLowerCase() === '0x23618e81e3f5cdf7f54c3d65f7fbc0abf5b21e8f';
-                      const isAccount9 = walletAddress?.toLowerCase() === '0xa0ee7a142d267c1f36714e4a8f75612f20a79720';
-                      
                       let displayedDid;
-                      if (walletConnected && (isAccount8 || isAccount9)) {
-                        displayedDid = `did:ethr:${walletAddress}`;
+                      if (walletConnected) {
+                        displayedDid = walletAddress;
                       } else {
-                        displayedDid = 'did:ethr:0x0000000000000000000000000000000000000000';
+                        displayedDid = 'Connect wallet';
                       }
                       
                       console.log('DID_RENDER:', displayedDid);
@@ -877,12 +874,7 @@ const VerifierDashboard = () => {
                 <button 
                   onClick={async (event) => {
                     try {
-                      const isAccount8 = walletAddress?.toLowerCase() === '0x23618e81e3f5cdf7f54c3d65f7fbc0abf5b21e8f';
-                      const isAccount9 = walletAddress?.toLowerCase() === '0xa0ee7a142d267c1f36714e4a8f75612f20a79720';
-                      
-                      const didToCopy = (walletConnected && (isAccount8 || isAccount9)) 
-                        ? `did:ethr:${walletAddress}`
-                        : 'did:ethr:0x0000000000000000000000000000000000000000';
+                      const didToCopy = walletConnected ? walletAddress : '0x0000000000000000000000000000000000000000';
                       
                       await navigator.clipboard.writeText(didToCopy);
                       console.log('DID copied to clipboard:', didToCopy);
@@ -1267,7 +1259,7 @@ const VerifierDashboard = () => {
                   <Input
                     value={searchForm.did}
                     onChange={(e) => setSearchForm(prev => ({ ...prev, did: e.target.value }))}
-                    placeholder="did:ethr:0x1234567890abcdef..."
+                    placeholder="0x1234567890abcdef..."
                     className="form-input text-white placeholder-gray-400 pl-12 h-12 text-lg"
                     data-testid="input-did"
                   />
@@ -1301,8 +1293,7 @@ const VerifierDashboard = () => {
                         </div>
                         <button
                           type="button"
-                          onClick={() => setSearchForm(prev => ({ ...prev, did: 'did:ethr:0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC' }))}
-                          className="ml-2 flex-shrink-0 p-1.5 bg-blue-500 bg-opacity-20 hover:bg-opacity-30 rounded border border-blue-500 border-opacity-30 transition-all duration-200"
+                          onClick={() => setSearchForm(prev => ({ ...prev, did: walletAddress || '' }))}
                           title="Copy to search field"
                         >
                           <svg className="h-3 w-3 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

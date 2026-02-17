@@ -417,7 +417,7 @@ const UserDashboard = () => {
         setIsRegisteredUser(isRegistered);
         
         if (isRegistered) {
-          setUserDID(`did:ethr:${address}`);
+          setUserDID(walletAddress);
           
           // If user is already registered, get their backend userId
           try {
@@ -513,7 +513,7 @@ const UserDashboard = () => {
           const userData = await response.json();
           console.log('🔍 User registration response:', userData);
           setIsRegisteredUser(true);
-          setUserDID(`did:ethr:${blockchainResult.address}`);
+          setUserDID(blockchainResult.address);
           setUserId(userData.user.id); // Store user ID for backend notifications
           setUserName(defaultName); // Update the userName state for UI display
           console.log('🔍 Set userId to:', userData.user.id);
@@ -718,7 +718,7 @@ const UserDashboard = () => {
   };
 
   const copyDID = () => {
-    const didToCopy = isEligibleUser ? (userDID || `did:ethr:${walletAddress || '0x...'}`) : 'did:ethr:0x000';
+    const didToCopy = isEligibleUser ? (userDID || walletAddress || '0x...') : '0x000';
     navigator.clipboard.writeText(didToCopy);
     toast({
       title: "DID Copied",
@@ -766,7 +766,7 @@ const UserDashboard = () => {
                 <p className="text-gray-400 text-sm mb-3">Your unique decentralized identifier</p>
                 <div className="flex items-center space-x-3">
                   <code className="bg-gray-800/80 text-purple-300 px-4 py-2 rounded-lg font-mono text-sm border border-purple-500/20">
-                    {isEligibleUser ? (userDID || `did:ethr:${walletAddress || '0x...'}`) : 'did:ethr:0x000'}
+                    {isEligibleUser ? (userDID || walletAddress || '0x...') : '0x000'}
                   </code>
                   <Button
                     size="sm"
@@ -1247,15 +1247,15 @@ const UserDashboard = () => {
           // Store the shared credential data in backend for verifier access
           try {
             const sharePayload = {
-              holderAddress: walletAddress.toLowerCase(), // Normalize to lowercase
-              verifierAddress: verifierDid.replace('did:ethr:', '').toLowerCase(), // Normalize to lowercase
+              holderAddress: walletAddress.toLowerCase(),
+              verifierAddress: verifierDid.replace('did:ethr:', '').toLowerCase(),
               credentialId: credential.id || credential.uniqueId,
               credentialType: credential.credentialType || credential.type,
               credentialTitle: credential.title || credential.data?.title || 'Untitled Credential',
               message: 'Credential shared via Credence platform',
               signature: result.signature,
-              holderDID: `did:ethr:${walletAddress}`,
-              verifierDID: verifierDid,
+              holderDID: walletAddress,
+              verifierDID: verifierDid.startsWith('did:ethr:') ? verifierDid : `did:ethr:${verifierDid}`,
               credentialData: credential
             };
             
@@ -1472,7 +1472,7 @@ const UserDashboard = () => {
                         type="text"
                         value={verifierDid}
                         onChange={(e) => setVerifierDid(e.target.value)}
-                        placeholder="did:ethr:0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f"
+                        placeholder="0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f"
                         className="flex-1 px-4 py-3 bg-gray-700/50 border border-gray-600/30 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400/50 transition-all duration-200 font-mono text-sm"
                       />
                       
@@ -1502,11 +1502,10 @@ const UserDashboard = () => {
                         <div className="text-sm">
                           <p className="text-blue-400 font-medium mb-1">Verifier DID Format</p>
                           <p className="text-gray-300 text-xs mb-2">
-                            Enter the verifier's DID in the format: <code className="bg-gray-800/60 px-1 rounded">did:ethr:0x...</code>
+                            Enter the verifier's wallet address
                           </p>
                           <div className="space-y-1 text-xs text-gray-400">
-                            <p>• Account 8: <code className="bg-gray-800/60 px-1 rounded text-blue-300">did:ethr:0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f</code></p>
-                            <p>• Account 9: <code className="bg-gray-800/60 px-1 rounded text-blue-300">did:ethr:0xa0Ee7A142d267C1f36714E4a8F75612F20a79720</code></p>
+                            <p>• Any valid Ethereum wallet address</p>
                           </div>
                         </div>
                       </div>

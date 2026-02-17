@@ -410,14 +410,34 @@ class Web3Service {
       // Validate recipient address restrictions
       await this.validateCredentialRecipient(holderAddress);
 
-      // Execute blockchain transaction directly
+      // Get proper fee data from network
+      let feeData;
+      try {
+        feeData = await this.provider.getFeeData();
+      } catch (e) {
+        feeData = { maxFeePerGas: BigInt(50000000000), maxPriorityFeePerGas: BigInt(2000000000), gasPrice: BigInt(2000000000) };
+      }
+      
+      let maxPriorityFeePerGas = feeData.maxPriorityFeePerGas || BigInt(2000000000);
+      let maxFeePerGas = feeData.maxFeePerGas || (feeData.gasPrice || BigInt(30000000000));
+      
+      // maxPriorityFeePerGas cannot exceed maxFeePerGas
+      if (maxPriorityFeePerGas > maxFeePerGas) {
+        maxPriorityFeePerGas = maxFeePerGas;
+      }
+
+      // Execute blockchain transaction with proper gas settings
       const contract = this.credentialRegistry.connect(this.signer);
       const tx = await contract.issueCredential(
         holderAddress,
         credentialType,
         JSON.stringify(data),
         expiresAt,
-        ipfsHash
+        ipfsHash,
+        {
+          maxFeePerGas: maxFeePerGas,
+          maxPriorityFeePerGas: maxPriorityFeePerGas
+        }
       );
       
       const receipt = await tx.wait();
