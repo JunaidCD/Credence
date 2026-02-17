@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Wallet } from 'lucide-react';
@@ -7,49 +7,46 @@ import { useLocation } from 'wouter';
 
 const LoginModal = ({ isOpen, onClose, userType }) => {
   const [, setLocation] = useLocation();
-  const { connectWallet, loading, user: authUser, isAuthenticated } = useAuth();
+  const { connectWallet, loading } = useAuth();
+  const isConnecting = useRef(false);
 
   const handleConnect = async () => {
+    // Prevent multiple clicks
+    if (isConnecting.current) return;
+    isConnecting.current = true;
+    
     try {
-      const user = await connectWallet(userType);
-      
-      if (user) {
-        // Close modal first
-        onClose();
-        
-        // Small delay to ensure modal closes before redirect
-        setTimeout(() => {
-          if (userType === 'verifier') {
-            setLocation('/dashboard/verifier');
-          } else if (userType === 'issuer') {
-            setLocation('/dashboard/issuer');
-          } else {
-            setLocation('/dashboard/user');
-          }
-        }, 100);
-      }
-    } catch (error) {
-      // Error is handled in AuthContext
-      console.error('Login failed:', error);
-    }
-  };
-
-  useEffect(() => {
-    if (isOpen && isAuthenticated && authUser) {
-      // User is already authenticated, redirect directly
+      // Close modal first - set state immediately
       onClose();
-      if (authUser.userType === 'verifier') {
+      
+      // Start the wallet connection
+      await connectWallet(userType);
+      
+      // Redirect immediately to the appropriate dashboard based on button clicked
+      if (userType === 'verifier') {
         setLocation('/dashboard/verifier');
-      } else if (authUser.userType === 'issuer') {
+      } else if (userType === 'issuer') {
         setLocation('/dashboard/issuer');
       } else {
         setLocation('/dashboard/user');
       }
+    } catch (error) {
+      // Error is handled in AuthContext
+      console.error('Login failed:', error);
+    } finally {
+      isConnecting.current = false;
     }
-  }, [isOpen, isAuthenticated, authUser]);
+  };
+
+  const handleDialogClose = (open) => {
+    // Only close if explicitly triggered, not during connection
+    if (!open && !isConnecting.current) {
+      onClose();
+    }
+  };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleDialogClose}>
       <DialogContent className="glass-effect border border-gray-800 max-w-md">
         <div className="text-center p-4">
           <div className="w-16 h-16 bg-gradient-to-r from-web3-purple to-web3-blue rounded-2xl flex items-center justify-center mx-auto mb-4">

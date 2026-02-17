@@ -1,17 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { User, Search, Award } from 'lucide-react';
-import { useState } from 'react';
-import LoginModal from './LoginModal.jsx';
 
-const HeroSection = () => {
-  const [showLoginModal, setShowLoginModal] = useState(false);
-  const [loginUserType, setLoginUserType] = useState(null);
-
-  const openLoginModal = (userType) => {
-    setLoginUserType(userType);
-    setShowLoginModal(true);
-  };
-
+const HeroSection = ({ onLoginClick }) => {
   return (
     <>
       <section className="relative pt-24 pb-20 sm:pt-32 sm:pb-24 overflow-hidden">
@@ -35,7 +25,7 @@ const HeroSection = () => {
             {/* Role-based Login Buttons */}
             <div className="flex flex-col lg:flex-row gap-4 justify-center mb-16 max-w-4xl mx-auto">
               <Button 
-                onClick={() => openLoginModal('issuer')}
+                onClick={() => onLoginClick('issuer')}
                 className="glow-button text-white px-8 py-4 text-lg font-semibold rounded-xl flex items-center justify-center min-w-[220px]"
                 data-testid="button-login-issuer"
               >
@@ -43,7 +33,7 @@ const HeroSection = () => {
                 Login as Issuer
               </Button>
               <Button 
-                onClick={() => openLoginModal('user')}
+                onClick={() => onLoginClick('user')}
                 variant="outline"
                 className="border-2 border-web3-purple text-white px-8 py-4 text-lg font-semibold rounded-xl hover:bg-web3-purple hover:bg-opacity-20 transition-all flex items-center justify-center bg-transparent min-w-[220px]"
                 data-testid="button-login-user"
@@ -52,7 +42,7 @@ const HeroSection = () => {
                 Login as User
               </Button>
               <Button 
-                onClick={() => openLoginModal('verifier')}
+                onClick={() => onLoginClick('verifier')}
                 variant="outline"
                 className="border-2 border-web3-blue text-white px-8 py-4 text-lg font-semibold rounded-xl hover:bg-web3-blue hover:bg-opacity-20 transition-all flex items-center justify-center bg-transparent min-w-[220px]"
                 data-testid="button-login-verifier"
@@ -89,12 +79,6 @@ const HeroSection = () => {
           </div>
         </div>
       </section>
-
-      <LoginModal 
-        isOpen={showLoginModal} 
-        onClose={() => setShowLoginModal(false)}
-        userType={loginUserType}
-      />
     </>
   );
 };

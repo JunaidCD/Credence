@@ -2,17 +2,9 @@ import { useState } from 'react';
 import { Link } from 'wouter';
 import { ShieldCheck, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import LoginModal from './LoginModal.jsx';
 
-const Navbar = () => {
+const Navbar = ({ onLoginClick }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [showLoginModal, setShowLoginModal] = useState(false);
-  const [loginUserType, setLoginUserType] = useState(null);
-
-  const openLoginModal = (userType = null) => {
-    setLoginUserType(userType);
-    setShowLoginModal(true);
-  };
 
   return (
     <>
@@ -52,7 +44,7 @@ const Navbar = () => {
                   Docs
                 </a>
                 <Button 
-                  onClick={() => openLoginModal()}
+                  onClick={() => onLoginClick()}
                   className="glow-button text-white px-4 py-2 text-sm font-medium rounded-lg"
                   data-testid="button-get-started"
                 >
@@ -101,7 +93,7 @@ const Navbar = () => {
                   Docs
                 </a>
                 <Button 
-                  onClick={() => openLoginModal()}
+                  onClick={() => onLoginClick()}
                   className="glow-button text-white px-4 py-2 text-sm font-medium rounded-lg w-full mt-2"
                   data-testid="mobile-button-get-started"
                 >
@@ -112,12 +104,6 @@ const Navbar = () => {
           )}
         </div>
       </nav>
-
-      <LoginModal 
-        isOpen={showLoginModal} 
-        onClose={() => setShowLoginModal(false)}
-        userType={loginUserType}
-      />
     </>
   );
 };

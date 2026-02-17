@@ -1029,8 +1029,8 @@ const VerifierDashboard = () => {
           
           <div className="text-center mt-4">
             {!walletConnected ? (
-              <p className="text-sm text-yellow-300">
-                Only hardhat accounts 8–9 can register as a verifier
+              <p className="text-sm text-gray-400">
+                Connect your wallet to register as a verifier
               </p>
             ) : isEligibleVerifier ? (
               <div>
@@ -1053,14 +1053,11 @@ const VerifierDashboard = () => {
               </div>
             ) : (
               <div>
-                <p className="text-sm text-yellow-300">
-                  Only hardhat accounts 8–9 can register as a verifier
+                <p className="text-sm text-green-400">
+                  Your wallet is eligible to register as a verifier
                 </p>
                 <p className="text-xs text-gray-400 mt-1">
                   Current wallet: {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
-                </p>
-                <p className="text-xs text-red-400 mt-1">
-                  Please switch to accounts 8 or 9 in MetaMask
                 </p>
               </div>
             )}
@@ -1281,137 +1278,11 @@ const VerifierDashboard = () => {
                 <div className="bg-slate-800 bg-opacity-50 rounded-lg p-4 border border-slate-700">
                   <div className="flex items-center mb-3">
                     <Users className="h-4 w-4 text-blue-400 mr-2" />
-                    <h3 className="text-base font-semibold text-blue-300">Valid Recipients (Accounts 2-7)</h3>
+                    <h3 className="text-base font-semibold text-blue-300">Valid Recipients</h3>
                   </div>
-                  <div className="grid md:grid-cols-3 gap-3">
-                    {/* Account 2 */}
-                    <div className="bg-slate-700 bg-opacity-50 rounded-lg p-3 border border-slate-600">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-gray-300 text-xs font-medium mb-1">Account 2</p>
-                          <p className="text-gray-400 text-xs font-mono truncate">0x3C44...4293BC</p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setSearchForm(prev => ({ ...prev, did: walletAddress || '' }))}
-                          title="Copy to search field"
-                        >
-                          <svg className="h-3 w-3 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Account 3 */}
-                    <div className="bg-slate-700 bg-opacity-50 rounded-lg p-3 border border-slate-600">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-gray-300 text-xs font-medium mb-1">Account 3</p>
-                          <p className="text-gray-400 text-xs font-mono truncate">0x90F7...3b906</p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setSearchForm(prev => ({ ...prev, did: 'did:ethr:0x90F79bf6EB2c4f870365E785982E1f101E93b906' }))}
-                          className="ml-2 flex-shrink-0 p-1.5 bg-blue-500 bg-opacity-20 hover:bg-opacity-30 rounded border border-blue-500 border-opacity-30 transition-all duration-200"
-                          title="Copy to search field"
-                        >
-                          <svg className="h-3 w-3 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Account 4 */}
-                    <div className="bg-slate-700 bg-opacity-50 rounded-lg p-3 border border-slate-600">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-gray-300 text-xs font-medium mb-1">Account 4</p>
-                          <p className="text-gray-400 text-xs font-mono truncate">0x15d3...C6A65</p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setSearchForm(prev => ({ ...prev, did: 'did:ethr:0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65' }))}
-                          className="ml-2 flex-shrink-0 p-1.5 bg-blue-500 bg-opacity-20 hover:bg-opacity-30 rounded border border-blue-500 border-opacity-30 transition-all duration-200"
-                          title="Copy to search field"
-                        >
-                          <svg className="h-3 w-3 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Account 5 */}
-                    <div className="bg-slate-700 bg-opacity-50 rounded-lg p-3 border border-slate-600">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-gray-300 text-xs font-medium mb-1">Account 5</p>
-                          <p className="text-gray-400 text-xs font-mono truncate">0x9965...A4dc</p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setSearchForm(prev => ({ ...prev, did: 'did:ethr:0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc' }))}
-                          className="ml-2 flex-shrink-0 p-1.5 bg-blue-500 bg-opacity-20 hover:bg-opacity-30 rounded border border-blue-500 border-opacity-30 transition-all duration-200"
-                          title="Copy to search field"
-                        >
-                          <svg className="h-3 w-3 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Account 6 */}
-                    <div className="bg-slate-700 bg-opacity-50 rounded-lg p-3 border border-slate-600">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-gray-300 text-xs font-medium mb-1">Account 6</p>
-                          <p className="text-gray-400 text-xs font-mono truncate">0x976E...0aa9</p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setSearchForm(prev => ({ ...prev, did: 'did:ethr:0x976EA74026E726554dB657fA54763abd0C3a0aa9' }))}
-                          className="ml-2 flex-shrink-0 p-1.5 bg-blue-500 bg-opacity-20 hover:bg-opacity-30 rounded border border-blue-500 border-opacity-30 transition-all duration-200"
-                          title="Copy to search field"
-                        >
-                          <svg className="h-3 w-3 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Account 7 */}
-                    <div className="bg-slate-700 bg-opacity-50 rounded-lg p-3 border border-slate-600">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-gray-300 text-xs font-medium mb-1">Account 7</p>
-                          <p className="text-gray-400 text-xs font-mono truncate">0x14dC...9955</p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setSearchForm(prev => ({ ...prev, did: 'did:ethr:0x14dC79964da2C08b23698B3D3cc7Ca32193d9955' }))}
-                          className="ml-2 flex-shrink-0 p-1.5 bg-blue-500 bg-opacity-20 hover:bg-opacity-30 rounded border border-blue-500 border-opacity-30 transition-all duration-200"
-                          title="Copy to search field"
-                        >
-                          <svg className="h-3 w-3 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-3 p-2 bg-yellow-500 bg-opacity-10 rounded border border-yellow-500 border-opacity-20">
-                    <div className="flex items-center">
-                      <AlertCircle className="h-3 w-3 text-yellow-400 mr-2" />
-                      <p className="text-yellow-300 text-xs">
-                        Anyone can receive credentials on Arbitrum Sepolia
-                      </p>
-                    </div>
-                  </div>
+                  <p className="text-gray-400 text-sm">
+                    Enter any valid Ethereum DID in the search field above to send verification requests.
+                  </p>
                 </div>
               </div>
               
@@ -1923,65 +1794,26 @@ const VerifierDashboard = () => {
             <div className="bg-blue-500 bg-opacity-10 rounded-lg p-4 border border-blue-500 border-opacity-20">
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="text-blue-300 font-semibold mb-1">🔐 Your DID</h4>
+                  <h4 className="text-blue-300 font-semibold mb-1">Your DID</h4>
                   <p className="text-gray-400 text-sm font-mono">
-                    {(() => {
-                      const isAccount8 = walletAddress?.toLowerCase() === '0x23618e81e3f5cdf7f54c3d65f7fbc0abf5b21e8f';
-                      const isAccount9 = walletAddress?.toLowerCase() === '0xa0ee7a142d267c1f36714e4a8f75612f20a79720';
-                      
-                      let displayedDid;
-                      if (walletConnected && (isAccount8 || isAccount9)) {
-                        displayedDid = `did:ethr:${walletAddress}`;
-                      } else {
-                        displayedDid = 'did:ethr:0x0000000000000000000000000000000000000000';
-                      }
-                      
-                      console.log('DID_RENDER:', displayedDid);
-                      
-                      return displayedDid.length > 40 ? `${displayedDid.slice(0, 20)}...${displayedDid.slice(-15)}` : displayedDid;
-                    })()}
+                    {walletConnected ? `did:ethr:${walletAddress}` : 'Connect wallet to get your DID'}
                   </p>
                 </div>
                 <button 
-                  onClick={async (event) => {
+                  onClick={async () => {
                     try {
-                      const isAccount8 = walletAddress?.toLowerCase() === '0x23618e81e3f5cdf7f54c3d65f7fbc0abf5b21e8f';
-                      const isAccount9 = walletAddress?.toLowerCase() === '0xa0ee7a142d267c1f36714e4a8f75612f20a79720';
-                      
-                      const didToCopy = (walletConnected && (isAccount8 || isAccount9)) 
-                        ? `did:ethr:${walletAddress}`
-                        : 'did:ethr:0x0000000000000000000000000000000000000000';
-                      
-                      await navigator.clipboard.writeText(didToCopy);
-                      console.log('DID copied to clipboard:', didToCopy);
-                      
-                      // Show success message
-                      alert('DID copied to clipboard!');
-                      
+                      if (walletConnected) {
+                        const did = `did:ethr:${walletAddress}`;
+                        await navigator.clipboard.writeText(did);
+                        alert('DID copied to clipboard!');
+                      }
                     } catch (error) {
                       console.error('Failed to copy DID:', error);
-                      alert('Failed to copy DID to clipboard');
                     }
                   }}
-                  disabled={(() => {
-                    const isAccount8 = walletAddress?.toLowerCase() === '0x23618e81e3f5cdf7f54c3d65f7fbc0abf5b21e8f';
-                    const isAccount9 = walletAddress?.toLowerCase() === '0xa0ee7a142d267c1f36714e4a8f75612f20a79720';
-                    return !walletConnected || (!isAccount8 && !isAccount9);
-                  })()}
-                  className={(() => {
-                    const isAccount8 = walletAddress?.toLowerCase() === '0x23618e81e3f5cdf7f54c3d65f7fbc0abf5b21e8f';
-                    const isAccount9 = walletAddress?.toLowerCase() === '0xa0ee7a142d267c1f36714e4a8f75612f20a79720';
-                    const isDisabled = !walletConnected || (!isAccount8 && !isAccount9);
-                    return isDisabled 
-                      ? "text-gray-500 cursor-not-allowed transition-colors" 
-                      : "text-blue-400 hover:text-blue-300 transition-colors";
-                  })()}
-                  title={(() => {
-                    const isAccount8 = walletAddress?.toLowerCase() === '0x23618e81e3f5cdf7f54c3d65f7fbc0abf5b21e8f';
-                    const isAccount9 = walletAddress?.toLowerCase() === '0xa0ee7a142d267c1f36714e4a8f75612f20a79720';
-                    const isDisabled = !walletConnected || (!isAccount8 && !isAccount9);
-                    return isDisabled ? "Copy not available for placeholder DID" : "Copy DID";
-                  })()}
+                  disabled={!walletConnected}
+                  className={walletConnected ? "text-blue-400 hover:text-blue-300 transition-colors" : "text-gray-500 cursor-not-allowed"}
+                  title={walletConnected ? "Copy DID" : "Connect wallet first"}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />

@@ -350,17 +350,22 @@ class Web3Service {
       } catch (e) {
         // Fallback values for networks that don't support getFeeData
         feeData = {
-          maxFeePerGas: BigInt(50000000000), // 50 gwei
-          maxPriorityFeePerGas: BigInt(2000000000), // 2 gwei
-          gasPrice: BigInt(2000000000)
+          maxFeePerGas: BigInt(100000000000), // 100 gwei
+          maxPriorityFeePerGas: BigInt(5000000000), // 5 gwei
+          gasPrice: BigInt(5000000000)
         };
       }
       
       // Ensure maxPriorityFeePerGas is not greater than maxFeePerGas
-      let maxPriorityFeePerGas = feeData.maxPriorityFeePerGas || BigInt(2000000000);
-      let maxFeePerGas = feeData.maxFeePerGas || (feeData.gasPrice || BigInt(30000000000));
+      let maxPriorityFeePerGas = feeData.maxPriorityFeePerGas || BigInt(5000000000);
+      let maxFeePerGas = feeData.maxFeePerGas || (feeData.gasPrice || BigInt(100000000000));
       
-      // maxPriorityFeePerGas cannot exceed maxFeePerGas
+      // For Arbitrum and other L2 networks, ensure minimum gas to handle high base fees
+      // The base fee on Arbitrum Sepolia can be 20+ gwei
+      const MIN_GAS_PRICE = BigInt(100000000000); // 100 gwei minimum
+      if (maxFeePerGas < MIN_GAS_PRICE) {
+        maxFeePerGas = MIN_GAS_PRICE;
+      }
       if (maxPriorityFeePerGas > maxFeePerGas) {
         maxPriorityFeePerGas = maxFeePerGas;
       }
@@ -447,13 +452,17 @@ class Web3Service {
       try {
         feeData = await this.provider.getFeeData();
       } catch (e) {
-        feeData = { maxFeePerGas: BigInt(50000000000), maxPriorityFeePerGas: BigInt(2000000000), gasPrice: BigInt(2000000000) };
+        feeData = { maxFeePerGas: BigInt(100000000000), maxPriorityFeePerGas: BigInt(5000000000), gasPrice: BigInt(5000000000) };
       }
       
-      let maxPriorityFeePerGas = feeData.maxPriorityFeePerGas || BigInt(2000000000);
-      let maxFeePerGas = feeData.maxFeePerGas || (feeData.gasPrice || BigInt(30000000000));
+      let maxPriorityFeePerGas = feeData.maxPriorityFeePerGas || BigInt(5000000000);
+      let maxFeePerGas = feeData.maxFeePerGas || (feeData.gasPrice || BigInt(100000000000));
       
-      // maxPriorityFeePerGas cannot exceed maxFeePerGas
+      // For Arbitrum and other L2 networks, ensure minimum gas to handle high base fees
+      const MIN_GAS_PRICE = BigInt(100000000000); // 100 gwei minimum
+      if (maxFeePerGas < MIN_GAS_PRICE) {
+        maxFeePerGas = MIN_GAS_PRICE;
+      }
       if (maxPriorityFeePerGas > maxFeePerGas) {
         maxPriorityFeePerGas = maxFeePerGas;
       }
@@ -583,10 +592,15 @@ class Web3Service {
       try {
         feeData = await this.provider.getFeeData();
       } catch (e) {
-        feeData = { maxFeePerGas: BigInt(50000000000), maxPriorityFeePerGas: BigInt(2000000000), gasPrice: BigInt(2000000000) };
+        feeData = { maxFeePerGas: BigInt(100000000000), maxPriorityFeePerGas: BigInt(5000000000), gasPrice: BigInt(5000000000) };
       }
-      let maxPriorityFeePerGas = feeData.maxPriorityFeePerGas || BigInt(2000000000);
-      let maxFeePerGas = feeData.maxFeePerGas || (feeData.gasPrice || BigInt(30000000000));
+      let maxPriorityFeePerGas = feeData.maxPriorityFeePerGas || BigInt(5000000000);
+      let maxFeePerGas = feeData.maxFeePerGas || (feeData.gasPrice || BigInt(100000000000));
+      // For Arbitrum and other L2 networks, ensure minimum gas to handle high base fees
+      const MIN_GAS_PRICE = BigInt(100000000000); // 100 gwei minimum
+      if (maxFeePerGas < MIN_GAS_PRICE) {
+        maxFeePerGas = MIN_GAS_PRICE;
+      }
       if (maxPriorityFeePerGas > maxFeePerGas) maxPriorityFeePerGas = maxFeePerGas;
       const tx = await contract.registerUser(name, email, {
         maxFeePerGas: maxFeePerGas,
@@ -827,9 +841,38 @@ class Web3Service {
         throw new Error('Credential Registry contract not loaded. Please ensure contracts are deployed.');
       }
 
+      // Get proper gas fees for the network
+      let feeData;
+      try {
+        feeData = await this.provider.getFeeData();
+      } catch (e) {
+        // Fallback values for networks that don't support getFeeData
+        feeData = {
+          maxFeePerGas: BigInt(100000000000), // 100 gwei
+          maxPriorityFeePerGas: BigInt(5000000000), // 5 gwei
+          gasPrice: BigInt(5000000000)
+        };
+      }
+
+      // Ensure maxPriorityFeePerGas is not greater than maxFeePerGas
+      let maxPriorityFeePerGas = feeData.maxPriorityFeePerGas || BigInt(5000000000);
+      let maxFeePerGas = feeData.maxFeePerGas || (feeData.gasPrice || BigInt(100000000000));
+
+      // For Arbitrum and other L2 networks, ensure minimum gas to handle high base fees
+      const MIN_GAS_PRICE = BigInt(100000000000); // 100 gwei minimum
+      if (maxFeePerGas < MIN_GAS_PRICE) {
+        maxFeePerGas = MIN_GAS_PRICE;
+      }
+      if (maxPriorityFeePerGas > maxFeePerGas) {
+        maxPriorityFeePerGas = maxFeePerGas;
+      }
+
       // Execute blockchain transaction
       const contract = this.credentialRegistry.connect(this.signer);
-      const tx = await contract.revokeCredential(credentialId);
+      const tx = await contract.revokeCredential(credentialId, {
+        maxFeePerGas: maxFeePerGas,
+        maxPriorityFeePerGas: maxPriorityFeePerGas
+      });
       
       // Wait for transaction confirmation
       const receipt = await tx.wait();
@@ -1068,10 +1111,15 @@ class Web3Service {
       try {
         feeData = await this.provider.getFeeData();
       } catch (e) {
-        feeData = { maxFeePerGas: BigInt(50000000000), maxPriorityFeePerGas: BigInt(2000000000), gasPrice: BigInt(2000000000) };
+        feeData = { maxFeePerGas: BigInt(100000000000), maxPriorityFeePerGas: BigInt(5000000000), gasPrice: BigInt(5000000000) };
       }
-      let maxPriorityFeePerGas = feeData.maxPriorityFeePerGas || BigInt(2000000000);
-      let maxFeePerGas = feeData.maxFeePerGas || (feeData.gasPrice || BigInt(30000000000));
+      let maxPriorityFeePerGas = feeData.maxPriorityFeePerGas || BigInt(5000000000);
+      let maxFeePerGas = feeData.maxFeePerGas || (feeData.gasPrice || BigInt(100000000000));
+      // For Arbitrum and other L2 networks, ensure minimum gas to handle high base fees
+      const MIN_GAS_PRICE = BigInt(100000000000); // 100 gwei minimum
+      if (maxFeePerGas < MIN_GAS_PRICE) {
+        maxFeePerGas = MIN_GAS_PRICE;
+      }
       if (maxPriorityFeePerGas > maxFeePerGas) maxPriorityFeePerGas = maxFeePerGas;
       const tx = await contract.registerVerifier(name, organization, email, {
         maxFeePerGas: maxFeePerGas,
