@@ -1162,8 +1162,17 @@ class Web3Service {
       if (!this.credentialRegistry) {
         throw new Error('Credential Registry contract not loaded. Please ensure contracts are deployed.');
       }
+      
+      // Check if the verifier is registered on the blockchain
+      if (!this.verifierRegistry) {
+        throw new Error('Verifier Registry contract not loaded. Please ensure contracts are deployed.');
+      }
+      
+      const isRegisteredVerifier = await this.verifierRegistry.isRegisteredVerifier(this.account);
+      if (!isRegisteredVerifier) {
+        throw new Error('Only registered verifiers can request credentials. Please register as a verifier first.');
+      }
 
-      // Anyone can send verification requests
       // Extract address from DID and validate format
       const holderAddress = holderDID.replace('did:ethr:', '');
       

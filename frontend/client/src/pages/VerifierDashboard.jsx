@@ -1357,26 +1357,34 @@ const VerifierDashboard = () => {
 
               {/* Submit Button */}
               <div className="form-section">
-                <Button
-                  type="submit"
-                  disabled={sendRequestMutation.isPending || !searchForm.did || !searchForm.credentialType}
-                  className="enhanced-button w-full text-white py-3 text-sm font-bold"
-                  data-testid="button-send-request"
-                >
-                  <div className="flex items-center justify-center space-x-2">
-                    {sendRequestMutation.isPending ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        <span>Sending Request...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Send className="h-4 w-4" />
-                        <span>Ask for credential</span>
-                      </>
-                    )}
+                {!isRegisteredVerifier ? (
+                  <div className="bg-yellow-900/30 border border-yellow-700/50 rounded-lg p-4 text-center">
+                    <p className="text-yellow-400 text-sm">
+                      You must be a registered verifier to request credentials. Please register first.
+                    </p>
                   </div>
-                </Button>
+                ) : (
+                  <Button
+                    type="submit"
+                    disabled={sendRequestMutation.isPending || !searchForm.did || !searchForm.credentialType}
+                    className="enhanced-button w-full text-white py-3 text-sm font-bold"
+                    data-testid="button-send-request"
+                  >
+                    <div className="flex items-center justify-center space-x-2">
+                      {sendRequestMutation.isPending ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          <span>Sending Request...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-4 w-4" />
+                          <span>Ask for credential</span>
+                        </>
+                      )}
+                    </div>
+                  </Button>
+                )}
               </div>
             </form>
           </CardContent>
