@@ -335,19 +335,26 @@ export async function registerRoutes(app) {
         // Get verifier information for better notification
         const verifier = await storage.getUser(requestData.verifierId);
         const verifierName = verifier?.name || 'Unknown Verifier';
+        const verifierDID = requestData.verifierDID || (verifier?.did) || 'Unknown';
         console.log('Found verifier:', verifierName);
+        
+        // Format DID with did:ethr: prefix if not already present
+        let formattedVerifierDID = verifierDID;
+        if (verifierDID && !verifierDID.startsWith('did:ethr:') && verifierDID.startsWith('0x')) {
+          formattedVerifierDID = `did:ethr:${verifierDID}`;
+        }
         
         const notificationData = {
           userId: requestData.userId,
           type: 'verification_request',
           title: 'Share Credential Request',
-          message: `You have received a request to share your ${requestData.credentialType} credential from ${verifierName}.`,
+          message: `You have received a request to share your ${requestData.credentialType} credential from ${formattedVerifierDID}.`,
           data: {
             requestId: request.id,
             verifierId: requestData.verifierId,
             credentialType: requestData.credentialType,
             message: requestData.message,
-            verifierDID: requestData.verifierDID || 'Unknown',
+            verifierDID: formattedVerifierDID,
             holderDID: requestData.holderDID || 'Unknown',
             signature: requestData.signature || null,
             blockchainData: requestData.blockchainData || null,
