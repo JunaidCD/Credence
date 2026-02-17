@@ -212,7 +212,7 @@ const IssuerDashboard = () => {
       // Debug current account information
       const accountDebug = Web3Service.debugAccountInfo();
       
-      // Check eligibility using Web3Service (accounts 0-1)
+      // Check eligibility using Web3Service (anyone can now register as issuer)
       const eligibility = await Web3Service.checkIssuerEligibility();
       
       console.log('Current account:', Web3Service.getAccount());
@@ -221,7 +221,7 @@ const IssuerDashboard = () => {
 
       if (!eligibility.isAllowed) {
         const currentAccount = Web3Service.getAccount();
-        throw new Error(`Account ${currentAccount} is not allowed. Only Hardhat accounts 0 (0xf39F...2266) or 1 (0x7099...79C8) can register as issuers.`);
+        throw new Error(`Account ${currentAccount} is not allowed to register as issuer.`);
       }
 
       if (eligibility.isRegistered) {
@@ -622,7 +622,7 @@ const IssuerDashboard = () => {
                     {!isEligibleIssuer && walletConnected && (
                       <div className="flex items-center space-x-2 px-3 py-2 bg-red-600/20 border border-red-500/30 rounded-xl mb-2">
                         <AlertTriangle className="h-4 w-4 text-red-400" />
-                        <span className="text-red-400 text-xs">Use accounts 0-1 only</span>
+                        <span className="text-red-400 text-xs">Anyone can register as an issuer</span>
                       </div>
                     )}
                     <Button
@@ -967,7 +967,7 @@ const IssuerDashboard = () => {
                       <div className="mt-3 p-2 bg-yellow-900/20 rounded-lg border border-yellow-600/30">
                         <div className="flex items-center">
                           <AlertTriangle className="h-4 w-4 text-yellow-400 mr-2 flex-shrink-0" />
-                          <span className="text-xs text-yellow-300">Only accounts 2-7 can receive credentials. Accounts 0-1 cannot send to themselves or other accounts.</span>
+                          <span className="text-xs text-yellow-300">Anyone can receive credentials on Arbitrum Sepolia</span>
                         </div>
                       </div>
                     </div>

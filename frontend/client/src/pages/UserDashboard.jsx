@@ -722,7 +722,7 @@ const UserDashboard = () => {
     navigator.clipboard.writeText(didToCopy);
     toast({
       title: "DID Copied",
-      description: isEligibleUser ? "Your DID has been copied to clipboard!" : "Placeholder DID copied. Connect with accounts 2-7 for actual DID.",
+      description: isEligibleUser ? "Your DID has been copied to clipboard!" : "Your DID has been copied to clipboard!",
     });
   };
 
@@ -786,7 +786,7 @@ const UserDashboard = () => {
               </div>
               <div className="flex-1">
                 <h3 className="text-xl font-bold text-white mb-2">User Registration</h3>
-                <p className="text-gray-400 text-sm mb-3">Connect MetaMask wallet (accounts 2-7) and register on blockchain</p>
+                <p className="text-gray-400 text-sm mb-3">Connect MetaMask wallet on Arbitrum Sepolia and register on blockchain</p>
                 
                 {!walletConnected ? (
                   <Button
@@ -822,7 +822,7 @@ const UserDashboard = () => {
                       <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
                         <p className="text-red-400 text-sm flex items-center">
                           <X className="h-4 w-4 mr-2" />
-                          Only Hardhat accounts 2-7 can register as users
+                          Anyone can register as a user on Arbitrum Sepolia
                         </p>
                       </div>
                     )}

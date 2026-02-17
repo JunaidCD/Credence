@@ -15,8 +15,8 @@ contract UserRegistry {
     mapping(address => bool) public isRegisteredUser;
     address[] public userAddresses;
     
-    // Define allowed user accounts (accounts 2-7 for Hardhat)
-    mapping(address => bool) public allowedUserAccounts;
+    // Define allowed user accounts - now open to any address
+    // mapping(address => bool) public allowedUserAccounts;
     
     uint256 public totalUsers = 0;
     
@@ -29,17 +29,11 @@ contract UserRegistry {
     event UserDeactivated(address indexed userAddress);
     
     constructor() {
-        // Initialize allowed user accounts (Hardhat accounts 2-7)
-        allowedUserAccounts[0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC] = true; // Account 2
-        allowedUserAccounts[0x90F79bf6EB2c4f870365E785982E1f101E93b906] = true; // Account 3
-        allowedUserAccounts[0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65] = true; // Account 4
-        allowedUserAccounts[0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc] = true; // Account 5
-        allowedUserAccounts[0x976EA74026E726554dB657fA54763abd0C3a0aa9] = true; // Account 6
-        allowedUserAccounts[0x14dC79964da2C08b23698B3D3cc7Ca32193d9955] = true; // Account 7
+        // Anyone can now register as a user - no restrictions
     }
     
     modifier onlyAllowedAccount() {
-        require(allowedUserAccounts[msg.sender], "Only accounts 2-7 can register as users");
+        // Removed restriction - anyone can register as a user
         _;
     }
     
@@ -51,7 +45,7 @@ contract UserRegistry {
     function registerUser(
         string memory _name,
         string memory _email
-    ) external onlyAllowedAccount notAlreadyRegistered {
+    ) external notAlreadyRegistered {
         require(bytes(_name).length > 0, "Name cannot be empty");
         
         User memory newUser = User({
@@ -110,8 +104,9 @@ contract UserRegistry {
         users[_userAddress].credentialsReceived++;
     }
     
-    function isAllowedAccount(address _account) external view returns (bool) {
-        return allowedUserAccounts[_account];
+    function isAllowedAccount(address _account) external pure returns (bool) {
+        // Always returns true - any account can register
+        return true;
     }
     
     function getTotalUsers() external view returns (uint256) {

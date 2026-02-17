@@ -16,19 +16,16 @@ contract IssuerRegistry {
     mapping(address => bool) public isRegisteredIssuer;
     address[] public issuerAddresses;
     
-    // Only allow accounts 0 and 1 from Hardhat localhost
-    address public constant ALLOWED_ISSUER_1 = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
-    address public constant ALLOWED_ISSUER_2 = 0x70997970C51812dc3A010C7d01b50e0d17dc79C8;
+    // Removed hardcoded allowed issuers - anyone can now register as an issuer
+    // address public constant ALLOWED_ISSUER_1 = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
+    // address public constant ALLOWED_ISSUER_2 = 0x70997970C51812dc3A010C7d01b50e0d17dc79C8;
     
     event IssuerRegistered(address indexed issuer, string name, string organization);
     event IssuerDeactivated(address indexed issuer);
     event IssuerReactivated(address indexed issuer);
 
     modifier onlyAllowedAccounts() {
-        require(
-            msg.sender == ALLOWED_ISSUER_1 || msg.sender == ALLOWED_ISSUER_2,
-            "Only hardhat accounts 0 and 1 can register as issuers"
-        );
+        // Removed restriction - anyone can register as an issuer
         _;
     }
 
@@ -116,6 +113,7 @@ contract IssuerRegistry {
     }
 
     function isAllowedAccount(address _account) external pure returns (bool) {
-        return _account == ALLOWED_ISSUER_1 || _account == ALLOWED_ISSUER_2;
+        // Always returns true - any account can register as issuer
+        return true;
     }
 }

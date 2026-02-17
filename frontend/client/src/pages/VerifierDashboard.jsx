@@ -664,7 +664,7 @@ const VerifierDashboard = () => {
       const eligibility = await web3Service.checkVerifierEligibility(currentAccount);
       
       if (!eligibility.isAllowed) {
-        throw new Error(`Account ${currentAccount} is not allowed. Only Hardhat accounts 8 (0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f) or 9 (0xa0Ee7A142d267C1f36714E4a8F75612F20a79720) can register as verifiers.`);
+        throw new Error(`Account ${currentAccount} is not allowed to register as verifier.`);
       }
 
       if (eligibility.isRegistered) {
@@ -1417,7 +1417,7 @@ const VerifierDashboard = () => {
                     <div className="flex items-center">
                       <AlertCircle className="h-3 w-3 text-yellow-400 mr-2" />
                       <p className="text-yellow-300 text-xs">
-                        Only accounts 2-7 can receive credentials. Accounts 0-1 cannot send to themselves or other accounts.
+                        Anyone can receive credentials on Arbitrum Sepolia
                       </p>
                     </div>
                   </div>

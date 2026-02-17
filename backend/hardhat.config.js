@@ -29,7 +29,7 @@ module.exports = {
     
     // Arbitrum Sepolia Testnet (L2)
     arbitrumSepolia: {
-      url: process.env.ARBITRUM_SEPOLIA_RPC_URL || "https://sepolia-rollup.arbitrum.io/rpc",
+      url: process.env.ARBITRUM_SEPOLIA_RPC_URL || "https://arbitrum-sepolia.rpc.thirdweb.com",
       chainId: 421614,
       accounts: ["969efa63d6b675371ef36bb59eeb9c2c56d8e23e9ceba1d6c5f0129a07eb465d"],
       gasPrice: 100000000, // 0.1 gwei

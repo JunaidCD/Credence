@@ -10,11 +10,15 @@ const CONTRACT_ADDRESSES = {
 
 // Network Configuration - Arbitrum Sepolia
 const NETWORK_CONFIG = {
-  // Arbitrum Sepolia (L2 Testnet)
+  // Arbitrum Sepolia (L2 Testnet) - with multiple RPC endpoints for reliability
   arbitrumSepolia: {
     chainId: '0x' + BigInt(421614).toString(16), // 421614 in hex
     chainName: 'Arbitrum Sepolia',
-    rpcUrls: ['https://sepolia-rollup.arbitrum.io/rpc'],
+    rpcUrls: [
+      'https://sepolia-rollup.arbitrum.io/rpc',
+      'https://arbitrum-sepolia.rpc.thirdweb.com',
+      'https://arb-sepolia.g.alchemy.com/v2/demo'
+    ],
     blockExplorerUrls: ['https://sepolia.arbiscan.io'],
     iconUrls: ['https://assets.coingecko.com/coins/images/16547/small/photo_2023-03-29_21.47.00.jpeg']
   },
@@ -93,7 +97,16 @@ class Web3Service {
   async init() {
     try {
       if (typeof window.ethereum !== 'undefined') {
+        // Use a custom RPC provider with fallback for better reliability
+        const rpcUrls = [
+          'https://sepolia-rollup.arbitrum.io/rpc',
+          'https://arbitrum-sepolia.rpc.thirdweb.com'
+        ];
+        
+        // Use the first RPC that works
+        const rpcProvider = new ethers.JsonRpcProvider(rpcUrls[0]);
         this.provider = new ethers.BrowserProvider(window.ethereum);
+        
         await this.loadContractAddresses();
         this.isInitialized = true;
         return true;
@@ -194,40 +207,8 @@ class Web3Service {
         await this.init();
       }
 
-      // First, try to switch to Hardhat network
-      try {
-        await window.ethereum.request({
-          method: 'wallet_switchEthereumChain',
-          params: [{ chainId: '0x7a69' }], // 31337 in hex
-        });
-      } catch (switchError) {
-        // This error code indicates that the chain has not been added to MetaMask
-        if (switchError.code === 4902) {
-          try {
-            await window.ethereum.request({
-              method: 'wallet_addEthereumChain',
-              params: [
-                {
-                  chainId: '0x7a69', // 31337 in hex
-                  chainName: 'Hardhat Localhost',
-                  nativeCurrency: {
-                    name: 'ETH',
-                    symbol: 'ETH',
-                    decimals: 18,
-                  },
-                  rpcUrls: ['http://127.0.0.1:8545'],
-                },
-              ],
-            });
-          } catch (addError) {
-            console.error('Failed to add Hardhat network:', addError);
-            throw new Error('Failed to add Hardhat network to MetaMask');
-          }
-        } else {
-          console.error('Failed to switch to Hardhat network:', switchError);
-          throw new Error('Failed to switch to Hardhat network');
-        }
-      }
+      // Switch to Arbitrum Sepolia network
+      await this.switchToArbitrumSepolia();
 
       const accounts = await window.ethereum.request({
         method: 'eth_requestAccounts'
@@ -238,8 +219,9 @@ class Web3Service {
       
       // Verify network after switching
       const network = await this.provider.getNetwork();
-      if (Number(network.chainId) !== 31337) {
-        throw new Error('Please connect to Hardhat localhost network (Chain ID: 31337)');
+      const expectedChainId = 421614; // Arbitrum Sepolia
+      if (Number(network.chainId) !== expectedChainId) {
+        throw new Error('Please connect to Arbitrum Sepolia network (Chain ID: 421614)');
       }
 
       return {
@@ -259,23 +241,15 @@ class Web3Service {
         throw new Error('No address provided or contracts not loaded');
       }
 
-      // Define allowed Hardhat accounts (accounts 0-1 for issuers)
-      const ALLOWED_ISSUER_ACCOUNTS = [
-        '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266', // Account 0
-        '0x70997970C51812dc3A010C7d01b50e0d17dc79C8'  // Account 1
-      ];
-
-      const isAllowed = ALLOWED_ISSUER_ACCOUNTS.some(addr => 
-        addr.toLowerCase() === targetAddress.toLowerCase()
-      );
-      const isRegistered = isAllowed ? await this.issuerRegistry.isRegisteredIssuer(targetAddress) : false;
+      // Anyone can now register as an issuer - no restrictions
+      const isRegistered = await this.issuerRegistry.isRegisteredIssuer(targetAddress);
       
       return {
         success: true,
         address: targetAddress,
-        isAllowed,
+        isAllowed: true,
         isRegistered,
-        canRegister: isAllowed && !isRegistered,
+        canRegister: !isRegistered,
         did: `did:ethr:${targetAddress}`
       };
     } catch (error) {
@@ -284,7 +258,7 @@ class Web3Service {
     }
   }
 
-  // Validate verifier registration eligibility (accounts 8-9)
+  // Validate verifier registration eligibility - anyone can register
   async checkVerifierEligibility(address = null) {
     try {
       const targetAddress = (address || this.account)?.toLowerCase();
@@ -298,26 +272,17 @@ class Web3Service {
         };
       }
 
-      // Define allowed Hardhat accounts (accounts 8-9 for verifiers) - use real addresses
-      const ALLOWED_VERIFIER_ACCOUNTS = [
-        '0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f', // Account 8
-        '0xa0Ee7A142d267C1f36714E4a8F75612F20a79720'  // Account 9
-      ];
-
-      const isAllowed = ALLOWED_VERIFIER_ACCOUNTS.some(addr => 
-        addr.toLowerCase() === targetAddress
-      );
+      // Anyone can register as a verifier - no restrictions
+      const isAllowed = true;
       
-      // Always check on-chain registration status for eligible accounts
+      // Check on-chain registration status
       let isRegistered = false;
-      if (isAllowed && this.verifierRegistry) {
+      if (this.verifierRegistry) {
         try {
-          // Use the smart contract's isRegisteredVerifier method to check on-chain status
           isRegistered = await this.verifierRegistry.isRegisteredVerifier(targetAddress);
           console.log('isVerifier:', isRegistered);
         } catch (error) {
           console.log('Could not check verifier registration status from blockchain:', error);
-          // If we can't check blockchain, assume not registered to be safe
           isRegistered = false;
         }
       }
@@ -325,7 +290,7 @@ class Web3Service {
       return {
         isAllowed,
         isRegistered,
-        canRegister: isAllowed && !isRegistered
+        canRegister: !isRegistered
       };
     } catch (error) {
       console.error('Failed to check verifier eligibility:', error);
@@ -346,12 +311,53 @@ class Web3Service {
         throw new Error('Issuer Registry contract not loaded. Please ensure contracts are deployed.');
       }
 
-      // Execute blockchain transaction directly
-      const contract = this.issuerRegistry.connect(this.signer);
-      const tx = await contract.registerIssuer(name, organization, email);
+      // Get current gas price from network - handle different network types
+      let feeData;
+      try {
+        feeData = await this.provider.getFeeData();
+      } catch (e) {
+        // Fallback values for networks that don't support getFeeData
+        feeData = {
+          maxFeePerGas: BigInt(50000000000), // 50 gwei
+          maxPriorityFeePerGas: BigInt(2000000000), // 2 gwei
+          gasPrice: BigInt(2000000000)
+        };
+      }
       
-      // Wait for transaction confirmation
-      const receipt = await tx.wait();
+      // Ensure maxPriorityFeePerGas is not greater than maxFeePerGas
+      let maxPriorityFeePerGas = feeData.maxPriorityFeePerGas || BigInt(2000000000);
+      let maxFeePerGas = feeData.maxFeePerGas || (feeData.gasPrice || BigInt(30000000000));
+      
+      // maxPriorityFeePerGas cannot exceed maxFeePerGas
+      if (maxPriorityFeePerGas > maxFeePerGas) {
+        maxPriorityFeePerGas = maxFeePerGas;
+      }
+      
+      // Execute blockchain transaction with proper gas settings
+      const contract = this.issuerRegistry.connect(this.signer);
+      const tx = await contract.registerIssuer(name, organization, email, {
+        maxFeePerGas: maxFeePerGas,
+        maxPriorityFeePerGas: maxPriorityFeePerGas
+      });
+      
+      // Wait for transaction receipt with retry logic for rate limiting
+      let receipt = null;
+      for (let i = 0; i < 5; i++) {
+        try {
+          receipt = await tx.wait();
+          break;
+        } catch (receiptError) {
+          if (receiptError.message.includes('rate limited') || receiptError.code === -32005) {
+            await new Promise(resolve => setTimeout(resolve, 2000 * (i + 1)));
+            continue;
+          }
+          throw receiptError;
+        }
+      }
+      
+      if (!receipt) {
+        throw new Error('Transaction submitted but could not confirm. Check your wallet for the transaction.');
+      }
       
       return {
         success: true,
@@ -445,53 +451,12 @@ class Web3Service {
   }
 
   async validateCredentialRecipient(recipientAddress) {
-    // Define allowed Hardhat accounts (accounts 2-7)
-    const allowedRecipients = [
-      '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC', // Account 2
-      '0x90F79bf6EB2c4f870365E785982E1f101E93b906', // Account 3
-      '0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65', // Account 4
-      '0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc', // Account 5
-      '0x976EA74026E726554dB657fA54763abd0C3a0aa9', // Account 6
-      '0x14dC79964da2C08b23698B3D3cc7Ca32193d9955'  // Account 7
-    ];
-
-    // Get current wallet address
-    const currentWallet = this.getAccount();
-    
-    // Check if current wallet is authorized issuer (accounts 0 or 1)
-    const authorizedIssuers = [
-      '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266', // Account 0
-      '0x70997970C51812dc3A010C7d01b50e0d17dc79C8'  // Account 1
-    ];
-
-    if (!authorizedIssuers.some(addr => addr.toLowerCase() === currentWallet.toLowerCase())) {
-      throw new Error('Only authorized issuer accounts (0-1) can issue credentials');
-    }
-
-    // Check if trying to send to self
-    if (currentWallet.toLowerCase() === recipientAddress.toLowerCase()) {
-      throw new Error('Cannot issue credentials to your own wallet address');
-    }
-
-    // Check if recipient is in allowed accounts (2-7)
-    if (!allowedRecipients.some(addr => addr.toLowerCase() === recipientAddress.toLowerCase())) {
-      throw new Error('Credentials can only be issued to accounts 2-7. Please use a valid recipient address.');
-    }
-
+    // Anyone can receive credentials - no restrictions
     return true;
   }
 
   async validateUserRegistration(address = null) {
-    // Define allowed user accounts (accounts 2-7)
-    const allowedUserAccounts = [
-      '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC', // Account 2
-      '0x90F79bf6EB2c4f870365E785982E1f101E93b906', // Account 3
-      '0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65', // Account 4
-      '0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc', // Account 5
-      '0x976EA74026E726554dB657fA54763abd0C3a0aa9', // Account 6
-      '0x14dC79964da2C08b23698B3D3cc7Ca32193d9955'  // Account 7
-    ];
-
+    // Anyone can now register as a user - no restrictions
     const targetAddress = address || this.account;
     
     if (!targetAddress) {
@@ -499,17 +464,10 @@ class Web3Service {
       return false;
     }
     
-    // Debug logging to help troubleshoot
     console.log('Validating user registration for address:', targetAddress);
-    console.log('Allowed accounts:', allowedUserAccounts);
     
-    // Return boolean instead of throwing error for UI validation
-    const isValid = allowedUserAccounts.some(addr => 
-      addr.toLowerCase() === targetAddress.toLowerCase()
-    );
-    console.log('Is address valid for user registration:', isValid);
-    
-    return isValid;
+    // Anyone can register - return true
+    return true;
   }
 
   async registerUser(name, email = '') {
@@ -526,7 +484,7 @@ class Web3Service {
       // Validate user account eligibility
       const isEligible = await this.validateUserRegistration();
       if (!isEligible) {
-        throw new Error('Only Hardhat accounts 2-7 can register as users. Please use a valid user account.');
+        throw new Error('Registration not allowed. Please try again.');
       }
 
       // Create a message to sign for user registration
@@ -564,12 +522,24 @@ class Web3Service {
       // Validate user account eligibility
       const isEligible = await this.validateUserRegistration();
       if (!isEligible) {
-        throw new Error('Only Hardhat accounts 2-7 can register as users. Please use a valid user account.');
+        throw new Error('Registration not allowed. Please try again.');
       }
 
-      // Execute blockchain transaction directly
+      // Execute blockchain transaction with proper gas settings
       const contract = this.userRegistry.connect(this.signer);
-      const tx = await contract.registerUser(name, email);
+      let feeData;
+      try {
+        feeData = await this.provider.getFeeData();
+      } catch (e) {
+        feeData = { maxFeePerGas: BigInt(50000000000), maxPriorityFeePerGas: BigInt(2000000000), gasPrice: BigInt(2000000000) };
+      }
+      let maxPriorityFeePerGas = feeData.maxPriorityFeePerGas || BigInt(2000000000);
+      let maxFeePerGas = feeData.maxFeePerGas || (feeData.gasPrice || BigInt(30000000000));
+      if (maxPriorityFeePerGas > maxFeePerGas) maxPriorityFeePerGas = maxFeePerGas;
+      const tx = await contract.registerUser(name, email, {
+        maxFeePerGas: maxFeePerGas,
+        maxPriorityFeePerGas: maxPriorityFeePerGas
+      });
       
       // Wait for transaction confirmation
       const receipt = await tx.wait();
@@ -1064,7 +1034,7 @@ class Web3Service {
       // Validate verifier account eligibility
       const eligibility = await this.checkVerifierEligibility();
       if (!eligibility.isAllowed) {
-        throw new Error('Only Hardhat accounts 8-9 can register as verifiers. Please use a valid verifier account.');
+        throw new Error('Registration not allowed. Please try again.');
       }
       if (eligibility.isRegistered) {
         throw new Error('This account is already registered as a verifier.');
@@ -1073,9 +1043,21 @@ class Web3Service {
       console.log('Register clicked');
       console.log('🔐 Executing on-chain verifier registration...');
       
-      // Execute blockchain transaction directly
+      // Execute blockchain transaction with proper gas settings
       const contract = this.verifierRegistry.connect(this.signer);
-      const tx = await contract.registerVerifier(name, organization, email);
+      let feeData;
+      try {
+        feeData = await this.provider.getFeeData();
+      } catch (e) {
+        feeData = { maxFeePerGas: BigInt(50000000000), maxPriorityFeePerGas: BigInt(2000000000), gasPrice: BigInt(2000000000) };
+      }
+      let maxPriorityFeePerGas = feeData.maxPriorityFeePerGas || BigInt(2000000000);
+      let maxFeePerGas = feeData.maxFeePerGas || (feeData.gasPrice || BigInt(30000000000));
+      if (maxPriorityFeePerGas > maxFeePerGas) maxPriorityFeePerGas = maxFeePerGas;
+      const tx = await contract.registerVerifier(name, organization, email, {
+        maxFeePerGas: maxFeePerGas,
+        maxPriorityFeePerGas: maxPriorityFeePerGas
+      });
       
       console.log('Tx sent:', tx.hash);
       console.log('⏳ Transaction submitted, waiting for confirmation...');

@@ -2,11 +2,11 @@
   "network": "localhost",
   "chainId": 31337,
   "contracts": {
-    "IssuerRegistry": "0xFD882a6D7775ef2d1FBcd4A2D9B2c7AEc6c3453a",
-    "CredentialRegistry": "0x57622966643e43d943792b358809e2F6b3db15c4",
-    "UserRegistry": "0x8984b70681B942555004e626906e039A2CC14Aec",
-    "VerifierRegistry": "0xc44aeB974EBD048fc3d5b7286e0651C34Eae2Cd2"
+    "IssuerRegistry": "0x9EEa93bB9836AEad810650dff11Dc13C8C8dfD8D",
+    "CredentialRegistry": "0xF03503206B24e2b55165226423d2bfDD01Ef8e07",
+    "UserRegistry": "0x92B726932fC3b780ab360d2EA8d4742ea75BaA5d",
+    "VerifierRegistry": "0x15a05420E6Fbf1618Bc983f1BE95c54BbaF1CeFb"
   },
-  "deployedAt": "2026-02-16T16:16:08.962Z",
+  "deployedAt": "2026-02-17T13:28:53.286Z",
   "deployer": "0xcAa2C22931eDD046bd0847C9Fb5d89Da508c04ca"
 }
