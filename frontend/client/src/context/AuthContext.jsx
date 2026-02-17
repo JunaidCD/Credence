@@ -92,12 +92,26 @@ export const AuthProvider = ({ children }) => {
 
       return user;
     } catch (error) {
-      dispatch({ type: 'LOGIN_ERROR', payload: error.message });
+      // Format error message for user rejection
+      const errorMessage = error.message || '';
+      let displayMessage = errorMessage;
+      
+      // Check for user rejection
+      if (error.code === 4001 || 
+          errorMessage.toLowerCase().includes('user rejected') ||
+          errorMessage.toLowerCase().includes('user denied') ||
+          errorMessage.toLowerCase().includes('transaction rejected') ||
+          errorMessage.toLowerCase().includes('cancelled') ||
+          errorMessage.toLowerCase().includes('cancel')) {
+        displayMessage = 'User rejected the transaction';
+      }
+      
+      dispatch({ type: 'LOGIN_ERROR', payload: displayMessage });
       
       toast({
         variant: "destructive",
         title: "Connection Failed",
-        description: error.message,
+        description: displayMessage,
       });
 
       throw error;

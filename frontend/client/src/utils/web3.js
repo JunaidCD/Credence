@@ -38,6 +38,24 @@ const NETWORK_CONFIG = {
   }
 };
 
+// Helper function to format error messages
+const formatError = (error) => {
+  const errorMessage = error.message || '';
+  
+  // Check for user rejection (code 4001 or message contains 'rejected' or 'cancel')
+  if (error.code === 4001 || 
+      errorMessage.toLowerCase().includes('user rejected') ||
+      errorMessage.toLowerCase().includes('user denied') ||
+      errorMessage.toLowerCase().includes('transaction rejected') ||
+      errorMessage.toLowerCase().includes('cancelled') ||
+      errorMessage.toLowerCase().includes('cancel')) {
+    return 'User rejected the transaction';
+  }
+  
+  // Return original message for other errors
+  return errorMessage;
+};
+
 // Contract ABIs - simplified for frontend use
 const ISSUER_REGISTRY_ABI = [
   "function registerIssuer(string memory _name, string memory _organization, string memory _email) external",
@@ -92,6 +110,7 @@ class Web3Service {
     this.verifierRegistry = null;
     this.isInitialized = false;
     this.eventListeners = new Map(); // Store active event listeners
+    this.isConnecting = false; // Flag to prevent duplicate wallet connections
   }
 
   async init() {
@@ -202,6 +221,17 @@ class Web3Service {
   }
 
   async connectWallet() {
+    // Prevent duplicate connection attempts
+    if (this.isConnecting) {
+      console.log('Wallet connection already in progress');
+      return {
+        account: this.account,
+        chainId: 421614
+      };
+    }
+    
+    this.isConnecting = true;
+    
     try {
       if (!this.provider) {
         await this.init();
@@ -230,7 +260,9 @@ class Web3Service {
       };
     } catch (error) {
       console.error('Wallet connection failed:', error);
-      throw error;
+      throw new Error(formatError(error));
+    } finally {
+      this.isConnecting = false;
     }
   }
 
@@ -366,7 +398,7 @@ class Web3Service {
       };
     } catch (error) {
       console.error('Issuer registration failed:', error);
-      throw error;
+      throw new Error(formatError(error));
     }
   }
 
@@ -521,7 +553,7 @@ class Web3Service {
       };
     } catch (error) {
       console.error('User registration failed:', error);
-      throw error;
+      throw new Error(formatError(error));
     }
   }
 
@@ -576,7 +608,7 @@ class Web3Service {
       };
     } catch (error) {
       console.error('Blockchain user registration failed:', error);
-      throw error;
+      throw new Error(formatError(error));
     }
   }
 
@@ -1102,7 +1134,7 @@ class Web3Service {
       };
     } catch (error) {
       console.error('❌ Verifier registration failed:', error);
-      throw error;
+      throw new Error(formatError(error));
     }
   }
 
