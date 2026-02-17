@@ -1027,26 +1027,6 @@ class Web3Service {
   }
 
   async validateVerifierRegistration(address = null) {
-    // Get the standard Hardhat accounts (these are deterministic)
-    const standardHardhatAccounts = [
-      '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266', // Account 0
-      '0x70997970C51812dc3A010C7d01b50e0d17dc79C8', // Account 1
-      '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC', // Account 2
-      '0x90F79bf6EB2c4f870365E785982E1f101E93b906', // Account 3
-      '0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65', // Account 4
-      '0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc', // Account 5
-      '0x976EA74026E726554dB657fA54763abd0C3a0aa9', // Account 6
-      '0x14dC79964da2C08b23698B3D3cc7Ca32193d9955', // Account 7
-      '0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f', // Account 8
-      '0xa0Ee7A142d267C1f36714E4a8F75612F20a79720'  // Account 9
-    ];
-
-    // Define allowed verifier accounts (accounts 8-9) - use real addresses
-    const allowedVerifierAccounts = [
-      '0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f', // Account 8
-      '0xa0Ee7A142d267C1f36714E4a8F75612F20a79720'  // Account 9
-    ];
-
     const targetAddress = address || this.account;
     
     if (!targetAddress) {
@@ -1054,22 +1034,9 @@ class Web3Service {
       return false;
     }
     
-    // Debug logging to help troubleshoot
-    console.log('🔍 Validating verifier registration for address:', targetAddress);
-    console.log('📋 Allowed verifier accounts (8-9):', allowedVerifierAccounts);
-    console.log('📝 All Hardhat accounts:', standardHardhatAccounts);
-    
-    // Return boolean for UI validation
-    const isValid = allowedVerifierAccounts.some(addr => 
-      addr.toLowerCase() === targetAddress.toLowerCase()
-    );
-    console.log('✅ Is address valid for verifier registration:', isValid);
-    
-    // Additional debugging - show which account index this is
-    const accountIndex = standardHardhatAccounts.findIndex(addr => 
-      addr.toLowerCase() === targetAddress.toLowerCase()
-    );
-    console.log('🔢 Account index:', accountIndex >= 0 ? accountIndex : 'Not a standard Hardhat account');
+    // Anyone can register as a verifier - just validate it's a proper Ethereum address
+    const isValid = targetAddress.startsWith('0x') && targetAddress.length === 42;
+    console.log('Is valid Ethereum address for verifier:', isValid);
     
     return isValid;
   }
@@ -1148,38 +1115,15 @@ class Web3Service {
         throw new Error('Credential Registry contract not loaded. Please ensure contracts are deployed.');
       }
 
-      // Validate verifier eligibility
-      const eligibility = await this.checkVerifierEligibility();
-      if (!eligibility.isAllowed || !eligibility.isRegistered) {
-        throw new Error('Only registered verifiers (accounts 8-9) can send verification requests.');
-      }
-
-      // Extract address from DID
+      // Anyone can send verification requests
+      // Extract address from DID and validate format
       const holderAddress = holderDID.replace('did:ethr:', '');
       
-      // Validate holder address format
       if (!ethers.isAddress(holderAddress)) {
         throw new Error('Invalid holder DID format. Please provide a valid Ethereum DID.');
       }
 
-      // Check if holder is a valid user account (2-7)
-      const allowedUserAccounts = [
-        '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC', // Account 2
-        '0x90F79bf6EB2c4f870365E785982E1f101E93b906', // Account 3
-        '0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65', // Account 4
-        '0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc', // Account 5
-        '0x976EA74026E726554dB657fA54763abd0C3a0aa9', // Account 6
-        '0x14dC79964da2C08b23698B3D3cc7Ca32193d9955'  // Account 7
-      ];
-
-      const isValidHolder = allowedUserAccounts.some(addr => 
-        addr.toLowerCase() === holderAddress.toLowerCase()
-      );
-
-      if (!isValidHolder) {
-        throw new Error('Verification requests can only be sent to user accounts (2-7).');
-      }
-
+      // Validate that holder address is valid
       console.log('🔐 Sending verification request on blockchain...');
       console.log('📋 Request details:', {
         verifier: this.account,
@@ -1395,10 +1339,10 @@ class Web3Service {
         throw new Error('Wallet not connected. Please connect your MetaMask wallet first.');
       }
 
-      // Validate user eligibility (only accounts 2-7 can share credentials)
+      // Any registered user can share credentials
       const isEligibleUser = await this.validateUserRegistration();
       if (!isEligibleUser) {
-        throw new Error('Only user accounts (2-7) can share credentials.');
+        throw new Error('Only registered users can share credentials.');
       }
 
       // Extract verifier address from DID
@@ -1409,20 +1353,7 @@ class Web3Service {
         throw new Error('Invalid verifier DID format. Please provide a valid Ethereum DID.');
       }
 
-      // Check if verifier is a valid verifier account (8-9)
-      const allowedVerifierAccounts = [
-        '0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f', // Account 8
-        '0xa0Ee7A142d267C1f36714E4a8F75612F20a79720'  // Account 9
-      ];
-
-      const isValidVerifier = allowedVerifierAccounts.some(addr => 
-        addr.toLowerCase() === verifierAddress.toLowerCase()
-      );
-
-      if (!isValidVerifier) {
-        throw new Error('Credentials can only be shared with registered verifiers (accounts 8-9).');
-      }
-
+      // Allow sharing with any valid Ethereum address
       console.log('🔐 Sharing credential on blockchain...');
       console.log('📋 Share details:', {
         holder: this.account,
@@ -1453,6 +1384,7 @@ class Web3Service {
       console.log('✅ Credential sharing signed successfully');
       console.log('🔑 Signature:', signature.substring(0, 20) + '...');
 
+      // Allow sharing with any verifier address
       // Create blockchain transaction data
       const blockchainData = {
         ...shareData,
@@ -1495,23 +1427,7 @@ class Web3Service {
         };
       }
 
-      // Check if verifier is eligible (accounts 8-9)
-      const allowedVerifierAccounts = [
-        '0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f', // Account 8
-        '0xa0Ee7A142d267C1f36714E4a8F75612F20a79720'  // Account 9
-      ];
-
-      const isValidVerifier = allowedVerifierAccounts.some(addr => 
-        addr.toLowerCase() === verifierAddress.toLowerCase()
-      );
-
-      if (!isValidVerifier) {
-        return {
-          isValid: false,
-          error: 'Credentials can only be shared with registered verifiers (accounts 8-9)'
-        };
-      }
-
+      // Allow sharing with any verifier - just check it's a valid address
       // Check if verifier is registered on blockchain (optional check)
       let isRegistered = false;
       try {
@@ -1544,10 +1460,11 @@ class Web3Service {
         throw new Error('Wallet not connected. Please connect your MetaMask wallet first.');
       }
 
+      // Allow any registered verifier to approve
       // Validate verifier eligibility
       const eligibility = await this.checkVerifierEligibility();
-      if (!eligibility.isAllowed || !eligibility.isRegistered) {
-        throw new Error('Only registered verifiers (accounts 8-9) can approve credential verifications.');
+      if (!eligibility.isRegistered) {
+        throw new Error('Only registered verifiers can approve credential verifications.');
       }
 
       console.log('🔐 Approving credential verification with MetaMask...');
@@ -1606,10 +1523,11 @@ class Web3Service {
         throw new Error('Wallet not connected. Please connect your MetaMask wallet first.');
       }
 
+      // Allow any registered verifier to reject
       // Validate verifier eligibility
       const eligibility = await this.checkVerifierEligibility();
-      if (!eligibility.isAllowed || !eligibility.isRegistered) {
-        throw new Error('Only registered verifiers (accounts 8-9) can reject credential verifications.');
+      if (!eligibility.isRegistered) {
+        throw new Error('Only registered verifiers can reject credential verifications.');
       }
 
       console.log('🔐 Rejecting credential verification with MetaMask...');
@@ -1663,30 +1581,21 @@ class Web3Service {
 
   debugAccountInfo() {
     const currentAccount = this.getAccount();
-    const hardhatAccounts = {
-      '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266': 'Account 0 (Issuer)',
-      '0x70997970C51812dc3A010C7d01b50e0d17dc79C8': 'Account 1 (Issuer)',
-      '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC': 'Account 2 (User)',
-      '0x90F79bf6EB2c4f870365E785982E1f101E93b906': 'Account 3 (User)',
-      '0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65': 'Account 4 (User)',
-      '0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc': 'Account 5 (User)',
-      '0x976EA74026E726554dB657fA54763abd0C3a0aa9': 'Account 6 (User)',
-      '0x14dC79964da2C08b23698B3D3cc7Ca32193d9955': 'Account 7 (User)'
-    };
-
-    const accountInfo = hardhatAccounts[currentAccount] || 'Unknown Account';
+    
+    // Generic account type detection - determine from blockchain registration
+    // This is a debug helper, actual role checking should be done via contract calls
+    const accountInfo = 'Custom Wallet';
     
     console.log('=== ACCOUNT DEBUG INFO ===');
     console.log('Current Account:', currentAccount);
     console.log('Account Type:', accountInfo);
-    console.log('Is Issuer Account:', ['0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266', '0x70997970C51812dc3A010C7d01b50e0d17dc79C8'].includes(currentAccount));
     console.log('Active Event Listeners:', this.getActiveListeners().length);
     console.log('========================');
     
     return {
       address: currentAccount,
       type: accountInfo,
-      isIssuerAccount: ['0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266', '0x70997970C51812dc3A010C7d01b50e0d17dc79C8'].includes(currentAccount),
+      isIssuerAccount: false,
       activeListeners: this.getActiveListeners()
     };
   }

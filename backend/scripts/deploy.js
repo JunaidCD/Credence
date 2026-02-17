@@ -44,12 +44,17 @@ async function main() {
   const verifierRegistryAddress = await verifierRegistry.getAddress();
   console.log("VerifierRegistry deployed to:", verifierRegistryAddress);
 
+  // Get network information dynamically
+  const network = await ethers.provider.getNetwork();
+  const chainId = network.chainId.toString();
+  const networkName = network.name === 'unknown' ? 'Custom Network' : network.name;
+
   // Save deployment addresses to backend and frontend
   const fs = require('fs');
   const path = require('path');
   const deploymentInfo = {
-    network: "localhost",
-    chainId: 31337,
+    network: networkName,
+    chainId: chainId,
     contracts: {
       IssuerRegistry: issuerRegistryAddress,
       CredentialRegistry: credentialRegistryAddress,
@@ -82,7 +87,7 @@ async function main() {
   console.log("- CredentialRegistry:", credentialRegistryAddress);
   console.log("- UserRegistry:", userRegistryAddress);
   console.log("- VerifierRegistry:", verifierRegistryAddress);
-  console.log("- Network: Hardhat Localhost (Chain ID: 31337)");
+  console.log("- Network:", networkName, "(Chain ID:", chainId, ")");
 }
 
 main()

@@ -1472,7 +1472,7 @@ const UserDashboard = () => {
                         type="text"
                         value={verifierDid}
                         onChange={(e) => setVerifierDid(e.target.value)}
-                        placeholder="0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f"
+                        placeholder="Enter verifier DID (did:ethr:0x...)"
                         className="flex-1 px-4 py-3 bg-gray-700/50 border border-gray-600/30 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400/50 transition-all duration-200 font-mono text-sm"
                       />
                       
