@@ -77,12 +77,36 @@ export async function registerRoutes(app) {
       // If not found by DID, try to extract address and find by address
       if (!user) {
         const didParam = decodeURIComponent(req.params.did);
+        // Handle both DID format (did:ethr:0x...) and plain address (0x...)
+        let extractedAddress = null;
         if (didParam.startsWith('did:ethr:')) {
-          const extractedAddress = didParam.replace('did:ethr:', '').toLowerCase();
+          extractedAddress = didParam.replace('did:ethr:', '').toLowerCase();
+        } else if (didParam.startsWith('0x') && didParam.length === 42) {
+          // It's already a plain Ethereum address
+          extractedAddress = didParam.toLowerCase();
+        }
+        
+        if (extractedAddress) {
           console.log('Trying to find user by extracted address:', extractedAddress);
           user = await storage.getUserByAddress(extractedAddress);
           console.log('Found user by address:', user);
         }
+      }
+
+      // If still not found, try case-insensitive DID match
+      if (!user) {
+        const didParam = decodeURIComponent(req.params.did).toLowerCase();
+        for (const u of allUsers) {
+          if (u.did && u.did.toLowerCase() === didParam) {
+            user = u;
+            break;
+          }
+          if (u.address && u.address.toLowerCase() === didParam) {
+            user = u;
+            break;
+          }
+        }
+        console.log('Found user by case-insensitive match:', user);
       }
       
       console.log('=== END DID LOOKUP DEBUG ===');
