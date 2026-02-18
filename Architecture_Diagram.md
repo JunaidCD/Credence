@@ -9,9 +9,11 @@
 
 ### 1. Credential Issuance Flow
 
+![Data Flow](./assets/DATA_FLOW.png)
 
 ### 2. Credential Verification Flow
-`
+
+![Verification Flow](./assets/Credential_Verification.png)
 
 ## Component Architecture
 
