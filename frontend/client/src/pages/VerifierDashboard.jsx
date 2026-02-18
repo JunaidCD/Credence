@@ -550,9 +550,15 @@ const VerifierDashboard = () => {
       queryClient.invalidateQueries(['shared-credentials', walletAddress]);
     },
     onError: (error) => {
+      // Check if this is a rejection error
+      const errorMessage = error.message || '';
+      const isRejection = errorMessage === 'Transaction Declined' || 
+        errorMessage.toLowerCase().includes('rejected') ||
+        errorMessage.toLowerCase().includes('denied');
+      
       toast({
-        title: "Approval Failed",
-        description: error.message,
+        title: isRejection ? "Transaction Declined" : "Approval Failed",
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -639,9 +645,15 @@ const VerifierDashboard = () => {
       queryClient.invalidateQueries(['shared-credentials', walletAddress]);
     },
     onError: (error) => {
+      // Check if this is a rejection error
+      const errorMessage = error.message || '';
+      const isRejection = errorMessage === 'Transaction Declined' || 
+        errorMessage.toLowerCase().includes('rejected') ||
+        errorMessage.toLowerCase().includes('denied');
+      
       toast({
-        title: "Rejection Failed",
-        description: error.message,
+        title: isRejection ? "Transaction Declined" : "Rejection Failed",
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -695,10 +707,17 @@ const VerifierDashboard = () => {
       });
     } catch (error) {
       console.error('Registration error:', error);
+      
+      // Check if this is a rejection error
+      const errorMessage = error.message || '';
+      const isRejection = errorMessage === 'Transaction Declined' || 
+        errorMessage.toLowerCase().includes('rejected') ||
+        errorMessage.toLowerCase().includes('denied');
+      
       toast({
         variant: "destructive",
-        title: "Registration Failed",
-        description: error.message,
+        title: isRejection ? "Transaction Declined" : "Registration Failed",
+        description: errorMessage,
       });
     } finally {
       setIsRegistering(false);
@@ -803,10 +822,16 @@ const VerifierDashboard = () => {
       });
     },
     onError: (error) => {
+      // Check if this is a rejection error
+      const errorMessage = error.message || '';
+      const isRejection = errorMessage === 'Transaction Declined' || 
+        errorMessage.toLowerCase().includes('rejected') ||
+        errorMessage.toLowerCase().includes('denied');
+      
       toast({
         variant: "destructive",
-        title: "Request Failed",
-        description: error.message,
+        title: isRejection ? "Transaction Declined" : "Request Failed",
+        description: errorMessage,
       });
     }
   });

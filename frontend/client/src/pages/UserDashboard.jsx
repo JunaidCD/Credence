@@ -565,9 +565,15 @@ const UserDashboard = () => {
         }
       }
     } catch (error) {
+      // Check if this is a rejection error
+      const errorMessage = error.message || '';
+      const isRejection = errorMessage === 'Transaction Declined' || 
+        errorMessage.toLowerCase().includes('rejected') ||
+        errorMessage.toLowerCase().includes('denied');
+      
       toast({
-        title: "Registration Failed",
-        description: error.message,
+        title: isRejection ? "Transaction Declined" : "Registration Failed",
+        description: errorMessage,
         variant: "destructive"
       });
     }

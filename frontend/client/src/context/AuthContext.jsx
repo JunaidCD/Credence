@@ -94,16 +94,20 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       // Format error message for user rejection
       const errorMessage = error.message || '';
+      const errorCode = error.code;
       let displayMessage = errorMessage;
       
-      // Check for user rejection
-      if (error.code === 4001 || 
+      // Check for user rejection with more comprehensive pattern matching
+      if (errorCode === 4001 || 
           errorMessage.toLowerCase().includes('user rejected') ||
           errorMessage.toLowerCase().includes('user denied') ||
           errorMessage.toLowerCase().includes('transaction rejected') ||
+          errorMessage.toLowerCase().includes('rejected') ||
           errorMessage.toLowerCase().includes('cancelled') ||
-          errorMessage.toLowerCase().includes('cancel')) {
-        displayMessage = 'User rejected the transaction';
+          errorMessage.toLowerCase().includes('cancel') ||
+          errorMessage.toLowerCase().includes('signature') ||
+          errorMessage.toLowerCase().includes('denied')) {
+        displayMessage = 'Transaction Declined';
       }
       
       dispatch({ type: 'LOGIN_ERROR', payload: displayMessage });

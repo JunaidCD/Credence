@@ -248,10 +248,17 @@ const IssuerDashboard = () => {
       });
     } catch (error) {
       console.error('Registration error:', error);
+      
+      // Check if this is a rejection error
+      const errorMessage = error.message || '';
+      const isRejection = errorMessage === 'Transaction Declined' || 
+        errorMessage.toLowerCase().includes('rejected') ||
+        errorMessage.toLowerCase().includes('denied');
+      
       toast({
         variant: "destructive",
-        title: "Registration Failed",
-        description: error.message,
+        title: isRejection ? "Transaction Declined" : "Registration Failed",
+        description: errorMessage,
       });
     } finally {
       setIsRegistering(false);
@@ -357,10 +364,16 @@ const IssuerDashboard = () => {
       });
     },
     onError: (error) => {
+      // Check if this is a rejection error
+      const errorMessage = error.message || '';
+      const isRejection = errorMessage === 'Transaction Declined' || 
+        errorMessage.toLowerCase().includes('rejected') ||
+        errorMessage.toLowerCase().includes('denied');
+      
       toast({
         variant: "destructive",
-        title: "Issuance Failed",
-        description: error.message,
+        title: isRejection ? "Transaction Declined" : "Issuance Failed",
+        description: errorMessage,
       });
     }
   });
@@ -379,10 +392,16 @@ const IssuerDashboard = () => {
       });
     },
     onError: (error) => {
+      // Check if this is a rejection error
+      const errorMessage = error.message || '';
+      const isRejection = errorMessage === 'Transaction Declined' || 
+        errorMessage.toLowerCase().includes('rejected') ||
+        errorMessage.toLowerCase().includes('denied');
+      
       toast({
         variant: "destructive",
-        title: "Revocation Failed",
-        description: error.message,
+        title: isRejection ? "Transaction Declined" : "Revocation Failed",
+        description: errorMessage,
       });
     }
   });

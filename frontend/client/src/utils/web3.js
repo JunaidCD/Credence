@@ -41,15 +41,23 @@ const NETWORK_CONFIG = {
 // Helper function to format error messages
 const formatError = (error) => {
   const errorMessage = error.message || '';
+  const errorCode = error.code;
+  const errorReason = error.reason;
   
-  // Check for user rejection (code 4001 or message contains 'rejected' or 'cancel')
-  if (error.code === 4001 || 
+  // Check for user rejection (code 4001, ACTION_REJECTED, or various rejection message patterns)
+  if (errorCode === 4001 || 
+      errorCode === 'ACTION_REJECTED' ||
+      errorReason === 'rejected' ||
       errorMessage.toLowerCase().includes('user rejected') ||
       errorMessage.toLowerCase().includes('user denied') ||
       errorMessage.toLowerCase().includes('transaction rejected') ||
+      errorMessage.toLowerCase().includes('rejected') ||
       errorMessage.toLowerCase().includes('cancelled') ||
-      errorMessage.toLowerCase().includes('cancel')) {
-    return 'User rejected the transaction';
+      errorMessage.toLowerCase().includes('cancel') ||
+      errorMessage.toLowerCase().includes('signature') ||
+      errorMessage.toLowerCase().includes('denied') ||
+      errorMessage.toLowerCase().includes('ethers-user-denied')) {
+    return 'Transaction Declined';
   }
   
   // Return original message for other errors
@@ -286,7 +294,7 @@ class Web3Service {
       };
     } catch (error) {
       console.error('Failed to check issuer eligibility:', error);
-      throw error;
+      throw new Error(formatError(error));
     }
   }
 
@@ -557,7 +565,7 @@ class Web3Service {
       };
     } catch (error) {
       console.error('Credential issuance failed:', error);
-      throw error;
+      throw new Error(formatError(error));
     }
   }
 
@@ -952,7 +960,7 @@ class Web3Service {
       };
     } catch (error) {
       console.error('Credential revocation failed:', error);
-      throw error;
+      throw new Error(formatError(error));
     }
   }
 
@@ -1298,7 +1306,7 @@ class Web3Service {
       };
     } catch (error) {
       console.error('❌ Verification request failed:', error);
-      throw error;
+      throw new Error(formatError(error));
     }
   }
 
@@ -1536,7 +1544,7 @@ class Web3Service {
       };
     } catch (error) {
       console.error('❌ Credential sharing failed:', error);
-      throw error;
+      throw new Error(formatError(error));
     }
   }
 
@@ -1644,7 +1652,7 @@ class Web3Service {
       };
     } catch (error) {
       console.error('❌ Credential approval failed:', error);
-      throw error;
+      throw new Error(formatError(error));
     }
   }
 
@@ -1707,7 +1715,7 @@ class Web3Service {
       };
     } catch (error) {
       console.error('❌ Credential rejection failed:', error);
-      throw error;
+      throw new Error(formatError(error));
     }
   }
 
