@@ -6,6 +6,135 @@
 
 ---
 
+## How to Run Tests
+
+### Prerequisites
+```bash
+# Install dependencies
+cd backend
+npm install
+```
+
+### Run All Tests
+```bash
+cd backend
+npm test
+```
+This runs all smart contract tests using Hardhat. Gas report is automatically generated.
+
+### Run Tests with Gas Report Only
+```bash
+cd backend
+npx hardhat test --gas
+```
+Runs tests with detailed gas usage output.
+
+### Generate Gas Report (No Tests)
+```bash
+cd backend
+npx hardhat gas-report
+```
+Generates a standalone gas report without running tests.
+
+### Run Tests with Verbose Output
+```bash
+cd backend
+npx hardhat test --verbose
+```
+Shows detailed output including gas usage per test.
+
+### Run Tests and Save Report to File
+```bash
+cd backend
+npx hardhat test > test-output.txt 2>&1
+```
+Saves test output (including gas report) to a text file.
+
+### Compile Contracts Only
+```bash
+cd backend
+npm run compile
+```
+Compiles all Solidity contracts and generates artifacts.
+
+### Run Local Hardhat Node
+```bash
+cd backend
+npm run node
+```
+Starts a local Hardhat network node.
+
+### Deploy Contracts to Local Network
+```bash
+cd backend
+npm run deploy:local
+```
+Deploys all contracts to the local Hardhat network.
+
+### Run Specific Test File
+```bash
+cd backend
+npx hardhat test test/credentials.test.js
+npx hardhat test test/accesscontrol.test.js
+npx hardhat test test/registry.test.js
+npx hardhat test test/verifier.test.js
+npx hardhat test test/zkverifier.test.js
+```
+
+### Circom (ZK Circuits) Commands
+```bash
+# Install Circom dependencies
+cd backend
+npm run circom:install
+
+# Compile Circom circuits
+npm run circom:compile
+
+# Setup ZK proving keys
+npm run circom:setup
+
+# Full ZK setup (compile + setup + prove)
+npm run circom:full-setup
+
+# Generate ZK proof
+npm run circom:prove
+```
+
+### View Detailed Gas Report
+After running tests, the gas report shows:
+- **Method Gas Usage** - Min, Max, Avg gas for each function
+- **Contract Deployment Costs** - Gas required for each contract deployment
+- **% of Block Limit** - How much of the block gas limit each operation uses
+
+### Gas Reporter Configuration
+The gas reporter is configured in `hardhat.config.js`:
+```javascript
+gasReporter: {
+  enabled: true,
+  currency: "USD",
+  coinmarketcap: process.env.COINMARKETCAP_API_KEY || "",
+  token: "ETH",
+  gasPriceApi: "https://api.arbiscan.io/api?module=proxy&action=eth_gasPrice"
+}
+```
+
+**To disable gas reporter:**
+```bash
+DISABLE_GAS_REPORT=true npx hardhat test
+```
+
+**To run with custom gas price API:**
+```bash
+GAS_PRICE_API=https://api.etherscan.io/api?module=proxy&action=eth_gasPrice npx hardhat test
+```
+
+**To get USD pricing (requires API key):**
+```bash
+COINMARKETCAP_API_KEY=your_api_key npx hardhat test
+```
+
+---
+
 ## Test Results Summary
 
 ### Overall Status: ✅ 56 Passing | ❌ 24 Failing
