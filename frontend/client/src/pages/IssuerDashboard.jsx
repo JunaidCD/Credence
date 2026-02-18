@@ -310,6 +310,11 @@ const IssuerDashboard = () => {
         throw new Error('Invalid Ethereum address. Please enter a valid wallet address (0x...)');
       }
 
+      // Prevent issuer from issuing credential to themselves
+      if (recipientAddress.toLowerCase() === walletAddress.toLowerCase()) {
+        throw new Error('You cannot issue a credential to your own wallet address');
+      }
+
       // Parse metadata
       let parsedMetadata = {
         issuer: user.name,

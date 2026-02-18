@@ -2,11 +2,11 @@
   "network": "arbitrumSepolia",
   "chainId": "421614",
   "contracts": {
-    "IssuerRegistry": "0x0497457eE092c7e25A274a52F4872616c6619427",
-    "CredentialRegistry": "0xA9aeBd78fF7A0A6B1dF6aFf345bb7E186F247050",
-    "UserRegistry": "0x2E115c9e8ABF0ecdff3ce1E2Aaa209DC6A5C6517",
-    "VerifierRegistry": "0xaB9d6019037fF80D5E73f1C0aa4157D6685CBC00"
+    "IssuerRegistry": "0x8e28682B332B2C04E7155550176296FE01963a5b",
+    "CredentialRegistry": "0xD5e1968fad8369aB082d1c79a1e496BC4ce7002D",
+    "UserRegistry": "0x37B40fbAB4563D64AE72C6aC7Eb66179995722fE",
+    "VerifierRegistry": "0x1f6A1D14463e5fF921b106D4f6b21c26fFb7eb3f"
   },
-  "deployedAt": "2026-02-18T04:40:55.215Z",
+  "deployedAt": "2026-02-18T05:12:04.254Z",
   "deployer": "0xcAa2C22931eDD046bd0847C9Fb5d89Da508c04ca"
 }

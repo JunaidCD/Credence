@@ -478,6 +478,16 @@ const VerifierDashboard = () => {
           throw new Error('Credential not found');
         }
 
+        // Prevent verifier from verifying their own credential
+        let recipientAddress = credential.recipientDID || credential.userId || '';
+        // If DID format, extract the address
+        if (recipientAddress.startsWith('did:ethr:')) {
+          recipientAddress = recipientAddress.replace('did:ethr:', '');
+        }
+        if (recipientAddress.toLowerCase() === walletAddress.toLowerCase()) {
+          throw new Error('You cannot verify your own credential');
+        }
+
         console.log('🔍 Starting credential approval process...');
         
         // Show MetaMask notification
@@ -571,6 +581,16 @@ const VerifierDashboard = () => {
         const credential = credentials.find(c => c.id === credentialId);
         if (!credential) {
           throw new Error('Credential not found');
+        }
+
+        // Prevent verifier from rejecting their own credential
+        let recipientAddress = credential.recipientDID || credential.userId || '';
+        // If DID format, extract the address
+        if (recipientAddress.startsWith('did:ethr:')) {
+          recipientAddress = recipientAddress.replace('did:ethr:', '');
+        }
+        if (recipientAddress.toLowerCase() === walletAddress.toLowerCase()) {
+          throw new Error('You cannot reject your own credential');
         }
 
         console.log('🔍 Starting credential rejection process...');
