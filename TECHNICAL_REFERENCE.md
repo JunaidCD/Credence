@@ -4,9 +4,9 @@ This document contains detailed API documentation, endpoint specifications, and 
 
 > **Quick Links:**
 > - [Main README](README.md) - Project overview and setup
-> - [Smart Contracts](#smart-contracts-api)
-> - [Backend API](#backend-api)
-> - [Frontend Components](#frontend-components)
+> - [Smart Contracts](backend/contracts/CredentialRegistry.sol) - Core smart contract
+> - [Backend API](backend/routes/ipfs.js) - API routes
+> - [Frontend Components](frontend/client/src/components/EIP712CredentialIssuer.jsx) - UI components
 
 ---
 
