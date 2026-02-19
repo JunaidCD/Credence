@@ -428,13 +428,13 @@ This project is licensed under the MIT License.
 
 ## 🙏 Acknowledgments
 
-- **Ethereum Foundation** for blockchain infrastructure
-- **Arbitrum** for L2 scaling solution
-- **MetaMask** for wallet integration
-- **Hardhat** for development framework
-- **React Team** for the frontend framework
-- **Tailwind CSS** for styling framework
-- **OpenZeppelin** for secure smart contract libraries
+- **[Ethereum Foundation](https://ethereum.org/)** for blockchain infrastructure
+- **[Arbitrum](https://arbitrum.io/)** for L2 scaling solution
+- **[MetaMask](https://metamask.io/)** for wallet integration
+- **[Hardhat](https://hardhat.org/)** for development framework
+- **[React Team](https://react.dev/)** for the frontend framework
+- **[Tailwind CSS](https://tailwindcss.com/)** for styling framework
+- **[OpenZeppelin](https://openzeppelin.com/)** for secure smart contract libraries
 
 ---
 
