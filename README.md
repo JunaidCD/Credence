@@ -51,6 +51,19 @@
 
 ## 🏗️ Architecture
 
+### Technology Stack
+
+| Layer | Technology |
+|-------|------------|
+| **Frontend** | React, Vite, Tailwind CSS |
+| **Web3** | Ethers.js, MetaMask |
+| **Blockchain** | Arbitrum, Solidity |
+| **Backend** | Node.js, Express |
+| **Database** | SQLite (Drizzle ORM) |
+| **Storage** | IPFS, Arweave |
+| **ZK Proofs** | Circom, Groth16 |
+| **Testing** | Hardhat, Chai |
+
 ### **Frontend Stack**
 - **React 18** with Hooks and Context API for state management
 - **Vite** for fast development and building
