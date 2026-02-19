@@ -1,6 +1,5 @@
 require("@nomicfoundation/hardhat-toolbox");
 require("@nomicfoundation/hardhat-chai-matchers");
-require("hardhat-gas-reporter");
 require("dotenv").config();
 
 /** @type import('hardhat/config').HardhatUserConfig */
@@ -49,13 +48,6 @@ module.exports = {
       chainId: 11155111,
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     }
-  },
-  gasReporter: {
-    enabled: true,
-    currency: "USD",
-    coinmarketcap: process.env.COINMARKETCAP_API_KEY || "",
-    token: "ETH",
-    gasPriceApi: "https://api.arbiscan.io/api?module=proxy&action=eth_gasPrice"
   },
   etherscan: {
     apiKey: {
