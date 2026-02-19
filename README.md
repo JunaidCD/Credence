@@ -10,14 +10,15 @@
 
 ## 🔗 Smart Contracts (Live on Arbitrum Sepolia)
 
-| Contract | Etherscan | Description |
-|----------|-----------|-------------|
-| **CredentialRegistry** | [View on Arbiscan](https://sepolia.arbiscan.io/address/YOUR_CONTRACT_ADDRESS) | Main credential contract |
-| **IssuerRegistry** | [View on Arbiscan](https://sepolia.arbiscan.io/address/YOUR_CONTRACT_ADDRESS) | Issuer management |
-| **UserRegistry** | [View on Arbiscan](https://sepolia.arbiscan.io/address/YOUR_CONTRACT_ADDRESS) | User management |
-| **VerifierRegistry** | [View on Arbiscan](https://sepolia.arbiscan.io/address/YOUR_CONTRACT_ADDRESS) | Verifier management |
+| Contract | Address | Transaction | Description |
+|----------|---------|-------------|-------------|
+| **CredentialRegistry** | [0x58388C72208c90F88b743ad2c50355a961a48A66](https://sepolia.arbiscan.io/address/0x58388C72208c90F88b743ad2c50355a961a48A66) | [View Tx](https://sepolia.arbiscan.io/tx/0xbf8069304933ca70b15923acd999a3770936d58f46e541c06d9373be984bf1c6) | Main credential contract |
+| **IssuerRegistry** | [0xA3bf87A2bD98c71C3fDe6b23b6240FcCdbc22F35](https://sepolia.arbiscan.io/address/0xA3bf87A2bD98c71C3fDe6b23b6240FcCdbc22F35) | [View Tx](https://sepolia.arbiscan.io/tx/0x2e2be6377d803a0dc73072324e1c3565d5109a28686247a253b52fb90dedbee9) | Issuer management |
+| **UserRegistry** | [0x7be6B7F1aCE0eF5D87C426825a402859B4E6111d](https://sepolia.arbiscan.io/address/0x7be6B7F1aCE0eF5D87C426825a402859B4E6111d) | [View Tx](https://sepolia.arbiscan.io/tx/0x1b9a8dd2222038e6a9c8870403c7fc6acb30c211dcf906a4a8095097dad29b16) | User management |
+| **VerifierRegistry** | [0xC647e9Cd90d8c05838277C08F9ACEACd729Cd133](https://sepolia.arbiscan.io/address/0xC647e9Cd90d8c05838277C08F9ACEACd729Cd133) | [View Tx](https://sepolia.arbiscan.io/tx/0xfc122118af6e640eb111dbf847136927b2f4f4dc72b3a092435ff477ee0eb09c) | Verifier management |
 
-> 📝 **Note:** Replace `YOUR_CONTRACT_ADDRESS` with actual deployed contract addresses after deployment.
+**Network:** Arbitrum Sepolia (Chain ID: 421614)
+**Explorer:** [https://sepolia.arbiscan.io](https://sepolia.arbiscan.io)
 
 ---
 
