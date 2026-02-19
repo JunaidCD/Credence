@@ -7,6 +7,8 @@
     "deploy:local": "npx hardhat run scripts/deploy.js --network localhost",
     "node": "npx hardhat node",
     "test": "npx hardhat test",
+    "slither": "slither . --exclude-dependencies",
+    "slither:json": "slither . --json slither-report.json",
     "circom:compile": "cd circuits && circom credentialProof.circom -o build -r",
     "circom:install": "cd circuits && npm install",
     "circom:setup": "cd circuits && npm run setup",

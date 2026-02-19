@@ -1,12 +1,12 @@
 # Test Report & Gas Report - Credence Smart Contracts
 
-**Date:** February 16, 2026  
+**Date:** February 19, 2026  
 **Solidity Version:** 0.8.19  
-**Hardhat Network:** Local (Hardhat)
+**Network:** Arbitrum Sepolia (L2) - Deployed
 
 ---
 
-## How to Run Tests
+## 🧪 How to Run Tests
 
 ### Prerequisites
 ```bash
@@ -36,18 +36,51 @@ npx hardhat gas-report
 ```
 Generates a standalone gas report without running tests.
 
-### Run Tests with Verbose Output
-```bash
-cd backend
-npx hardhat test --verbose
-```
-Shows detailed output including gas usage per test.
+---
 
-### Run Tests and Save Report to File
+## 🔒 Slither Security Analysis
+
+Slither is a static analysis tool for Solidity smart contracts that helps identify security vulnerabilities and gas optimizations.
+
+### Install Slither
+```bash
+pip install slither-analyzer
+```
+
+### Run Slither
 ```bash
 cd backend
-npx hardhat test > test-output.txt 2>&1
+npm run slither          # Quick analysis
+npm run slither:json     # Export to JSON report
 ```
+
+Or directly:
+```bash
+slither . --exclude-dependencies
+```
+
+### Latest Slither Analysis Results
+
+#### High Severity
+| Issue | Contract | Description |
+|-------|----------|-------------|
+| Reentrancy | TimelockController.execute() | External calls before state changes |
+| ABI Encode Packed | CredentialVerifier.generateProof() | Use abi.encode() instead of abi.encodePacked() with multiple dynamic args |
+
+#### Medium Severity
+| Issue | Contract | Description |
+|-------|----------|-------------|
+| Missing Zero Check | TimelockController | target address not validated |
+| Calls in Loop | RateLimiter.batchCheck() | External calls inside loop |
+
+#### Low/Informational
+| Issue | Contract | Description |
+|-------|----------|-------------|
+| Uninitialized State | CredentialVerifier.verifierProofs | Never initialized |
+| Strict Equality | Multiple contracts | Use >= instead of == 0 |
+| Shadowing | MultiSigWallet.getTransaction | Local shadows state variable |
+| Missing Events | OracleAggregator, RateLimiter | Add events for admin changes |
+| Timestamp Usage | CredentialNFT, CredentialRegistry | Minor DoS risk (acceptable for expiration)
 Saves test output (including gas report) to a text file.
 
 ### Compile Contracts Only
