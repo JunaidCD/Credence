@@ -3,15 +3,6 @@ import fs from "fs";
 import path from "path";
 import { createServer as createViteServer, createLogger } from "vite";
 import { nanoid } from "nanoid";
-import { readFileSync } from "fs";
-
-// Dynamically import vite config
-let viteConfig;
-try {
-  viteConfig = (await import("../vite.config.js")).default;
-} catch (e) {
-  viteConfig = {};
-}
 
 const viteLogger = createLogger();
 
@@ -34,7 +25,7 @@ export async function setupVite(app, server) {
   };
 
   const vite = await createViteServer({
-    ...viteConfig,
+    plugins: [],
     configFile: false,
     customLogger: {
       ...viteLogger,
@@ -58,7 +49,6 @@ export async function setupVite(app, server) {
         "index.html",
       );
 
-      // always reload the index.html file from disk incase it changes
       let template = await fs.promises.readFile(clientTemplate, "utf-8");
       template = template.replace(
         `src="/src/main.jsx"`,
@@ -84,7 +74,6 @@ export function serveStatic(app) {
 
   app.use(express.static(distPath));
 
-  // fall through to index.html if the file doesn't exist
   app.use("*", (_req, res) => {
     res.sendFile(path.resolve(distPath, "index.html"));
   });

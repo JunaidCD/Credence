@@ -8,14 +8,20 @@
 
 ---
 
+## 🔗 Live Demo
+
+**Deployed Application:** [https://frontend-phi-wine-35.vercel.app](https://frontend-phi-wine-35.vercel.app)
+
+---
+
 ## 🔗 Smart Contracts (Live on Arbitrum Sepolia L2)
 
 | Contract | Address | Transaction | Description |
 |----------|---------|-------------|-------------|
-| **CredentialRegistry** | [0x5d43665D082d49100F56831Ed9D3b32a41a51950](https://sepolia.arbiscan.io/address/0x5d43665D082d49100F56831Ed9D3b32a41a51950) | [View Tx](https://sepolia.arbiscan.io/tx/0xb2d5d3e3085b5579cfc0c80a83bceb6a77867760d6226f2ec1478a5ca732b810) | Main credential contract |
-| **IssuerRegistry** | [0x6127215cC0f3DBD44c78EA1158e68FC570527be2](https://sepolia.arbiscan.io/address/0x6127215cC0f3DBD44c78EA1158e68FC570527be2) | [View Tx](https://sepolia.arbiscan.io/tx/0xe4b88f574f7c1af800648c40ade4e6a3498c348222c272c1dc784655a68888ac) | Issuer management |
-| **UserRegistry** | [0xa3eE836757817cCbED082FfE51B0a83E303B2b95](https://sepolia.arbiscan.io/address/0xa3eE836757817cCbED082FfE51B0a83E303B2b95) | [View Tx](https://sepolia.arbiscan.io/tx/0x4055a754b6443db831a124d6e23202a4320cd7655d3e25131d51ce61f385126b) | User management |
-| **VerifierRegistry** | [0x2E46be122A43F1aaA447b64112d7aca01d970F40](https://sepolia.arbiscan.io/address/0x2E46be122A43F1aaA447b64112d7aca01d970F40) | [View Tx](https://sepolia.arbiscan.io/tx/0xae52e93dbcf9900f50be642d895420742830e9c9465890e4b624c4de6e27af51) | Verifier management |
+| **CredentialRegistry** | [0x2154CEF8A0147F6192fC35DA53682759B037fcee](https://sepolia.arbiscan.io/address/0x2154CEF8A0147F6192fC35DA53682759B037fcee) | [View Tx](https://sepolia.arbiscan.io/tx/0xc67de0bccff1d5abefb5c7ce33cc7c09b6e31b9ffc7e268ef1532e9ee7126e16) | Main credential contract |
+| **IssuerRegistry** | [0x02Fc5273C7449374601309fc456c0FE4847e4a3e](https://sepolia.arbiscan.io/address/0x02Fc5273C7449374601309fc456c0FE4847e4a3e) | [View Tx](https://sepolia.arbiscan.io/tx/0x5f299266386faa5ffb8690b48c058f54856c8703d0c0575047d1193fc27e0162) | Issuer management |
+| **UserRegistry** | [0x3b45272254758fD51E1e9A00F079684bcd19be86](https://sepolia.arbiscan.io/address/0x3b45272254758fD51E1e9A00F079684bcd19be86) | [View Tx](https://sepolia.arbiscan.io/tx/0x738dd7a687464ca4abd1e7828875818f6f8a72c48544e94bec4efecde918cd8b) | User management |
+| **VerifierRegistry** | [0xF42EA9e12321DfEF68f501E4D7A5ca3D887eD091](https://sepolia.arbiscan.io/address/0xF42EA9e12321DfEF68f501E4D7A5ca3D887eD091) | [View Tx](https://sepolia.arbiscan.io/tx/0xaf252d557f5aa5ede83b52944fd478bbfc0235da3b419716501c3b677ad0027d) | Verifier management |
 
 **Network:** Arbitrum Sepolia (Chain ID: 421614) - Layer 2
 **Explorer:** [https://sepolia.arbiscan.io](https://sepolia.arbiscan.io)

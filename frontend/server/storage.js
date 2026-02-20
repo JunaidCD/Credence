@@ -547,4 +547,12 @@ export class MemStorage {
   }
 }
 
-export const storage = new MemStorage();
+// Use global to persist across serverless function calls in same instance
+let globalStorage = global.__storage || null;
+
+if (!globalStorage) {
+  globalStorage = new MemStorage();
+  global.__storage = globalStorage;
+}
+
+export const storage = globalStorage;

@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { User, Search, Award } from 'lucide-react';
+import heroImage from '../assets/digital-identity-hero.png';
 
 const HeroSection = ({ onLoginClick }) => {
   return (
@@ -56,7 +57,7 @@ const HeroSection = ({ onLoginClick }) => {
             <div className="relative max-w-5xl mx-auto px-4 sm:px-8">
               <div className="relative hero-glow rounded-3xl overflow-hidden">
                 <img 
-                  src="/src/assets/digital-identity-hero.png" 
+                  src={heroImage} 
                   alt="Professional digital identity and verifiable credentials management interface" 
                   className="w-full h-auto rounded-3xl shadow-2xl animate-float relative z-10 object-cover aspect-video sm:aspect-auto" 
                   data-testid="hero-image"
