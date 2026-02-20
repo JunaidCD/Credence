@@ -4,22 +4,22 @@
   "explorerUrl": "https://sepolia.arbiscan.io",
   "contracts": {
     "IssuerRegistry": {
-      "address": "0x6127215cC0f3DBD44c78EA1158e68FC570527be2",
-      "transactionHash": "0xe4b88f574f7c1af800648c40ade4e6a3498c348222c272c1dc784655a68888ac"
+      "address": "0x0E3E9A1a61A2e7Cb10C99e25ad1ce47DC777B032",
+      "transactionHash": "0x6f822e2626891267e6770a660f9f31de12fc4485149691da4411aa2a68d47b35"
     },
     "CredentialRegistry": {
-      "address": "0x5d43665D082d49100F56831Ed9D3b32a41a51950",
-      "transactionHash": "0xb2d5d3e3085b5579cfc0c80a83bceb6a77867760d6226f2ec1478a5ca732b810"
+      "address": "0xA96b44b9d89789F6Cae8f0379240737289C63e67",
+      "transactionHash": "0xeacd362846ca9dbddd1ef4c111156b4680f22eb74305ef5d0961b7bde5b4e25e"
     },
     "UserRegistry": {
-      "address": "0xa3eE836757817cCbED082FfE51B0a83E303B2b95",
-      "transactionHash": "0x4055a754b6443db831a124d6e23202a4320cd7655d3e25131d51ce61f385126b"
+      "address": "0xC27BAB314178E9854EfAeac52f41Fa19b019aDe5",
+      "transactionHash": "0x5e2fae14405198119152c294891d2fcf63290f774f6c74b656a13b4248fc0609"
     },
     "VerifierRegistry": {
-      "address": "0x2E46be122A43F1aaA447b64112d7aca01d970F40",
-      "transactionHash": "0xae52e93dbcf9900f50be642d895420742830e9c9465890e4b624c4de6e27af51"
+      "address": "0x08985283F3214e02EA6accD729799652b44219E5",
+      "transactionHash": "0xb3592f492d2b2567838a219afa383a83161a85ecdc508f921c73d5b74a14f54a"
     }
   },
-  "deployedAt": "2026-02-19T18:35:35.134Z",
+  "deployedAt": "2026-02-20T04:04:08.828Z",
   "deployer": "0xcAa2C22931eDD046bd0847C9Fb5d89Da508c04ca"
 }
